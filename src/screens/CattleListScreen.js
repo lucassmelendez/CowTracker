@@ -21,15 +21,19 @@ const CattleListScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const loadCattle = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getAllCattle();
-      setCattle(data);
+      setCattle(data || []); // Garantizar que siempre sea un array
+      setDataLoaded(true);
     } catch (error) {
+      console.error('Error cargando ganado:', error);
       setError('Error al cargar el ganado: ' + error);
+      setCattle([]);
       Alert.alert('Error', 'No se pudo cargar el listado de ganado');
     } finally {
       setLoading(false);
@@ -89,7 +93,10 @@ const CattleListScreen = () => {
     return (
       <TouchableOpacity 
         style={styles.cattleItem}
-        onPress={() => router.push('/cattle-detail?id=' + item._id)}
+        onPress={() => router.push({
+          pathname: '/cattle-detail',
+          params: { id: item._id }
+        })}
       >
         <View style={styles.cattleHeader}>
           <Text style={styles.cattleId}>ID: {item.identificationNumber}</Text>
@@ -121,7 +128,7 @@ const CattleListScreen = () => {
     router.push('/add-cattle');
   };
 
-  if (loading && !refreshing) {
+  if (loading && !refreshing && !dataLoaded) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#27ae60" />

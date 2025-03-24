@@ -1,6 +1,6 @@
 {
   "name": "ganadoapp",
-  "main": "./App.js",
+  "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start --port 8082",

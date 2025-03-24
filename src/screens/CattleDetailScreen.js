@@ -61,7 +61,8 @@ const CattleDetailScreen = ({ route }) => {
   };
 
   const handleEdit = () => {
-    router.push(`/add-cattle?id=${cattleId}`);
+    console.log('Navegando a editar ganado:', cattleId);
+    router.push('/add-cattle?id=' + cattleId);
   };
 
   const handleGoBack = () => {

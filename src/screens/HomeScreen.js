@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 
@@ -7,12 +7,16 @@ const HomeScreen = () => {
   const { userData, logout } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    console.log('HomeScreen montado - Mostrando los menús');
+  }, []);
+
   const menuItems = [
     {
       id: 'cattle',
       title: 'Mi Ganado',
       icon: '🐄',
-      route: '/explore',
+      route: '/(tabs)/explore',
       description: 'Gestiona todo tu ganado',
     },
     {
@@ -38,6 +42,12 @@ const HomeScreen = () => {
     },
   ];
 
+  const navigateTo = (route) => {
+    console.log('Navegando a:', route);
+    Alert.alert("Navegación", `Intentando navegar a: ${route}`);
+    router.push(route);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -56,7 +66,7 @@ const HomeScreen = () => {
             <TouchableOpacity
               key={item.id}
               style={styles.menuItem}
-              onPress={() => router.push(item.route)}
+              onPress={() => navigateTo(item.route)}
             >
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={styles.menuTitle}>{item.title}</Text>

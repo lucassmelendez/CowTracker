@@ -82,7 +82,7 @@ const CattleListScreen = () => {
     return (
       <TouchableOpacity 
         style={styles.cattleItem}
-        onPress={() => router.push(`/cattle-detail?id=${item._id}`)}
+        onPress={() => router.push('/cattle-detail?id=' + item._id)}
       >
         <View style={styles.cattleHeader}>
           <Text style={styles.cattleId}>ID: {item.identificationNumber}</Text>
@@ -110,6 +110,7 @@ const CattleListScreen = () => {
   };
 
   const handleAddCattle = () => {
+    console.log('Navegando a agregar ganado');
     router.push('/add-cattle');
   };
 

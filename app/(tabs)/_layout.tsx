@@ -15,6 +15,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
+          headerTitle: 'GanadoApp',
           tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
         }}
       />
@@ -22,7 +23,8 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Mi Ganado',
-          tabBarIcon: ({ color, size }) => <Ionicons name="ios-list" color={color} size={size} />,
+          headerTitle: 'Mi Ganado',
+          tabBarIcon: ({ color, size }) => <Ionicons name="list" color={color} size={size} />,
         }}
       />
     </Tabs>

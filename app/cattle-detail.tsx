@@ -1,16 +1,16 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../src/components/AuthContext';
+import { View, StyleSheet } from 'react-native';
 import CattleDetailScreen from '../src/screens/CattleDetailScreen';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function CattleDetailPage() {
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  console.log('Parámetros recibidos:', params);
   
   return (
-    <AuthProvider>
-      <CattleDetailScreen route={{ params: { cattleId: id } }} />
-    </AuthProvider>
+    <View style={styles.container}>
+      <CattleDetailScreen route={{ params: { cattleId: params.id } }} />
+    </View>
   );
 }
 

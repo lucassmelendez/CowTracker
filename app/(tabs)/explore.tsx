@@ -1,13 +1,17 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../../src/components/AuthContext';
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import CattleListScreen from '../../src/screens/CattleListScreen';
 
 export default function CattleTab() {
+  // Registrar en la consola para verificar que esta pantalla se está cargando
+  useEffect(() => {
+    console.log('Cargando pantalla de lista de ganado en (tabs)/explore.tsx');
+  }, []);
+  
   return (
-    <AuthProvider>
+    <View style={styles.container}>
       <CattleListScreen />
-    </AuthProvider>
+    </View>
   );
 }
 

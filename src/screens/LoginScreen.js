@@ -25,6 +25,7 @@ const LoginScreen = () => {
   };
 
   const navigateToRegister = () => {
+    console.log('Navegando a registro');
     router.push('/register');
   };
 

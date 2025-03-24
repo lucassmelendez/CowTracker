@@ -44,6 +44,7 @@ const RegisterScreen = () => {
   };
 
   const navigateToLogin = () => {
+    console.log('Navegando a login');
     router.push('/login');
   };
 

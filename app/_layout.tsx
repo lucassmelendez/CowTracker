@@ -1,59 +1,60 @@
-import React from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
+import { AuthProvider, useAuth } from '../src/components/AuthContext';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-import { AuthProvider } from '../src/components/AuthContext';
+import { Text, View, ActivityIndicator } from 'react-native';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+function RootLayoutNav() {
+  const { isLoading, userToken } = useAuth();
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
+  // Mostrar indicador de carga mientras se verifica la autenticación
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#27ae60" />
+        <Text style={{ marginTop: 10 }}>Cargando...</Text>
+      </View>
+    );
   }
 
   return (
+    <>
+      <Stack 
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#27ae60',
+          },
+          headerTintColor: '#ffffff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
+        {userToken ? (
+          <>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="cattle-detail" options={{ title: 'Detalles del Ganado' }} />
+            <Stack.Screen name="add-cattle" options={{ title: 'Gestionar Ganado' }} />
+            <Stack.Screen name="profile" options={{ title: 'Mi Perfil' }} />
+            <Stack.Screen name="farms" options={{ title: 'Mis Granjas' }} />
+            <Stack.Screen name="sales" options={{ title: 'Ventas' }} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="login" options={{ headerShown: false }} />
+            <Stack.Screen name="register" options={{ headerShown: false }} />
+          </>
+        )}
+      </Stack>
+      <StatusBar style="light" />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack 
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: '#27ae60',
-            },
-            headerTintColor: '#ffffff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ headerShown: false }} />
-          <Stack.Screen name="cattle-detail" options={{ title: 'Detalles del Ganado' }} />
-          <Stack.Screen name="add-cattle" options={{ title: 'Gestionar Ganado' }} />
-          <Stack.Screen name="profile" options={{ title: 'Mi Perfil' }} />
-          <Stack.Screen name="farms" options={{ title: 'Mis Granjas' }} />
-          <Stack.Screen name="sales" options={{ title: 'Ventas' }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <RootLayoutNav />
     </AuthProvider>
   );
 }

@@ -1,13 +1,17 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../../src/components/AuthContext';
+import React, { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
 import HomeScreen from '../../src/screens/HomeScreen';
 
 export default function TabOneScreen() {
+  // Registrar en la consola para verificar que esta pantalla se está cargando
+  useEffect(() => {
+    console.log('Cargando pantalla de inicio en (tabs)/index.tsx');
+  }, []);
+
   return (
-    <AuthProvider>
+    <View style={styles.container}>
       <HomeScreen />
-    </AuthProvider>
+    </View>
   );
 }
 

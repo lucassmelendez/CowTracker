@@ -12,14 +12,20 @@ import {
   ScrollView
 } from 'react-native';
 import { useAuth } from '../components/AuthContext';
+import { useRouter } from 'expo-router';
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading, error } = useAuth();
+  const router = useRouter();
 
   const handleLogin = () => {
     login(email, password);
+  };
+
+  const navigateToRegister = () => {
+    router.push('/register');
   };
 
   return (
@@ -29,11 +35,7 @@ const LoginScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.logoContainer}>
-          <Image 
-            source={require('../assets/logo.png')} 
-            style={styles.logo} 
-            resizeMode="contain" 
-          />
+          <Text style={styles.logoEmoji}>🐄</Text>
           <Text style={styles.title}>GanadoApp</Text>
           <Text style={styles.subtitle}>Gestión de ganado y granjas</Text>
         </View>
@@ -74,7 +76,7 @@ const LoginScreen = ({ navigation }) => {
 
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>¿No tienes una cuenta? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <TouchableOpacity onPress={navigateToRegister}>
               <Text style={styles.registerLink}>Regístrate aquí</Text>
             </TouchableOpacity>
           </View>
@@ -98,9 +100,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 40,
   },
-  logo: {
-    width: 120,
-    height: 120,
+  logoEmoji: {
+    fontSize: 80,
     marginBottom: 10,
   },
   title: {

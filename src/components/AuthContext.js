@@ -2,6 +2,9 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login, register } from '../services/api';
 
+// Bandera para modo desarrollo - para ver todas las pantallas sin iniciar sesión
+const DEV_MODE = true; // Cambiar a false para comportamiento normal
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -14,6 +17,19 @@ export const AuthProvider = ({ children }) => {
     // Cargar token almacenado
     const bootstrapAsync = async () => {
       try {
+        // En modo desarrollo, establecer un token fake para poder ver todas las pantallas
+        if (DEV_MODE) {
+          setUserToken('dev-token');
+          setUserData({
+            _id: 'dev-user-id',
+            name: 'Usuario Desarrollo',
+            email: 'dev@example.com',
+            role: 'admin',
+          });
+          setIsLoading(false);
+          return;
+        }
+        
         const token = await AsyncStorage.getItem('userToken');
         const user = await AsyncStorage.getItem('userData');
         
@@ -33,6 +49,18 @@ export const AuthProvider = ({ children }) => {
 
   const authContext = {
     login: async (email, password) => {
+      // En modo desarrollo, simular login exitoso inmediatamente
+      if (DEV_MODE) {
+        setUserToken('dev-token');
+        setUserData({
+          _id: 'dev-user-id',
+          name: 'Usuario Desarrollo',
+          email: email || 'dev@example.com',
+          role: 'admin',
+        });
+        return;
+      }
+      
       setIsLoading(true);
       setError(null);
       try {
@@ -61,6 +89,18 @@ export const AuthProvider = ({ children }) => {
       }
     },
     register: async (name, email, password) => {
+      // En modo desarrollo, simular registro exitoso inmediatamente
+      if (DEV_MODE) {
+        setUserToken('dev-token');
+        setUserData({
+          _id: 'dev-user-id',
+          name: name || 'Usuario Desarrollo',
+          email: email || 'dev@example.com',
+          role: 'admin',
+        });
+        return;
+      }
+      
       setIsLoading(true);
       setError(null);
       try {
@@ -89,6 +129,18 @@ export const AuthProvider = ({ children }) => {
       }
     },
     logout: async () => {
+      // En modo desarrollo, solo reiniciar el estado sin esperar
+      if (DEV_MODE) {
+        setUserToken('dev-token');
+        setUserData({
+          _id: 'dev-user-id',
+          name: 'Usuario Desarrollo',
+          email: 'dev@example.com',
+          role: 'admin',
+        });
+        return;
+      }
+      
       setIsLoading(true);
       try {
         await AsyncStorage.removeItem('userToken');

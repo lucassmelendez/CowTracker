@@ -1,12 +1,12 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../../src/components/AuthContext';
-import HomeScreen from '../../src/screens/HomeScreen';
+import { AuthProvider } from '../src/components/AuthContext';
+import LoginScreen from '../src/screens/LoginScreen';
 
-export default function TabOneScreen() {
+export default function LoginPage() {
   return (
     <AuthProvider>
-      <HomeScreen />
+      <LoginScreen />
     </AuthProvider>
   );
 }
@@ -16,4 +16,4 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-});
+}); 

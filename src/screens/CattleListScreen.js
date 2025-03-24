@@ -10,8 +10,10 @@ import {
   RefreshControl
 } from 'react-native';
 import { getAllCattle } from '../services/api';
+import { useRouter } from 'expo-router';
 
-const CattleListScreen = ({ navigation }) => {
+const CattleListScreen = () => {
+  const router = useRouter();
   const [cattle, setCattle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,12 +43,12 @@ const CattleListScreen = ({ navigation }) => {
     loadCattle();
 
     // Actualizar la lista cuando la pantalla vuelve a estar en foco
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribe = router.addListener('focus', () => {
       loadCattle();
     });
 
     return unsubscribe;
-  }, [navigation]);
+  }, [router]);
 
   const renderCattleItem = ({ item }) => {
     const getStatusColor = (status) => {
@@ -80,7 +82,7 @@ const CattleListScreen = ({ navigation }) => {
     return (
       <TouchableOpacity 
         style={styles.cattleItem}
-        onPress={() => navigation.navigate('CattleDetail', { id: item._id })}
+        onPress={() => router.push(`/cattle-detail?id=${item._id}`)}
       >
         <View style={styles.cattleHeader}>
           <Text style={styles.cattleId}>ID: {item.identificationNumber}</Text>
@@ -107,6 +109,10 @@ const CattleListScreen = ({ navigation }) => {
     );
   };
 
+  const handleAddCattle = () => {
+    router.push('/add-cattle');
+  };
+
   if (loading && !refreshing) {
     return (
       <View style={styles.centered}>
@@ -123,7 +129,7 @@ const CattleListScreen = ({ navigation }) => {
         </Text>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => navigation.navigate('AddCattle')}
+          onPress={handleAddCattle}
         >
           <Text style={styles.addButtonText}>+ Añadir</Text>
         </TouchableOpacity>
@@ -144,7 +150,7 @@ const CattleListScreen = ({ navigation }) => {
           <Text style={styles.emptyText}>No tienes ganado registrado</Text>
           <TouchableOpacity
             style={styles.emptyButton}
-            onPress={() => navigation.navigate('AddCattle')}
+            onPress={handleAddCattle}
           >
             <Text style={styles.emptyButtonText}>Añadir ganado</Text>
           </TouchableOpacity>

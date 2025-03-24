@@ -1,6 +1,17 @@
 const asyncHandler = require('express-async-handler');
-const User = require('../models/userModel');
 const generateToken = require('../utils/generateToken');
+const bcrypt = require('bcryptjs');
+
+// Función para hashear contraseñas
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return await bcrypt.hash(password, salt);
+};
+
+// Función para comparar contraseñas
+const comparePassword = async (enteredPassword, storedPassword) => {
+  return await bcrypt.compare(enteredPassword, storedPassword);
+};
 
 // @desc    Autenticar usuario y obtener token
 // @route   POST /api/users/login
@@ -8,9 +19,9 @@ const generateToken = require('../utils/generateToken');
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+  const user = global.mockDB.users.find(u => u.email === email);
 
-  if (user && (await user.matchPassword(password))) {
+  if (user && (await comparePassword(password, user.password))) {
     res.json({
       _id: user._id,
       name: user.name,
@@ -30,38 +41,39 @@ const authUser = asyncHandler(async (req, res) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
-  const userExists = await User.findOne({ email });
+  const userExists = global.mockDB.users.find(u => u.email === email);
 
   if (userExists) {
     res.status(400);
     throw new Error('El usuario ya existe');
   }
 
-  const user = await User.create({
+  const hashedPassword = await hashPassword(password);
+  
+  const user = {
+    _id: Date.now().toString(),
     name,
     email,
-    password,
-  });
+    password: hashedPassword,
+    role: 'user'
+  };
+  
+  global.mockDB.users.push(user);
 
-  if (user) {
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } else {
-    res.status(400);
-    throw new Error('Datos de usuario inválidos');
-  }
+  res.status(201).json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    token: generateToken(user._id),
+  });
 });
 
 // @desc    Obtener perfil de usuario
 // @route   GET /api/users/profile
 // @access  Private
 const getUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const user = global.mockDB.users.find(u => u._id === req.user._id);
 
   if (user) {
     res.json({
@@ -80,24 +92,26 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/profile
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  const userIndex = global.mockDB.users.findIndex(u => u._id === req.user._id);
 
-  if (user) {
+  if (userIndex !== -1) {
+    const user = global.mockDB.users[userIndex];
+    
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
     
     if (req.body.password) {
-      user.password = req.body.password;
+      user.password = await hashPassword(req.body.password);
     }
 
-    const updatedUser = await user.save();
+    global.mockDB.users[userIndex] = user;
 
     res.json({
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      role: updatedUser.role,
-      token: generateToken(updatedUser._id),
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
     });
   } else {
     res.status(404);

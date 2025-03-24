@@ -11,8 +11,10 @@ import {
   ScrollView
 } from 'react-native';
 import { useAuth } from '../components/AuthContext';
+import { useRouter } from 'expo-router';
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = () => {
+  const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +41,10 @@ const RegisterScreen = ({ navigation }) => {
 
     setLocalError('');
     register(name, email, password);
+  };
+
+  const navigateToLogin = () => {
+    router.push('/login');
   };
 
   return (
@@ -105,7 +111,7 @@ const RegisterScreen = ({ navigation }) => {
 
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>¿Ya tienes una cuenta? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity onPress={navigateToLogin}>
               <Text style={styles.loginLink}>Inicia sesión aquí</Text>
             </TouchableOpacity>
           </View>

@@ -1,15 +1,15 @@
-const mongoose = require('mongoose');
-
+// Simulador de conexión a MongoDB
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    
-    console.log(`MongoDB conectado: ${conn.connection.host}`);
+    console.log('Simulando conexión a MongoDB (modo de desarrollo sin DB)');
+    // Simulamos una conexión exitosa
+    global.mockDB = {
+      users: [],
+      cattle: []
+    };
+    return { connection: { host: 'mock-db-server' } };
   } catch (error) {
-    console.error(`Error al conectar a MongoDB: ${error.message}`);
+    console.error(`Error al conectar a la base de datos: ${error.message}`);
     process.exit(1);
   }
 };

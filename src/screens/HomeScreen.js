@@ -1,37 +1,39 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useAuth } from '../components/AuthContext';
+import { useRouter } from 'expo-router';
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = () => {
   const { userData, logout } = useAuth();
+  const router = useRouter();
 
   const menuItems = [
     {
       id: 'cattle',
       title: 'Mi Ganado',
       icon: '🐄',
-      screen: 'CattleList',
+      route: '/explore',
       description: 'Gestiona todo tu ganado',
     },
     {
       id: 'farms',
       title: 'Mis Granjas',
       icon: '🏡',
-      screen: 'Farms',
+      route: '/farms',
       description: 'Administra tus granjas',
     },
     {
       id: 'sales',
       title: 'Ventas',
       icon: '💰',
-      screen: 'Sales',
+      route: '/sales',
       description: 'Historial y registro de ventas',
     },
     {
       id: 'profile',
       title: 'Mi Perfil',
       icon: '👤',
-      screen: 'Profile',
+      route: '/profile',
       description: 'Visualiza y edita tu perfil',
     },
   ];
@@ -54,7 +56,7 @@ const HomeScreen = ({ navigation }) => {
             <TouchableOpacity
               key={item.id}
               style={styles.menuItem}
-              onPress={() => navigation.navigate(item.screen)}
+              onPress={() => router.push(item.route)}
             >
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={styles.menuTitle}>{item.title}</Text>

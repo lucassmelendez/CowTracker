@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
+import { getShadowStyle } from '../utils/styles';
 
 const ProfileScreen = () => {
   const { userData, logout } = useAuth();
@@ -153,11 +154,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     margin: 20,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...getShadowStyle(),
   },
   avatarContainer: {
     alignItems: 'center',
@@ -246,6 +243,12 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  formContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 20,
+    ...getShadowStyle(),
   },
 });
 

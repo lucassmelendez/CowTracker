@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { getShadowStyle } from '../utils/styles';
 
 const AddCattleScreen = ({ route }) => {
   const router = useRouter();
@@ -242,14 +243,7 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 15,
     marginTop: -15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...getShadowStyle(),
   },
   sectionTitle: {
     fontSize: 18,

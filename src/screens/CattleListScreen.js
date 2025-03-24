@@ -7,10 +7,13 @@ import {
   TouchableOpacity, 
   ActivityIndicator,
   Alert,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { getAllCattle } from '../services/api';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import { getShadowStyle } from '../utils/styles';
 
 const CattleListScreen = () => {
   const router = useRouter();
@@ -39,16 +42,20 @@ const CattleListScreen = () => {
     setRefreshing(false);
   };
 
+  // Cargar datos iniciales
   useEffect(() => {
     loadCattle();
+  }, []);
 
-    // Actualizar la lista cuando la pantalla vuelve a estar en foco
-    const unsubscribe = router.addListener('focus', () => {
+  // Recargar datos cuando la pantalla obtiene el foco
+  useFocusEffect(
+    React.useCallback(() => {
       loadCattle();
-    });
-
-    return unsubscribe;
-  }, [router]);
+      return () => {
+        // Cleanup opcional si es necesario
+      };
+    }, [])
+  );
 
   const renderCattleItem = ({ item }) => {
     const getStatusColor = (status) => {
@@ -213,11 +220,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...getShadowStyle({ height: 1, radius: 2 }),
   },
   cattleHeader: {
     flexDirection: 'row',

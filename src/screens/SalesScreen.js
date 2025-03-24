@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import { getShadowStyle } from '../utils/styles';
 
 const SalesScreen = () => {
   const router = useRouter();
@@ -133,7 +134,7 @@ const SalesScreen = () => {
 
   const renderSaleItem = ({ item }) => (
     <TouchableOpacity 
-      style={styles.card}
+      style={styles.saleCard}
       onPress={() => openDetailsModal(item)}
     >
       <View style={styles.cardHeader}>
@@ -461,19 +462,12 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingBottom: 80,
   },
-  card: {
+  saleCard: {
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...getShadowStyle(),
   },
   cardHeader: {
     flexDirection: 'row',
@@ -531,14 +525,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    ...getShadowStyle({ elevation: 5, opacity: 0.25 }),
   },
   emptyContainer: {
     alignItems: 'center',
@@ -560,14 +547,16 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 15,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
+    width: '90%',
     maxHeight: '80%',
+    ...getShadowStyle({ elevation: 5 }),
   },
   modalHeader: {
     flexDirection: 'row',

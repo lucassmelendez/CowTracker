@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
+import { getShadowStyle } from '../utils/styles';
 
 const RegisterScreen = () => {
   const router = useRouter();
@@ -148,11 +149,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
+    ...getShadowStyle(),
     marginBottom: 20,
   },
   label: {

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { getShadowStyle } from '../utils/styles';
 
 const FarmsScreen = () => {
   const router = useRouter();
@@ -99,7 +100,7 @@ const FarmsScreen = () => {
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
+    <View style={styles.farmItem}>
       <View style={styles.cardHeader}>
         <Text style={styles.farmName}>{item.name}</Text>
         <View style={styles.actionsContainer}>
@@ -156,7 +157,7 @@ const FarmsScreen = () => {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={openAddModal}>
+      <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
         <Ionicons name="add" size={30} color="#fff" />
       </TouchableOpacity>
 
@@ -242,19 +243,12 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingBottom: 80,
   },
-  card: {
+  farmItem: {
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...getShadowStyle(),
   },
   cardHeader: {
     flexDirection: 'row',
@@ -287,7 +281,7 @@ const styles = StyleSheet.create({
     color: '#555',
     marginLeft: 8,
   },
-  fab: {
+  addButton: {
     position: 'absolute',
     bottom: 20,
     right: 20,
@@ -297,14 +291,7 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    ...getShadowStyle({ elevation: 5 }),
   },
   emptyContainer: {
     alignItems: 'center',
@@ -326,21 +313,16 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 20,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    width: '80%',
+    alignItems: 'center',
+    ...getShadowStyle({ elevation: 5, radius: 10 }),
   },
   modalTitle: {
     fontSize: 20,

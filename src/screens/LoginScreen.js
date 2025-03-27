@@ -18,11 +18,16 @@ import { getShadowStyle } from '../utils/styles';
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading, error } = useAuth();
+  const { login, loading, error } = useAuth();
   const router = useRouter();
 
-  const handleLogin = () => {
-    login(email, password);
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+      // La redirección se maneja automáticamente en el archivo index.tsx
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+    }
   };
 
   const navigateToRegister = () => {
@@ -56,7 +61,7 @@ const LoginScreen = () => {
           <Text style={styles.label}>Contraseña</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ingrese su contraseña"
+            placeholder="********"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -65,23 +70,23 @@ const LoginScreen = () => {
           {error && <Text style={styles.errorText}>{error}</Text>}
 
           <TouchableOpacity 
-            style={styles.button} 
+            style={styles.loginButton} 
             onPress={handleLogin}
-            disabled={isLoading}
+            disabled={loading}
           >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
+            {loading ? (
+              <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Iniciar Sesión</Text>
+              <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
             )}
           </TouchableOpacity>
 
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>¿No tienes una cuenta? </Text>
-            <TouchableOpacity onPress={navigateToRegister}>
-              <Text style={styles.registerLink}>Regístrate aquí</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            style={styles.registerButton}
+            onPress={navigateToRegister}
+          >
+            <Text style={styles.registerButtonText}>¿No tienes cuenta? Regístrate</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -137,7 +142,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
-  button: {
+  loginButton: {
     backgroundColor: '#27ae60',
     height: 50,
     borderRadius: 8,
@@ -145,8 +150,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 15,
   },
-  buttonText: {
+  loginButtonText: {
     color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  registerButton: {
+    backgroundColor: '#ecf0f1',
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15,
+    borderColor: '#95a5a6',
+    borderWidth: 1,
+  },
+  registerButtonText: {
+    color: '#95a5a6',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -155,18 +175,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  registerText: {
-    color: '#7f8c8d',
-  },
-  registerLink: {
-    color: '#2980b9',
-    fontWeight: '600',
-  },
 });
 
-export default LoginScreen; 
+export default LoginScreen;

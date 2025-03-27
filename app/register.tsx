@@ -1,14 +1,9 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../src/components/AuthContext';
 import RegisterScreen from '../src/screens/RegisterScreen';
 
 export default function RegisterPage() {
-  return (
-    <AuthProvider>
-      <RegisterScreen />
-    </AuthProvider>
-  );
+  return <RegisterScreen />;
 }
 
 const styles = StyleSheet.create({

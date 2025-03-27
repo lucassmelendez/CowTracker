@@ -2,6 +2,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { mockCattle, mockFarms } from './mockData';
+import * as firestoreService from './firestore';
+import { auth } from '../config/firebase';
 
 // En desarrollo, usamos diferentes URLs dependiendo de la plataforma
 // - En web y Android emulador: localhost se resuelve al dispositivo host
@@ -43,8 +45,9 @@ api.interceptors.request.use(
   }
 );
 
-// Variable para controlar si debemos usar datos simulados
-const USE_MOCK_DATA = true; // Cambiar a false cuando el servidor esté disponible
+// Variable para controlar si debemos usar datos simulados o Firebase
+const USE_MOCK_DATA = false; // Cambiado a false para usar Firebase
+const USE_FIREBASE = true; // Nueva bandera para usar Firebase en lugar del backend
 
 export const login = async (email, password) => {
   try {
@@ -89,6 +92,25 @@ export const getAllCattle = async () => {
     return mockCattle;
   }
 
+  // Si estamos usando Firebase
+  if (USE_FIREBASE) {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      console.log('Obteniendo ganado desde Firebase');
+      return await firestoreService.getAllCattle(currentUser.uid);
+    } catch (error) {
+      console.error('Error al obtener ganado desde Firebase:', error);
+      // En caso de error, usar datos simulados como fallback
+      console.log('Usando datos simulados como fallback');
+      return mockCattle;
+    }
+  }
+
+  // Si no estamos usando Firebase ni datos simulados, usar el backend
   try {
     console.log('Intentando obtener ganado desde:', `${API_URL}/cattle`);
     const response = await api.get('/cattle');
@@ -113,6 +135,21 @@ export const getCattleById = async (id) => {
     return cattle;
   }
 
+  // Si estamos usando Firebase
+  if (USE_FIREBASE) {
+    try {
+      console.log('Obteniendo detalles de ganado desde Firebase, ID:', id);
+      return await firestoreService.getCattleById(id);
+    } catch (error) {
+      console.error('Error al obtener detalles de ganado desde Firebase:', error);
+      // Intentar usar datos simulados si falla
+      const cattle = mockCattle.find(c => c._id === id);
+      if (cattle) return cattle;
+      throw error;
+    }
+  }
+
+  // Si no estamos usando Firebase ni datos simulados, usar el backend
   try {
     const response = await api.get(`/cattle/${id}`);
     return response.data;
@@ -127,6 +164,28 @@ export const getCattleById = async (id) => {
 };
 
 export const createCattle = async (cattleData) => {
+  // Si estamos usando Firebase
+  if (USE_FIREBASE) {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error('Usuario no autenticado');
+      }
+      
+      // Agregar el ID del usuario al ganado
+      const dataWithUserId = {
+        ...cattleData,
+        userId: currentUser.uid
+      };
+      
+      return await firestoreService.createCattle(dataWithUserId);
+    } catch (error) {
+      console.error('Error al crear ganado en Firebase:', error);
+      throw error.message || 'Error al crear ganado';
+    }
+  }
+  
+  // Si no estamos usando Firebase, usar el backend
   try {
     const response = await api.post('/cattle', cattleData);
     return response.data;
@@ -136,6 +195,17 @@ export const createCattle = async (cattleData) => {
 };
 
 export const updateCattle = async (id, cattleData) => {
+  // Si estamos usando Firebase
+  if (USE_FIREBASE) {
+    try {
+      return await firestoreService.updateCattle(id, cattleData);
+    } catch (error) {
+      console.error('Error al actualizar ganado en Firebase:', error);
+      throw error.message || 'Error al actualizar ganado';
+    }
+  }
+  
+  // Si no estamos usando Firebase, usar el backend
   try {
     const response = await api.put(`/cattle/${id}`, cattleData);
     return response.data;
@@ -145,6 +215,17 @@ export const updateCattle = async (id, cattleData) => {
 };
 
 export const deleteCattle = async (id) => {
+  // Si estamos usando Firebase
+  if (USE_FIREBASE) {
+    try {
+      return await firestoreService.deleteCattle(id);
+    } catch (error) {
+      console.error('Error al eliminar ganado en Firebase:', error);
+      throw error.message || 'Error al eliminar ganado';
+    }
+  }
+  
+  // Si no estamos usando Firebase, usar el backend
   try {
     const response = await api.delete(`/cattle/${id}`);
     return response.data;
@@ -154,6 +235,17 @@ export const deleteCattle = async (id) => {
 };
 
 export const addMedicalRecord = async (id, medicalData) => {
+  // Si estamos usando Firebase
+  if (USE_FIREBASE) {
+    try {
+      return await firestoreService.addMedicalRecord(id, medicalData);
+    } catch (error) {
+      console.error('Error al agregar registro médico en Firebase:', error);
+      throw error.message || 'Error al agregar registro médico';
+    }
+  }
+  
+  // Si no estamos usando Firebase, usar el backend
   try {
     const response = await api.post(`/cattle/${id}/medical`, medicalData);
     return response.data;
@@ -162,4 +254,4 @@ export const addMedicalRecord = async (id, medicalData) => {
   }
 };
 
-export default api; 
+export default api;

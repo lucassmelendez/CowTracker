@@ -1,10 +1,24 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
-// URL base de la API según el entorno
-const API_URL = __DEV__ 
-  ? 'http://10.0.2.2:5000/api' // Para emulador Android
-  // ? 'http://localhost:5000/api' // Para desarrollo local
-  : 'https://tu-backend-produccion.com/api'; // URL de producción
+// Configurar URL de la API según la plataforma
+let API_URL;
+
+if (Platform.OS === 'web') {
+  API_URL = 'http://localhost:5000/api';
+} else if (Platform.OS === 'ios') {
+  // En iOS, localhost se refiere al dispositivo iOS
+  API_URL = 'http://localhost:5000/api';
+} else if (Platform.OS === 'android') {
+  // En Android, 10.0.2.2 se refiere al localhost de la máquina host
+  API_URL = 'http://10.0.2.2:5000/api';
+} else {
+  // Fallback
+  API_URL = 'http://localhost:5000/api';
+}
+
+// Para desarrollo, podrías querer usar una IP específica
+// API_URL = 'http://192.168.1.X:5000/api'; // Reemplaza con tu IP local
 
 // Crear instancia de axios con la configuración base
 const api = axios.create({

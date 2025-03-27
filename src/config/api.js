@@ -17,11 +17,11 @@ const api = axios.create({
 // Interceptor para añadir token de autenticación a las peticiones
 api.interceptors.request.use(
   async (config) => {
-    // Aquí podrías obtener el token de AsyncStorage
-    // const token = await AsyncStorage.getItem('userToken');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Obtener el token de AsyncStorage
+    const token = await AsyncStorage.getItem('userToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -29,4 +29,4 @@ api.interceptors.request.use(
   }
 );
 
-export default api; 
+export default api;

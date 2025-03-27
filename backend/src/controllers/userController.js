@@ -1,17 +1,8 @@
 const asyncHandler = require('express-async-handler');
 const generateToken = require('../utils/generateToken');
-const bcrypt = require('bcryptjs');
-
-// Función para hashear contraseñas
-const hashPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(password, salt);
-};
-
-// Función para comparar contraseñas
-const comparePassword = async (enteredPassword, storedPassword) => {
-  return await bcrypt.compare(enteredPassword, storedPassword);
-};
+const { auth, db } = require('../config/firebase');
+const firebaseUserModel = require('../models/firebaseUserModel');
+const authService = require('../services/authService');
 
 // @desc    Autenticar usuario y obtener token
 // @route   POST /api/users/login
@@ -19,19 +10,14 @@ const comparePassword = async (enteredPassword, storedPassword) => {
 const authUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = global.mockDB.users.find(u => u.email === email);
-
-  if (user && (await comparePassword(password, user.password))) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } else {
+  try {
+    // Usar el servicio de autenticación
+    const user = await authService.loginUser(email, password);
+    res.json(user);
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error);
     res.status(401);
-    throw new Error('Email o contraseña incorrectos');
+    throw new Error(error.message || 'Email o contraseña incorrectos');
   }
 });
 
@@ -39,52 +25,42 @@ const authUser = asyncHandler(async (req, res) => {
 // @route   POST /api/users
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role = 'user' } = req.body;
 
-  const userExists = global.mockDB.users.find(u => u.email === email);
-
-  if (userExists) {
+  try {
+    // Usar el servicio de autenticación
+    const user = await authService.registerUser({ name, email, password, role });
+    res.status(201).json(user);
+  } catch (error) {
+    console.error('Error al registrar usuario:', error);
     res.status(400);
-    throw new Error('El usuario ya existe');
+    throw new Error(error.message || 'Error al registrar usuario');
   }
-
-  const hashedPassword = await hashPassword(password);
-  
-  const user = {
-    _id: Date.now().toString(),
-    name,
-    email,
-    password: hashedPassword,
-    role: 'user'
-  };
-  
-  global.mockDB.users.push(user);
-
-  res.status(201).json({
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    token: generateToken(user._id),
-  });
 });
 
 // @desc    Obtener perfil de usuario
 // @route   GET /api/users/profile
 // @access  Private
 const getUserProfile = asyncHandler(async (req, res) => {
-  const user = global.mockDB.users.find(u => u._id === req.user._id);
+  try {
+    // Obtener usuario de Firebase
+    const user = await firebaseUserModel.getUserById(req.user._id);
 
-  if (user) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
-  } else {
-    res.status(404);
-    throw new Error('Usuario no encontrado');
+    if (user) {
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      });
+    } else {
+      res.status(404);
+      throw new Error('Usuario no encontrado');
+    }
+  } catch (error) {
+    console.error('Error al obtener perfil de usuario:', error);
+    res.status(500);
+    throw new Error('Error al obtener perfil de usuario');
   }
 });
 
@@ -92,30 +68,89 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/users/profile
 // @access  Private
 const updateUserProfile = asyncHandler(async (req, res) => {
-  const userIndex = global.mockDB.users.findIndex(u => u._id === req.user._id);
-
-  if (userIndex !== -1) {
-    const user = global.mockDB.users[userIndex];
+  try {
+    const { name, role } = req.body;
+    const userId = req.user._id;
     
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    
-    if (req.body.password) {
-      user.password = await hashPassword(req.body.password);
+    // Validar que el rol sea válido si se está actualizando
+    if (role) {
+      const validRoles = ['admin', 'trabajador', 'veterinario', 'user'];
+      if (!validRoles.includes(role)) {
+        res.status(400);
+        throw new Error('Rol de usuario no válido');
+      }
     }
-
-    global.mockDB.users[userIndex] = user;
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
+    
+    // Actualizar usuario en Firebase
+    if (name) {
+      await auth.updateUser(userId, { displayName: name });
+    }
+    
+    // Actualizar datos en Firestore
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (role) updateData.role = role;
+    
+    await db.collection('users').doc(userId).update({
+      ...updateData,
+      updatedAt: new Date(),
     });
-  } else {
-    res.status(404);
-    throw new Error('Usuario no encontrado');
+    
+    // Obtener usuario actualizado
+    const updatedUser = await firebaseUserModel.getUserById(userId);
+    
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+    });
+  } catch (error) {
+    console.error('Error al actualizar perfil de usuario:', error);
+    res.status(500);
+    throw new Error('Error al actualizar perfil de usuario');
+  }
+});
+
+// @desc    Obtener todos los usuarios
+// @route   GET /api/users
+// @access  Private/Admin
+const getUsers = asyncHandler(async (req, res) => {
+  try {
+    // Obtener todos los usuarios de Firestore
+    const usersSnapshot = await db.collection('users').get();
+    const users = [];
+    
+    usersSnapshot.forEach(doc => {
+      users.push({
+        _id: doc.id,
+        ...doc.data(),
+      });
+    });
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    res.status(500);
+    throw new Error('Error al obtener usuarios');
+  }
+});
+
+// @desc    Actualizar rol de usuario
+// @route   PUT /api/users/:id/role
+// @access  Private/Admin
+const updateUserRole = asyncHandler(async (req, res) => {
+  const { role } = req.body;
+  const userId = req.params.id;
+  
+  try {
+    // Usar el servicio de autenticación
+    const updatedUser = await authService.changeUserRole(userId, role);
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error al actualizar rol de usuario:', error);
+    res.status(400);
+    throw new Error(error.message || 'Error al actualizar rol de usuario');
   }
 });
 
@@ -124,4 +159,6 @@ module.exports = {
   registerUser,
   getUserProfile,
   updateUserProfile,
-}; 
+  getUsers,
+  updateUserRole,
+};

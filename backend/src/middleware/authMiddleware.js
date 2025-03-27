@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
+const { auth } = require('../config/firebase');
+const firebaseUserModel = require('../models/firebaseUserModel');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -12,18 +14,17 @@ const protect = asyncHandler(async (req, res, next) => {
       // Obtener token del header
       token = req.headers.authorization.split(' ')[1];
 
-      // Verificar token
+      // Verificar token JWT
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Obtener usuario del token
-      const user = global.mockDB.users.find(u => u._id === decoded.id);
+      // Obtener usuario de Firebase
+      const user = await firebaseUserModel.getUserById(decoded.id);
       if (!user) {
         throw new Error('Usuario no encontrado');
       }
       
-      // Excluir password
-      const { password, ...userWithoutPassword } = user;
-      req.user = userWithoutPassword;
+      // Añadir usuario a la solicitud
+      req.user = user;
 
       next();
     } catch (error) {
@@ -48,4 +49,22 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin }; 
+const trabajador = (req, res, next) => {
+  if (req.user && (req.user.role === 'trabajador' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(401);
+    throw new Error('No autorizado como trabajador');
+  }
+};
+
+const veterinario = (req, res, next) => {
+  if (req.user && (req.user.role === 'veterinario' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(401);
+    throw new Error('No autorizado como veterinario');
+  }
+};
+
+module.exports = { protect, admin, trabajador, veterinario };

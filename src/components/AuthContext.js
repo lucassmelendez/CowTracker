@@ -2,6 +2,23 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, firestore } from '../config/firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut,
+  updateProfile,
+  updateEmail,
+  updatePassword,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  getDoc,
+  serverTimestamp 
+} from 'firebase/firestore';
 import api from '../services/api';
 
 // Crear contexto de autenticación
@@ -30,24 +47,21 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Registrar usuario con Firebase Auth
-      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       // Actualizar perfil con el nombre
-      await userCredential.user.updateProfile({
+      await updateProfile(userCredential.user, {
         displayName: name
       });
 
       // Guardar datos adicionales en Firestore
-      await firestore
-        .collection('users')
-        .doc(userCredential.user.uid)
-        .set({
-          uid: userCredential.user.uid,
-          name: name,
-          email: email,
-          role: role, // Usar el rol proporcionado
-          createdAt: new Date().toISOString(),
-        });
+      await setDoc(doc(firestore, 'users', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        name: name,
+        email: email,
+        role: role, // Usar el rol proporcionado
+        createdAt: serverTimestamp(),
+      });
 
       // También registrar en el backend para sincronización
       try {
@@ -84,7 +98,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Iniciar sesión con Firebase Auth
-      const userCredential = await auth.signInWithEmailAndPassword(email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       return userCredential.user;
     } catch (error) {
       setError(error.message);
@@ -98,7 +112,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setLoading(true);
-      await auth.signOut();
+      await signOut(auth);
       await AsyncStorage.removeItem('@user_token');
       await AsyncStorage.removeItem('@user_info');
       setCurrentUser(null);
@@ -114,10 +128,7 @@ export const AuthProvider = ({ children }) => {
   // Función para obtener información adicional del usuario desde Firestore
   const getUserInfo = async (uid) => {
     try {
-      const userDoc = await firestore
-        .collection('users')
-        .doc(uid)
-        .get();
+      const userDoc = await getDoc(doc(firestore, 'users', uid));
 
       if (userDoc.exists) {
         return userDoc.data();
@@ -161,17 +172,17 @@ export const AuthProvider = ({ children }) => {
 
       // Actualizar datos en Firebase Auth
       if (name) {
-        await user.updateProfile({
+        await updateProfile(user, {
           displayName: name
         });
       }
 
       if (email && email !== user.email) {
-        await user.updateEmail(email);
+        await updateEmail(user, email);
       }
 
       if (password) {
-        await user.updatePassword(password);
+        await updatePassword(user, password);
       }
 
       // Actualizar datos en Firestore
@@ -179,13 +190,10 @@ export const AuthProvider = ({ children }) => {
       if (name) updateData.name = name;
       if (email) updateData.email = email;
       
-      await firestore
-        .collection('users')
-        .doc(user.uid)
-        .update({
-          ...updateData,
-          updatedAt: new Date().toISOString()
-        });
+      await updateDoc(doc(firestore, 'users', user.uid), {
+        ...updateData,
+        updatedAt: serverTimestamp()
+      });
 
       // Actualizar información del usuario en el estado
       const updatedUserInfo = await getUserInfo(user.uid);
@@ -208,7 +216,7 @@ export const AuthProvider = ({ children }) => {
       return () => {};
     }
 
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
         if (user) {
           // Usuario autenticado

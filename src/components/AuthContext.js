@@ -41,9 +41,39 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       if (isWeb) {
-        // En entorno web, mostramos un mensaje informativo
-        setError('La funcionalidad de registro no está disponible en el navegador web. Por favor, usa la aplicación móvil.');
-        throw new Error('Funcionalidad no disponible en web');
+        // En entorno web, usamos un flujo simulado para demostración
+        console.log('Registro en modo demostración (web)');
+        
+        // Simular un retraso para la demostración
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Crear un usuario simulado
+        const mockUser = {
+          uid: 'demo-' + Date.now(),
+          email,
+          displayName: name,
+        };
+        
+        // Guardar en localStorage para persistencia en la sesión
+        await AsyncStorage.setItem('@demo_user', JSON.stringify(mockUser));
+        await AsyncStorage.setItem('@demo_user_info', JSON.stringify({
+          uid: mockUser.uid,
+          name,
+          email,
+          role,
+          createdAt: new Date().toISOString(),
+        }));
+        
+        setCurrentUser(mockUser);
+        setUserInfo({
+          uid: mockUser.uid,
+          name,
+          email,
+          role,
+          createdAt: new Date().toISOString(),
+        });
+        
+        return mockUser;
       }
 
       // Registrar usuario con Firebase Auth
@@ -92,9 +122,51 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       if (isWeb) {
-        // En entorno web, mostramos un mensaje informativo
-        setError('La funcionalidad de inicio de sesión no está disponible en el navegador web. Por favor, usa la aplicación móvil.');
-        throw new Error('Funcionalidad no disponible en web');
+        // En entorno web, usamos un flujo simulado para demostración
+        console.log('Login en modo demostración (web)');
+        
+        // Simular un retraso para la demostración
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Verificar si hay un usuario demo registrado
+        const demoUser = await AsyncStorage.getItem('@demo_user');
+        const demoUserInfo = await AsyncStorage.getItem('@demo_user_info');
+        
+        if (demoUser && JSON.parse(demoUser).email === email) {
+          // Si el email coincide con el usuario demo registrado
+          const mockUser = JSON.parse(demoUser);
+          setCurrentUser(mockUser);
+          setUserInfo(JSON.parse(demoUserInfo));
+          return mockUser;
+        }
+        
+        // Si no hay usuario demo o el email no coincide, crear uno nuevo
+        const mockUser = {
+          uid: 'demo-' + Date.now(),
+          email,
+          displayName: email.split('@')[0],
+        };
+        
+        // Guardar en localStorage para persistencia en la sesión
+        await AsyncStorage.setItem('@demo_user', JSON.stringify(mockUser));
+        await AsyncStorage.setItem('@demo_user_info', JSON.stringify({
+          uid: mockUser.uid,
+          name: email.split('@')[0],
+          email,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+        }));
+        
+        setCurrentUser(mockUser);
+        setUserInfo({
+          uid: mockUser.uid,
+          name: email.split('@')[0],
+          email,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+        });
+        
+        return mockUser;
       }
 
       // Iniciar sesión con Firebase Auth
@@ -112,6 +184,16 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setLoading(true);
+      
+      if (isWeb) {
+        // En entorno web, simplemente limpiamos el estado y el localStorage
+        await AsyncStorage.removeItem('@demo_user');
+        await AsyncStorage.removeItem('@demo_user_info');
+        setCurrentUser(null);
+        setUserInfo(null);
+        return;
+      }
+      
       await signOut(auth);
       await AsyncStorage.removeItem('@user_token');
       await AsyncStorage.removeItem('@user_info');
@@ -128,9 +210,18 @@ export const AuthProvider = ({ children }) => {
   // Función para obtener información adicional del usuario desde Firestore
   const getUserInfo = async (uid) => {
     try {
+      if (isWeb) {
+        // En entorno web, devolvemos la información del localStorage
+        const demoUserInfo = await AsyncStorage.getItem('@demo_user_info');
+        if (demoUserInfo) {
+          return JSON.parse(demoUserInfo);
+        }
+        return null;
+      }
+      
       const userDoc = await getDoc(doc(firestore, 'users', uid));
 
-      if (userDoc.exists) {
+      if (userDoc.exists()) {
         return userDoc.data();
       }
       return null;
@@ -152,15 +243,50 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Función para actualizar el perfil del usuario
-  const updateProfile = async (data) => {
+  const updateUserProfile = async (data) => {
     try {
       setLoading(true);
       setError(null);
 
       if (isWeb) {
-        // En entorno web, mostramos un mensaje informativo
-        setError('La funcionalidad de actualización de perfil no está disponible en el navegador web. Por favor, usa la aplicación móvil.');
-        throw new Error('Funcionalidad no disponible en web');
+        // En entorno web, actualizamos la información del usuario demo
+        console.log('Actualización de perfil en modo demostración (web)');
+        
+        // Simular un retraso para la demostración
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const demoUser = await AsyncStorage.getItem('@demo_user');
+        const demoUserInfo = await AsyncStorage.getItem('@demo_user_info');
+        
+        if (demoUser && demoUserInfo) {
+          const { name, email } = data;
+          const mockUser = JSON.parse(demoUser);
+          const userInfoData = JSON.parse(demoUserInfo);
+          
+          // Actualizar datos
+          if (name) {
+            mockUser.displayName = name;
+            userInfoData.name = name;
+          }
+          
+          if (email) {
+            mockUser.email = email;
+            userInfoData.email = email;
+          }
+          
+          userInfoData.updatedAt = new Date().toISOString();
+          
+          // Guardar cambios
+          await AsyncStorage.setItem('@demo_user', JSON.stringify(mockUser));
+          await AsyncStorage.setItem('@demo_user_info', JSON.stringify(userInfoData));
+          
+          setCurrentUser(mockUser);
+          setUserInfo(userInfoData);
+          
+          return userInfoData;
+        }
+        
+        throw new Error('No hay usuario para actualizar');
       }
 
       const { name, email, password } = data;
@@ -211,8 +337,24 @@ export const AuthProvider = ({ children }) => {
   // Efecto para observar cambios en la autenticación
   useEffect(() => {
     if (isWeb) {
-      // En entorno web, simplemente establecemos loading en false
-      setLoading(false);
+      // En entorno web, verificamos si hay un usuario demo en localStorage
+      const checkDemoUser = async () => {
+        try {
+          const demoUser = await AsyncStorage.getItem('@demo_user');
+          const demoUserInfo = await AsyncStorage.getItem('@demo_user_info');
+          
+          if (demoUser && demoUserInfo) {
+            setCurrentUser(JSON.parse(demoUser));
+            setUserInfo(JSON.parse(demoUserInfo));
+          }
+        } catch (error) {
+          console.error('Error al restaurar usuario demo:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      checkDemoUser();
       return () => {};
     }
 
@@ -282,7 +424,7 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     logout,
-    updateProfile,
+    updateProfile: updateUserProfile,
     hasRole,
     isAdmin: () => hasRole('admin'),
     isTrabajador: () => hasRole('trabajador'),

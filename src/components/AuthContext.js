@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, firestore } from '../config/firebase';
 import api from '../services/api';
@@ -15,15 +15,22 @@ export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const isWeb = Platform.OS === 'web';
 
   // Función para registrar un nuevo usuario
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, role = 'user') => {
     try {
       setLoading(true);
       setError(null);
 
+      if (isWeb) {
+        // En entorno web, mostramos un mensaje informativo
+        setError('La funcionalidad de registro no está disponible en el navegador web. Por favor, usa la aplicación móvil.');
+        throw new Error('Funcionalidad no disponible en web');
+      }
+
       // Registrar usuario con Firebase Auth
-      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+      const userCredential = await auth.createUserWithEmailAndPassword(email, password);
       
       // Actualizar perfil con el nombre
       await userCredential.user.updateProfile({
@@ -31,15 +38,15 @@ export const AuthProvider = ({ children }) => {
       });
 
       // Guardar datos adicionales en Firestore
-      await firestore()
+      await firestore
         .collection('users')
         .doc(userCredential.user.uid)
         .set({
           uid: userCredential.user.uid,
           name: name,
           email: email,
-          role: 'user', // Rol por defecto
-          createdAt: firestore.FieldValue.serverTimestamp(),
+          role: role, // Usar el rol proporcionado
+          createdAt: new Date().toISOString(),
         });
 
       // También registrar en el backend para sincronización
@@ -48,7 +55,7 @@ export const AuthProvider = ({ children }) => {
           name,
           email,
           password,
-          role: 'user'
+          role
         });
       } catch (backendError) {
         console.error('Error al registrar en el backend:', backendError);
@@ -70,8 +77,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
+      if (isWeb) {
+        // En entorno web, mostramos un mensaje informativo
+        setError('La funcionalidad de inicio de sesión no está disponible en el navegador web. Por favor, usa la aplicación móvil.');
+        throw new Error('Funcionalidad no disponible en web');
+      }
+
       // Iniciar sesión con Firebase Auth
-      const userCredential = await auth().signInWithEmailAndPassword(email, password);
+      const userCredential = await auth.signInWithEmailAndPassword(email, password);
       return userCredential.user;
     } catch (error) {
       setError(error.message);
@@ -85,7 +98,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setLoading(true);
-      await auth().signOut();
+      await auth.signOut();
       await AsyncStorage.removeItem('@user_token');
       await AsyncStorage.removeItem('@user_info');
       setCurrentUser(null);
@@ -101,7 +114,7 @@ export const AuthProvider = ({ children }) => {
   // Función para obtener información adicional del usuario desde Firestore
   const getUserInfo = async (uid) => {
     try {
-      const userDoc = await firestore()
+      const userDoc = await firestore
         .collection('users')
         .doc(uid)
         .get();
@@ -133,8 +146,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
+      if (isWeb) {
+        // En entorno web, mostramos un mensaje informativo
+        setError('La funcionalidad de actualización de perfil no está disponible en el navegador web. Por favor, usa la aplicación móvil.');
+        throw new Error('Funcionalidad no disponible en web');
+      }
+
       const { name, email, password } = data;
-      const user = auth().currentUser;
+      const user = auth.currentUser;
 
       if (!user) {
         throw new Error('Usuario no autenticado');
@@ -160,12 +179,12 @@ export const AuthProvider = ({ children }) => {
       if (name) updateData.name = name;
       if (email) updateData.email = email;
       
-      await firestore()
+      await firestore
         .collection('users')
         .doc(user.uid)
         .update({
           ...updateData,
-          updatedAt: firestore.FieldValue.serverTimestamp()
+          updatedAt: new Date().toISOString()
         });
 
       // Actualizar información del usuario en el estado
@@ -183,7 +202,13 @@ export const AuthProvider = ({ children }) => {
 
   // Efecto para observar cambios en la autenticación
   useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged(async (user) => {
+    if (isWeb) {
+      // En entorno web, simplemente establecemos loading en false
+      setLoading(false);
+      return () => {};
+    }
+
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       try {
         if (user) {
           // Usuario autenticado
@@ -238,7 +263,7 @@ export const AuthProvider = ({ children }) => {
 
     // Limpiar suscripción al desmontar
     return () => unsubscribe();
-  }, []);
+  }, [isWeb]);
 
   // Valor del contexto
   const value = {

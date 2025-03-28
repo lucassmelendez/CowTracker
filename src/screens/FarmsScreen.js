@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,40 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
-  Modal
+  Modal,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
+import { useAuth } from '../components/AuthContext';
+import { getAllFarms, createFarm, updateFarm } from '../services/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { firestore } from '../config/firebase';
 
 const FarmsScreen = () => {
   const router = useRouter();
-  // Datos de ejemplo para granjas
-  const [farms, setFarms] = useState([
-    { id: '1', name: 'Rancho El Paraíso', location: 'San Juan', size: '150 hectáreas', cattleCount: 42 },
-    { id: '2', name: 'Finca Los Olivos', location: 'Santa Rosa', size: '75 hectáreas', cattleCount: 28 },
-    { id: '3', name: 'Hacienda Buena Vista', location: 'Las Flores', size: '200 hectáreas', cattleCount: 65 },
-  ]);
+  const { userInfo } = useAuth();
+  const [farms, setFarms] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (userInfo?.uid) {
+      loadFarms();
+    }
+  }, [userInfo]);
+
+  const loadFarms = async () => {
+    try {
+      const userFarms = await getAllFarms(userInfo.uid);
+      setFarms(userFarms);
+    } catch (error) {
+      console.error('Error al cargar granjas:', error);
+      Alert.alert('Error', 'No se pudieron cargar las granjas');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Estado para el modal de agregar/editar granja
   const [modalVisible, setModalVisible] = useState(false);
@@ -45,38 +65,39 @@ const FarmsScreen = () => {
     setModalVisible(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!farmName || !farmLocation || !farmSize) {
       Alert.alert('Error', 'Por favor, completa todos los campos');
       return;
     }
 
-    if (editingFarm) {
-      // Editar granja existente
-      const updatedFarms = farms.map(farm => 
-        farm.id === editingFarm.id 
-          ? { ...farm, name: farmName, location: farmLocation, size: farmSize } 
-          : farm
-      );
-      setFarms(updatedFarms);
-      Alert.alert('Éxito', 'Granja actualizada correctamente');
-    } else {
-      // Agregar nueva granja
-      const newFarm = {
-        id: Date.now().toString(),
+    try {
+      const farmData = {
         name: farmName,
         location: farmLocation,
         size: farmSize,
-        cattleCount: 0
+        userId: userInfo.uid,
+        cattleCount: editingFarm ? editingFarm.cattleCount : 0
       };
-      setFarms([...farms, newFarm]);
-      Alert.alert('Éxito', 'Granja agregada correctamente');
+
+      if (editingFarm) {
+        await updateFarm(editingFarm._id, farmData);
+        Alert.alert('Éxito', 'Granja actualizada correctamente');
+      } else {
+        await createFarm(farmData);
+        Alert.alert('Éxito', 'Granja agregada correctamente');
+      }
+      
+      await loadFarms(); // Recargar las granjas
+    } catch (error) {
+      console.error('Error al guardar granja:', error);
+      Alert.alert('Error', 'No se pudo guardar la granja');
     }
     
     setModalVisible(false);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     Alert.alert(
       'Confirmar eliminación',
       '¿Estás seguro de eliminar esta granja?',
@@ -85,10 +106,16 @@ const FarmsScreen = () => {
         { 
           text: 'Eliminar', 
           style: 'destructive',
-          onPress: () => {
-            const updatedFarms = farms.filter(farm => farm.id !== id);
-            setFarms(updatedFarms);
-            Alert.alert('Éxito', 'Granja eliminada correctamente');
+          onPress: async () => {
+            try {
+              const docRef = doc(firestore, FARMS_COLLECTION, id);
+              await deleteDoc(docRef);
+              await loadFarms(); // Recargar las granjas
+              Alert.alert('Éxito', 'Granja eliminada correctamente');
+            } catch (error) {
+              console.error('Error al eliminar granja:', error);
+              Alert.alert('Error', 'No se pudo eliminar la granja');
+            }
           }
         }
       ]
@@ -143,24 +170,31 @@ const FarmsScreen = () => {
         <Text style={styles.subtitle}>Gestiona tus propiedades</Text>
       </View>
 
-      <FlatList
-        data={farms}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="leaf-outline" size={60} color="#ddd" />
-            <Text style={styles.emptyText}>No tienes granjas registradas</Text>
-            <Text style={styles.emptySubtext}>Agrega una nueva granja para comenzar</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#27ae60" />
+        </View>
+      ) : (
+        <>
+          <FlatList
+            data={farms}
+            renderItem={renderItem}
+            keyExtractor={item => item._id}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="leaf-outline" size={60} color="#ddd" />
+                <Text style={styles.emptyText}>No tienes granjas registradas</Text>
+                <Text style={styles.emptySubtext}>Agrega una nueva granja para comenzar</Text>
+              </View>
+            }
+          />
 
-      <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
-        <Ionicons name="add" size={30} color="#fff" />
-      </TouchableOpacity>
-
+          <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
+            <Ionicons name="add" size={30} color="#fff" />
+          </TouchableOpacity>
+        </>
+      )}
       <Modal
         animationType="slide"
         transparent={true}
@@ -219,6 +253,11 @@ const FarmsScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -375,4 +414,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FarmsScreen; 
+export default FarmsScreen;

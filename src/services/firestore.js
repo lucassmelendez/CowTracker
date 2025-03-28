@@ -178,3 +178,23 @@ export const createFarm = async (farmData) => {
     throw error;
   }
 };
+
+export const updateFarm = async (id, farmData) => {
+  try {
+    const dataWithTimestamp = {
+      ...farmData,
+      updatedAt: serverTimestamp(),
+    };
+    
+    const docRef = doc(firestore, FARMS_COLLECTION, id);
+    await updateDoc(docRef, dataWithTimestamp);
+    
+    return {
+      _id: id,
+      ...farmData,
+    };
+  } catch (error) {
+    console.error('Error al actualizar granja:', error);
+    throw error;
+  }
+};

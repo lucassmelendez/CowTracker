@@ -27,7 +27,15 @@ const WelcomeScreen = () => {
       return;
     }
 
+    if (!userInfo || !userInfo.uid) {
+      console.error('Error: No hay información de usuario disponible');
+      Alert.alert('Error', 'No se pudo verificar la información del usuario. Por favor, inicia sesión nuevamente.');
+      return;
+    }
+
     try {
+      console.log('Creando granja con datos:', { farmName, farmLocation, farmSize, userId: userInfo.uid });
+      
       const farmData = {
         name: farmName,
         location: farmLocation,
@@ -37,7 +45,9 @@ const WelcomeScreen = () => {
         createdAt: serverTimestamp()
       };
 
-      await addDoc(collection(firestore, 'farms'), farmData);
+      const docRef = await addDoc(collection(firestore, 'farms'), farmData);
+      console.log('Granja creada exitosamente con ID:', docRef.id);
+      
       Alert.alert(
         'Éxito',
         'Tu granja ha sido creada exitosamente',

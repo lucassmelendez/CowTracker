@@ -39,6 +39,23 @@ export const AuthProvider = ({ children }) => {
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
 
+  // Efecto para escuchar cambios en el estado de autenticación
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const additionalInfo = await getUserInfo(user.uid);
+        setCurrentUser(user);
+        setUserInfo(additionalInfo);
+      } else {
+        setCurrentUser(null);
+        setUserInfo(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Función para registrar un nuevo usuario
   const register = async (name, email, password, role = 'user') => {
     try {
@@ -55,6 +72,16 @@ export const AuthProvider = ({ children }) => {
 
       // Guardar datos adicionales en Firestore
       await setDoc(doc(firestore, 'users', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        name: name,
+        email: email,
+        role: role,
+        createdAt: serverTimestamp(),
+      });
+
+      // Establecer el usuario y su información antes de redirigir
+      setCurrentUser(userCredential.user);
+      setUserInfo({
         uid: userCredential.user.uid,
         name: name,
         email: email,
@@ -95,8 +122,15 @@ export const AuthProvider = ({ children }) => {
 
       // Iniciar sesión con Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Obtener información adicional del usuario
+      const additionalInfo = await getUserInfo(userCredential.user.uid);
+      setUserInfo(additionalInfo);
+      setCurrentUser(userCredential.user);
+
       return userCredential.user;
     } catch (error) {
+      console.error('Error de inicio de sesión:', error);
       setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
       throw error;
     } finally {

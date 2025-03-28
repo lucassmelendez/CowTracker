@@ -21,7 +21,11 @@ const WelcomeScreen = () => {
   const [farmLocation, setFarmLocation] = useState('');
   const [farmSize, setFarmSize] = useState('');
 
+  const [isCreating, setIsCreating] = useState(false);
+
   const handleCreateFarm = async () => {
+    if (isCreating) return; // Prevenir múltiples envíos
+
     if (!farmName || !farmLocation || !farmSize) {
       Alert.alert('Error', 'Por favor, completa todos los campos');
       return;
@@ -33,9 +37,9 @@ const WelcomeScreen = () => {
       return;
     }
 
+    setIsCreating(true);
+
     try {
-      console.log('Creando granja con datos:', { farmName, farmLocation, farmSize, userId: userInfo.uid });
-      
       const farmData = {
         name: farmName,
         location: farmLocation,
@@ -47,15 +51,14 @@ const WelcomeScreen = () => {
 
       const docRef = await addDoc(collection(firestore, 'farms'), farmData);
       console.log('Granja creada exitosamente con ID:', docRef.id);
-      
-      Alert.alert(
-        'Éxito',
-        'Tu granja ha sido creada exitosamente',
-        [{ text: 'OK', onPress: () => router.push('/farms') }]
-      );
+      setIsCreating(false);
+      Alert.alert('Éxito', 'Granja creada exitosamente', [
+        { text: 'OK', onPress: () => router.push('/farms') }
+      ]);
     } catch (error) {
       console.error('Error al crear la granja:', error);
       Alert.alert('Error', 'No se pudo crear la granja. Por favor, intenta de nuevo.');
+      setIsCreating(false);
     }
   };
 

@@ -21,21 +21,20 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('user'); 
+  const [role, setRole] = useState('admin'); 
   const [localError, setLocalError] = useState('');
   const [showRoleModal, setShowRoleModal] = useState(false);
   const { register, isLoading, error } = useAuth();
 
   const roles = [
-    { label: 'Usuario', value: 'user' },
-    { label: 'Administrador', value: 'admin' },
+    { label: 'Ganadero', value: 'admin' },
     { label: 'Trabajador', value: 'trabajador' },
     { label: 'Veterinario', value: 'veterinario' }
   ];
 
   const getRoleLabel = (value) => {
     const selectedRole = roles.find(r => r.value === value);
-    return selectedRole ? selectedRole.label : 'Usuario';
+    return selectedRole ? selectedRole.label : 'Ganadero';
   };
 
   const handleRegister = () => {

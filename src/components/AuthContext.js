@@ -62,8 +62,11 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
+      // Convertir email a minúsculas antes de registrar
+      const normalizedEmail = email.toLowerCase();
+      
       // Registrar usuario con Firebase Auth primero
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
       
       // Actualizar perfil con el nombre
       await updateProfile(userCredential.user, {
@@ -74,7 +77,7 @@ export const AuthProvider = ({ children }) => {
       await setDoc(doc(firestore, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
         name: name,
-        email: email,
+        email: normalizedEmail,
         role: role,
         createdAt: serverTimestamp(),
       });
@@ -120,8 +123,11 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
+      // Convertir email a minúsculas antes de iniciar sesión
+      const normalizedEmail = email.toLowerCase();
+      
       // Iniciar sesión con Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       
       // Obtener información adicional del usuario
       const additionalInfo = await getUserInfo(userCredential.user.uid);

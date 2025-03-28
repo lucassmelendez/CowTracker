@@ -5,25 +5,36 @@ import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
 
 const ProfileScreen = () => {
-  const { userData, logout } = useAuth();
+  const { currentUser, userInfo, updateUserProfile, logout } = useAuth();
   const router = useRouter();
-  const [name, setName] = useState(userData?.name || '');
-  const [email, setEmail] = useState(userData?.email || '');
+  const [name, setName] = useState(userInfo?.name || currentUser?.displayName || '');
+  const [email, setEmail] = useState(userInfo?.email || currentUser?.email || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleSave = () => {
-    if (password && password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
-      return;
-    }
+  const handleSave = async () => {
+    try {
+      if (password && password !== confirmPassword) {
+        Alert.alert('Error', 'Las contraseñas no coinciden');
+        return;
+      }
 
-    // Aquí iría la lógica para actualizar el perfil
-    Alert.alert('Éxito', 'Perfil actualizado correctamente');
-    setIsEditing(false);
-    setPassword('');
-    setConfirmPassword('');
+      const updateData = {
+        name,
+        email,
+        ...(password ? { password } : {})
+      };
+
+      await updateUserProfile(updateData);
+      Alert.alert('Éxito', 'Perfil actualizado correctamente');
+      setIsEditing(false);
+      setPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Error al actualizar perfil:', error);
+      Alert.alert('Error', 'No se pudo actualizar el perfil. Por favor, intenta de nuevo.');
+    }
   };
 
   const handleBack = () => {
@@ -40,9 +51,9 @@ const ProfileScreen = () => {
       <View style={styles.card}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{userData?.name?.charAt(0) || 'U'}</Text>
+            <Text style={styles.avatarText}>{userInfo?.name?.charAt(0) || currentUser?.displayName?.charAt(0) || 'U'}</Text>
           </View>
-          <Text style={styles.role}>{userData?.role === 'admin' ? 'Administrador' : 'Usuario'}</Text>
+          <Text style={styles.role}>{userInfo?.role === 'admin' ? 'Administrador' : 'Usuario'}</Text>
         </View>
 
         <View style={styles.infoContainer}>
@@ -55,7 +66,7 @@ const ProfileScreen = () => {
               placeholder="Nombre completo"
             />
           ) : (
-            <Text style={styles.infoText}>{userData?.name || 'Sin nombre'}</Text>
+            <Text style={styles.infoText}>{userInfo?.name || currentUser?.displayName || 'Sin nombre'}</Text>
           )}
 
           <Text style={styles.label}>Correo electrónico</Text>
@@ -68,7 +79,7 @@ const ProfileScreen = () => {
               keyboardType="email-address"
             />
           ) : (
-            <Text style={styles.infoText}>{userData?.email || 'Sin correo'}</Text>
+            <Text style={styles.infoText}>{userInfo?.email || currentUser?.email || 'Sin correo'}</Text>
           )}
 
           {isEditing && (
@@ -104,8 +115,8 @@ const ProfileScreen = () => {
                 style={styles.cancelButton} 
                 onPress={() => {
                   setIsEditing(false);
-                  setName(userData?.name || '');
-                  setEmail(userData?.email || '');
+                  setName(userInfo?.name || '');
+                  setEmail(userInfo?.email || '');
                   setPassword('');
                   setConfirmPassword('');
                 }}
@@ -252,4 +263,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfileScreen; 
+export default ProfileScreen;

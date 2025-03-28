@@ -1,11 +1,19 @@
 import React, { useEffect } from 'react';
-import { Stack, Redirect } from 'expo-router';
+import { Stack, Redirect, useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/components/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, ActivityIndicator } from 'react-native';
 
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      // Redirigir a login si no hay usuario autenticado
+      router.replace('/login');
+    }
+  }, [currentUser, loading]);
 
   // Mostrar indicador de carga mientras se verifica la autenticación
   if (loading) {

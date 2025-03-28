@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
+import { useRouter, useNavigation } from 'expo-router';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -47,6 +48,8 @@ const AuthStack = () => {
 };
 
 const AppStack = () => {
+  const { hasRole } = useAuth();
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -69,37 +72,50 @@ const AppStack = () => {
         component={ProfileScreen} 
         options={{ title: 'Mi Perfil' }}
       />
-      <Stack.Screen 
-        name="CattleList" 
-        component={CattleListScreen} 
-        options={{ title: 'Mi Ganado' }}
-      />
-      <Stack.Screen 
-        name="CattleDetail" 
-        component={CattleDetailScreen} 
-        options={{ title: 'Detalles del Ganado' }}
-      />
-      <Stack.Screen 
-        name="AddCattle" 
-        component={AddCattleScreen} 
-        options={{ title: 'Agregar Ganado' }}
-      />
-      <Stack.Screen 
-        name="Sales" 
-        component={SalesScreen} 
-        options={{ title: 'Ventas' }}
-      />
-      <Stack.Screen 
-        name="Farms" 
-        component={FarmsScreen} 
-        options={{ title: 'Mis Granjas' }}
-      />
+      {hasRole('user') && (
+        <>
+          <Stack.Screen 
+            name="CattleList" 
+            component={CattleListScreen} 
+            options={{ title: 'Mi Ganado' }}
+          />
+          <Stack.Screen 
+            name="CattleDetail" 
+            component={CattleDetailScreen} 
+            options={{ title: 'Detalles del Ganado' }}
+          />
+          <Stack.Screen 
+            name="AddCattle" 
+            component={AddCattleScreen} 
+            options={{ title: 'Agregar Ganado' }}
+          />
+          <Stack.Screen 
+            name="Sales" 
+            component={SalesScreen} 
+            options={{ title: 'Ventas' }}
+          />
+          <Stack.Screen 
+            name="Farms" 
+            component={FarmsScreen} 
+            options={{ title: 'Mis Granjas' }}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 };
 
 const Navigation = () => {
-  const { isLoading, userToken } = useAuth();
+  const { isLoading, userToken, currentUser } = useAuth();
+  const router = useRouter();
+
+  // Verificar autenticación
+  useEffect(() => {
+    if (!isLoading && !currentUser) {
+      // Redirigir a login si no hay usuario autenticado
+      router.replace('/login');
+    }
+  }, [currentUser, isLoading]);
 
   if (isLoading) {
     return (
@@ -124,4 +140,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Navigation; 
+export default Navigation;

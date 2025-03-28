@@ -43,7 +43,7 @@ const LoginScreen = () => {
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.logoContainer}>
           <Text style={styles.logoEmoji}>🐄</Text>
-          <Text style={styles.title}>GanadoApp</Text>
+          <Text style={styles.title}>COW TRACKER</Text>
           <Text style={styles.subtitle}>Gestión de ganado y granjas</Text>
         </View>
 

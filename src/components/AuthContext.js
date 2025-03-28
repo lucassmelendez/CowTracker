@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, firestore } from '../config/firebase';
+import { useRouter } from 'expo-router';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isWeb = Platform.OS === 'web';
+  const router = useRouter();
 
   // Función para registrar un nuevo usuario
   const register = async (name, email, password, role = 'user') => {
@@ -59,6 +61,9 @@ export const AuthProvider = ({ children }) => {
         role: role,
         createdAt: serverTimestamp(),
       });
+
+      // Redirigir al usuario a la pantalla de bienvenida para crear su primera granja
+      router.push('/welcome');
 
       // También registrar en el backend para sincronización
       try {

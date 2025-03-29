@@ -246,107 +246,23 @@ export const updateFarm = async (id, farmData) => {
 
 
 // Funciones para gestionar ganado en granjas
-export const addCattleToFarm = async (farmId, cattleId) => {
-  try {
-    // Crear un documento en la colección de relación farm_cattle
-    const dataWithTimestamp = {
-      farmId,
-      cattleId,
-      createdAt: serverTimestamp(),
-    };
-    
-    await addDoc(collection(firestore, FARM_CATTLE_COLLECTION), dataWithTimestamp);
-    
-    // Actualizar el contador de ganado en la granja
-    const farmDoc = await getDoc(doc(firestore, FARMS_COLLECTION, farmId));
-    if (farmDoc.exists()) {
-      const farmData = farmDoc.data();
-      const cattleCount = farmData.cattleCount || 0;
-      
-      await updateDoc(doc(firestore, FARMS_COLLECTION, farmId), {
-        cattleCount: cattleCount + 1,
-        updatedAt: serverTimestamp(),
-      });
-    }
-    
-    return { success: true, message: 'Ganado añadido a la granja correctamente' };
-  } catch (error) {
-    console.error('Error al añadir ganado a la granja:', error);
-    throw error;
-  }
-};
 
-export const removeCattleFromFarm = async (farmId, cattleId) => {
-  try {
-    // Buscar el documento que relaciona la granja con el ganado
-    const cattleQuery = query(
-      collection(firestore, FARM_CATTLE_COLLECTION),
-      where('farmId', '==', farmId),
-      where('cattleId', '==', cattleId)
-    );
-    
-    const querySnapshot = await getDocs(cattleQuery);
-    
-    if (querySnapshot.empty) {
-      throw new Error('Relación entre ganado y granja no encontrada');
-    }
-    
-    // Eliminar todos los documentos encontrados (debería ser solo uno)
-    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
-    
-    // Actualizar el contador de ganado en la granja
-    const farmDoc = await getDoc(doc(firestore, FARMS_COLLECTION, farmId));
-    if (farmDoc.exists()) {
-      const farmData = farmDoc.data();
-      const cattleCount = farmData.cattleCount || 0;
-      
-      await updateDoc(doc(firestore, FARMS_COLLECTION, farmId), {
-        cattleCount: Math.max(0, cattleCount - 1),
-        updatedAt: serverTimestamp(),
-      });
-    }
-    
-    return { success: true, message: 'Ganado eliminado de la granja correctamente' };
-  } catch (error) {
-    console.error('Error al eliminar ganado de la granja:', error);
-    throw error;
-  }
-};
+
+
 
 export const getFarmCattle = async (farmId) => {
   try {
-    // Buscar todas las relaciones para esta granja
     const cattleQuery = query(
-      collection(firestore, FARM_CATTLE_COLLECTION),
+      collection(firestore, CATTLE_COLLECTION),
       where('farmId', '==', farmId)
     );
     
     const querySnapshot = await getDocs(cattleQuery);
     
-    if (querySnapshot.empty) {
-      return [];
-    }
-    
-    // Obtener los IDs del ganado
-    const cattleIds = querySnapshot.docs.map(doc => doc.data().cattleId);
-    
-    // Obtener los datos de cada ganado
-    const cattleData = await Promise.all(
-      cattleIds.map(async (id) => {
-        const cattleDoc = await getDoc(doc(firestore, CATTLE_COLLECTION, id));
-        if (cattleDoc.exists()) {
-          return {
-            _id: cattleDoc.id,
-            ...cattleDoc.data(),
-          };
-        }
-        return null;
-      })
-    );
-    
-    // Filtrar posibles nulos
-    return cattleData.filter(cattle => cattle !== null);
+    return querySnapshot.docs.map(doc => ({
+      _id: doc.id,
+      ...doc.data(),
+    }));
   } catch (error) {
     console.error('Error al obtener ganado de la granja:', error);
     throw error;

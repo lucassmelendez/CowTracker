@@ -109,15 +109,13 @@ const AddCattleScreen = ({ route }) => {
         status: 'activo',
         healthStatus: 'saludable',
         userId: userInfo.uid,
+        farmId: selectedFarmId, // Add farmId directly to cattle data
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      // Guardar el ganado en Firestore
+      // Guardar el ganado en Firestore (ahora incluye directamente el farmId)
       const newCattle = await createCattle(cattleData);
-      
-      // Asociar el ganado a la granja seleccionada
-      await addCattleToFarm(selectedFarmId, newCattle._id);
       
       // Mostrar alerta y volver atrás
       Alert.alert(

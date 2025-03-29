@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
 
 const HomeScreen = () => {
-  const { userData, logout } = useAuth();
+  const { userData } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -51,16 +51,6 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.welcomeText}>¡Bienvenido!</Text>
-          <Text style={styles.nameText}>{userData?.name}</Text>
-        </View>
-        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView style={styles.menuContainer}>
         <View style={styles.menuGrid}>
           {menuItems.map((item) => (
@@ -108,31 +98,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  welcomeText: {
-    color: 'white',
-    fontSize: 16,
-  },
-  nameText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  logoutButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: 8,
-    borderRadius: 8,
-  },
-  logoutText: {
-    color: 'white',
-    fontWeight: '600',
   },
   menuContainer: {
     flex: 1,
@@ -202,7 +167,8 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: '#7f8c8d',
+    textAlign: 'center',
   },
 });
 
-export default HomeScreen; 
+export default HomeScreen;

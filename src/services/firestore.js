@@ -24,9 +24,18 @@ const FARM_VETERINARIANS_COLLECTION = 'farm_veterinarians';
 const FARM_CATTLE_COLLECTION = 'farm_cattle';
 
 // Funciones para el manejo de ganado
-export const getAllCattle = async (userId) => {
+export const getAllCattle = async (userId = null) => {
   try {
-    const cattleQuery = query(collection(firestore, CATTLE_COLLECTION), where('userId', '==', userId));
+    let cattleQuery;
+    
+    if (userId) {
+      // Si se proporciona un userId, filtrar por ese usuario
+      cattleQuery = query(collection(firestore, CATTLE_COLLECTION), where('userId', '==', userId));
+    } else {
+      // Si no se proporciona userId, obtener todos los registros
+      cattleQuery = collection(firestore, CATTLE_COLLECTION);
+    }
+    
     const querySnapshot = await getDocs(cattleQuery);
     
     return querySnapshot.docs.map(doc => ({
@@ -331,6 +340,174 @@ export const getFarmCattle = async (farmId) => {
     return cattleData.filter(cattle => cattle !== null);
   } catch (error) {
     console.error('Error al obtener ganado de la granja:', error);
+    throw error;
+  }
+};
+
+// Funciones para gestionar trabajadores en granjas
+export const addWorkerToFarm = async (farmId, workerId) => {
+  try {
+    // Crear un documento en la colección de relación farm_workers
+    const dataWithTimestamp = {
+      farmId,
+      workerId,
+      createdAt: serverTimestamp(),
+    };
+    
+    await addDoc(collection(firestore, FARM_WORKERS_COLLECTION), dataWithTimestamp);
+    
+    return { success: true, message: 'Trabajador añadido a la granja correctamente' };
+  } catch (error) {
+    console.error('Error al añadir trabajador a la granja:', error);
+    throw error;
+  }
+};
+
+export const removeWorkerFromFarm = async (farmId, workerId) => {
+  try {
+    // Buscar el documento que relaciona la granja con el trabajador
+    const workerQuery = query(
+      collection(firestore, FARM_WORKERS_COLLECTION),
+      where('farmId', '==', farmId),
+      where('workerId', '==', workerId)
+    );
+    
+    const querySnapshot = await getDocs(workerQuery);
+    
+    if (querySnapshot.empty) {
+      throw new Error('Relación entre trabajador y granja no encontrada');
+    }
+    
+    // Eliminar todos los documentos encontrados (debería ser solo uno)
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    return { success: true, message: 'Trabajador eliminado de la granja correctamente' };
+  } catch (error) {
+    console.error('Error al eliminar trabajador de la granja:', error);
+    throw error;
+  }
+};
+
+export const getFarmWorkers = async (farmId) => {
+  try {
+    // Buscar todas las relaciones para esta granja
+    const workerQuery = query(
+      collection(firestore, FARM_WORKERS_COLLECTION),
+      where('farmId', '==', farmId)
+    );
+    
+    const querySnapshot = await getDocs(workerQuery);
+    
+    if (querySnapshot.empty) {
+      return [];
+    }
+    
+    // Obtener los IDs de los trabajadores
+    const workerIds = querySnapshot.docs.map(doc => doc.data().workerId);
+    
+    // Obtener los datos de cada trabajador
+    const workerData = await Promise.all(
+      workerIds.map(async (id) => {
+        const workerDoc = await getDoc(doc(firestore, USERS_COLLECTION, id));
+        if (workerDoc.exists()) {
+          return {
+            _id: workerDoc.id,
+            ...workerDoc.data(),
+          };
+        }
+        return null;
+      })
+    );
+    
+    // Filtrar posibles nulos
+    return workerData.filter(worker => worker !== null);
+  } catch (error) {
+    console.error('Error al obtener trabajadores de la granja:', error);
+    throw error;
+  }
+};
+
+// Funciones para gestionar veterinarios en granjas
+export const addVeterinarianToFarm = async (farmId, vetId) => {
+  try {
+    // Crear un documento en la colección de relación farm_veterinarians
+    const dataWithTimestamp = {
+      farmId,
+      vetId,
+      createdAt: serverTimestamp(),
+    };
+    
+    await addDoc(collection(firestore, FARM_VETERINARIANS_COLLECTION), dataWithTimestamp);
+    
+    return { success: true, message: 'Veterinario añadido a la granja correctamente' };
+  } catch (error) {
+    console.error('Error al añadir veterinario a la granja:', error);
+    throw error;
+  }
+};
+
+export const removeVeterinarianFromFarm = async (farmId, vetId) => {
+  try {
+    // Buscar el documento que relaciona la granja con el veterinario
+    const vetQuery = query(
+      collection(firestore, FARM_VETERINARIANS_COLLECTION),
+      where('farmId', '==', farmId),
+      where('vetId', '==', vetId)
+    );
+    
+    const querySnapshot = await getDocs(vetQuery);
+    
+    if (querySnapshot.empty) {
+      throw new Error('Relación entre veterinario y granja no encontrada');
+    }
+    
+    // Eliminar todos los documentos encontrados (debería ser solo uno)
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    return { success: true, message: 'Veterinario eliminado de la granja correctamente' };
+  } catch (error) {
+    console.error('Error al eliminar veterinario de la granja:', error);
+    throw error;
+  }
+};
+
+export const getFarmVeterinarians = async (farmId) => {
+  try {
+    // Buscar todas las relaciones para esta granja
+    const vetQuery = query(
+      collection(firestore, FARM_VETERINARIANS_COLLECTION),
+      where('farmId', '==', farmId)
+    );
+    
+    const querySnapshot = await getDocs(vetQuery);
+    
+    if (querySnapshot.empty) {
+      return [];
+    }
+    
+    // Obtener los IDs de los veterinarios
+    const vetIds = querySnapshot.docs.map(doc => doc.data().vetId);
+    
+    // Obtener los datos de cada veterinario
+    const vetData = await Promise.all(
+      vetIds.map(async (id) => {
+        const vetDoc = await getDoc(doc(firestore, USERS_COLLECTION, id));
+        if (vetDoc.exists()) {
+          return {
+            _id: vetDoc.id,
+            ...vetDoc.data(),
+          };
+        }
+        return null;
+      })
+    );
+    
+    // Filtrar posibles nulos
+    return vetData.filter(vet => vet !== null);
+  } catch (error) {
+    console.error('Error al obtener veterinarios de la granja:', error);
     throw error;
   }
 };

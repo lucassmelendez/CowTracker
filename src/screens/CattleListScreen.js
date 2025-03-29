@@ -10,7 +10,7 @@ import {
   RefreshControl,
   Platform
 } from 'react-native';
-import { getAllCattle } from '../services/api';
+import { getAllCattle } from '../services';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { getShadowStyle } from '../utils/styles';
@@ -331,4 +331,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CattleListScreen; 
+export default CattleListScreen;

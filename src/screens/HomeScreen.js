@@ -35,11 +35,11 @@ const HomeScreen = () => {
       description: 'Historial y registro de ventas',
     },
     {
-      id: 'profile',
-      title: 'Mi Perfil',
-      icon: '👤',
-      route: '/profile',
-      description: 'Visualiza y edita tu perfil',
+      id: 'qr',
+      title: 'Escanear QR',
+      icon: '📷',
+      route: '/qr-scanner',
+      description: 'Escanear códigos QR',
     },
   ];
 

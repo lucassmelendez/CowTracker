@@ -1,7 +1,24 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
+import FarmSelector from '../../src/components/FarmSelector';
+import { useFarm } from '../../src/components/FarmContext';
+
+// Custom header component with farm selector
+function CustomHeader({ title }: { title: string }) {
+  const { selectedFarm, selectFarm } = useFarm();
+
+  return (
+    <View style={styles.headerContainer}>
+      <Text style={styles.headerTitle}>{title}</Text>
+      <FarmSelector 
+        selectedFarm={selectedFarm} 
+        onSelectFarm={selectFarm} 
+      />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -25,7 +42,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
-          headerTitle: 'CowTracker',
+          headerTitle: () => <CustomHeader title="CowTracker" />,
           tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
         }}
       />
@@ -33,10 +50,24 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Mi Ganado',
-          headerTitle: 'Mi Ganado',
+          headerTitle: () => <CustomHeader title="Mi Ganado" />,
           tabBarIcon: ({ color, size }) => <Ionicons name="list" color={color} size={size} />,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
+  },
+  headerTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#ffffff',
+  },
+});

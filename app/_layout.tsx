@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Stack, Redirect, useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from '../src/components/AuthContext';
+import { FarmProvider } from '../src/components/FarmContext';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, ActivityIndicator } from 'react-native';
 
@@ -58,7 +59,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <FarmProvider>
+        <RootLayoutNav />
+      </FarmProvider>
     </AuthProvider>
   );
 }

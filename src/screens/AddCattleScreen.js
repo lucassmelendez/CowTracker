@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -30,6 +30,30 @@ const AddCattleScreen = ({ route }) => {
   const [location, setLocation] = useState(isEditMode ? 'Potrero Norte' : '');
   const [notes, setNotes] = useState(isEditMode ? 'Excelente productora de leche. Vacunada en marzo 2023.' : '');
   const [purchasePrice, setPurchasePrice] = useState(isEditMode ? '1200' : '');
+  const [selectedFarmId, setSelectedFarmId] = useState('');
+  const [farms, setFarms] = useState([]);
+  const [loadingFarms, setLoadingFarms] = useState(false);
+  
+  useEffect(() => {
+    // Cargar las granjas disponibles
+    const loadFarms = async () => {
+      try {
+        setLoadingFarms(true);
+        const { userInfo } = require('../components/AuthContext').useAuth();
+        const userFarms = await getAllFarms(userInfo.uid);
+        setFarms(userFarms);
+      } catch (error) {
+        console.error('Error al cargar granjas:', error);
+        Alert.alert('Error', 'No se pudieron cargar las granjas disponibles');
+      } finally {
+        setLoadingFarms(false);
+      }
+    };
+    
+    loadFarms();
+    
+    // Aquí podría ir lógica para cargar datos iniciales si es modo edición
+  }, []);
   
   // Fechas
   const [dateOfBirth, setDateOfBirth] = useState(isEditMode ? new Date('2020-05-15') : new Date());
@@ -43,21 +67,58 @@ const AddCattleScreen = ({ route }) => {
     router.back();
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validaciones
     if (!identifier || !name || !type || !breed) {
       Alert.alert('Error', 'Por favor, completa los campos obligatorios');
       return;
     }
 
-    // Aquí iría la lógica para guardar en la base de datos
-    
-    // Mostrar alerta y volver atrás
-    Alert.alert(
-      isEditMode ? 'Ganado Actualizado' : 'Ganado Agregado',
-      isEditMode ? 'Los datos se han actualizado correctamente.' : 'El ganado se ha agregado correctamente.',
-      [{ text: 'OK', onPress: () => router.back() }]
-    );
+    if (!selectedFarmId) {
+      Alert.alert('Error', 'Por favor, selecciona una granja');
+      return;
+    }
+
+    try {
+      // Obtener información del usuario actual
+      const { userInfo } = require('../components/AuthContext').useAuth();
+      
+      // Preparar datos del ganado
+      const cattleData = {
+        identifier,
+        name,
+        type,
+        breed,
+        gender,
+        weight: parseFloat(weight) || 0,
+        location,
+        notes,
+        purchasePrice: parseFloat(purchasePrice) || 0,
+        dateOfBirth,
+        purchaseDate,
+        status: 'activo',
+        healthStatus: 'saludable',
+        userId: userInfo.uid,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Guardar el ganado en Firestore
+      const newCattle = await createCattle(cattleData);
+      
+      // Asociar el ganado a la granja seleccionada
+      await addCattleToFarm(selectedFarmId, newCattle._id);
+      
+      // Mostrar alerta y volver atrás
+      Alert.alert(
+        isEditMode ? 'Ganado Actualizado' : 'Ganado Agregado',
+        isEditMode ? 'Los datos se han actualizado correctamente.' : 'El ganado se ha agregado correctamente.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('Error al guardar ganado:', error);
+      Alert.alert('Error', 'No se pudo guardar el ganado. Inténtalo de nuevo.');
+    }
   };
 
   const formatDate = (date) => {
@@ -169,9 +230,39 @@ const AddCattleScreen = ({ route }) => {
           style={styles.input}
           value={purchasePrice}
           onChangeText={setPurchasePrice}
-          placeholder="Precio en $"
+          placeholder="Ej. 1200"
           keyboardType="numeric"
         />
+
+        <Text style={styles.sectionTitle}>Asignación a Granja</Text>
+        <Text style={styles.label}>Granja *</Text>
+        {loadingFarms ? (
+          <ActivityIndicator size="small" color="#27ae60" style={{marginVertical: 10}} />
+        ) : farms.length > 0 ? (
+          <View style={styles.farmSelector}>
+            {farms.map(farm => (
+              <TouchableOpacity
+                key={farm._id}
+                style={[styles.farmOption, selectedFarmId === farm._id && styles.selectedFarmOption]}
+                onPress={() => setSelectedFarmId(farm._id)}
+              >
+                <Text style={[styles.farmOptionText, selectedFarmId === farm._id && styles.selectedFarmOptionText]}>
+                  {farm.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.noFarmsContainer}>
+            <Text style={styles.noFarmsText}>No tienes granjas disponibles</Text>
+            <TouchableOpacity
+              style={styles.createFarmButton}
+              onPress={() => router.push('/farms')}
+            >
+              <Text style={styles.createFarmButtonText}>Crear Granja</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <Text style={styles.label}>Fecha de compra</Text>
         <TouchableOpacity 
@@ -222,6 +313,57 @@ const AddCattleScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
+  // Estilos para selector de granjas
+  farmSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 15,
+  },
+  farmOption: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    marginRight: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  selectedFarmOption: {
+    backgroundColor: '#27ae60',
+    borderColor: '#27ae60',
+  },
+  farmOptionText: {
+    color: '#333',
+    fontSize: 14,
+  },
+  selectedFarmOptionText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  noFarmsContainer: {
+    alignItems: 'center',
+    marginVertical: 15,
+    padding: 15,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  noFarmsText: {
+    color: '#777',
+    marginBottom: 10,
+  },
+  createFarmButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  createFarmButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -318,4 +460,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddCattleScreen; 
+export default AddCattleScreen;

@@ -29,24 +29,18 @@ function RootLayoutNav() {
     <>
       <Stack 
         screenOptions={{
-          headerStyle: {
-            backgroundColor: '#27ae60',
-          },
-          headerTintColor: '#ffffff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
+          headerShown: false, // Completely hide the header
         }}
       >
         {currentUser ? (
           <>
             <Stack.Screen name="index" redirect={true} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="cattle-detail" options={{ title: 'Detalles del Ganado' }} />
-            <Stack.Screen name="add-cattle" options={{ title: 'Gestionar Ganado' }} />
-            <Stack.Screen name="profile" options={{ title: 'Mi Perfil' }} />
-            <Stack.Screen name="farms" options={{ title: 'Mis Granjas' }} />
-            <Stack.Screen name="sales" options={{ title: 'Ventas' }} />
+            <Stack.Screen name="cattle-detail" options={{ title: 'Detalles del Ganado', headerShown: true }} />
+            <Stack.Screen name="add-cattle" options={{ title: 'Gestionar Ganado', headerShown: true }} />
+            <Stack.Screen name="profile" options={{ title: 'Mi Perfil', headerShown: true }} />
+            <Stack.Screen name="farms" options={{ title: 'Mis Granjas', headerShown: true }} />
+            <Stack.Screen name="sales" options={{ title: 'Ventas', headerShown: true }} />
           </>
         ) : (
           <>
@@ -56,7 +50,7 @@ function RootLayoutNav() {
           </>
         )}
       </Stack>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
     </>
   );
 }

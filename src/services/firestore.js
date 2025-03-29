@@ -179,9 +179,18 @@ export const getUsersByRole = async (role) => {
 };
 
 // Funciones para el manejo de granjas
-export const getAllFarms = async (userId) => {
+export const getAllFarms = async (userId = null) => {
   try {
-    const farmsQuery = query(collection(firestore, FARMS_COLLECTION), where('userId', '==', userId));
+    let farmsQuery;
+    
+    if (userId) {
+      // Si se proporciona un userId, filtrar por ese usuario
+      farmsQuery = query(collection(firestore, FARMS_COLLECTION), where('userId', '==', userId));
+    } else {
+      // Si no se proporciona userId, obtener todas las granjas
+      farmsQuery = collection(firestore, FARMS_COLLECTION);
+    }
+    
     const querySnapshot = await getDocs(farmsQuery);
     
     return querySnapshot.docs.map(doc => ({

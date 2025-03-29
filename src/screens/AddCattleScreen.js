@@ -7,18 +7,22 @@ import {
   TouchableOpacity, 
   ScrollView, 
   Alert,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
+import { getAllFarms, createCattle, addCattleToFarm } from '../services/firestore';
+import { useAuth } from '../components/AuthContext';
 
 const AddCattleScreen = ({ route }) => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = route?.params?.cattleId || params.id;
   const isEditMode = !!cattleId;
+  const { userInfo } = useAuth();
 
   // Estados para los campos del formulario
   const [identifier, setIdentifier] = useState(isEditMode ? 'BOV-2023-001' : '');
@@ -39,9 +43,10 @@ const AddCattleScreen = ({ route }) => {
     const loadFarms = async () => {
       try {
         setLoadingFarms(true);
-        const { userInfo } = require('../components/AuthContext').useAuth();
-        const userFarms = await getAllFarms(userInfo.uid);
-        setFarms(userFarms);
+        if (userInfo && userInfo.uid) {
+          const userFarms = await getAllFarms(userInfo.uid);
+          setFarms(userFarms);
+        }
       } catch (error) {
         console.error('Error al cargar granjas:', error);
         Alert.alert('Error', 'No se pudieron cargar las granjas disponibles');
@@ -50,10 +55,12 @@ const AddCattleScreen = ({ route }) => {
       }
     };
     
-    loadFarms();
+    if (userInfo) {
+      loadFarms();
+    }
     
     // Aquí podría ir lógica para cargar datos iniciales si es modo edición
-  }, []);
+  }, [userInfo]);
   
   // Fechas
   const [dateOfBirth, setDateOfBirth] = useState(isEditMode ? new Date('2020-05-15') : new Date());
@@ -80,8 +87,11 @@ const AddCattleScreen = ({ route }) => {
     }
 
     try {
-      // Obtener información del usuario actual
-      const { userInfo } = require('../components/AuthContext').useAuth();
+      // Verificar que tenemos la información del usuario
+      if (!userInfo || !userInfo.uid) {
+        Alert.alert('Error', 'No se pudo obtener la información del usuario');
+        return;
+      }
       
       // Preparar datos del ganado
       const cattleData = {

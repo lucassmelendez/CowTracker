@@ -235,6 +235,12 @@ const FarmsScreen = () => {
   };
   
   const handleDelete = async (id) => {
+    console.log('ID de la granja a eliminar:', id);
+    if (!id) {
+      console.error('El ID es inválido o undefined');
+      return;
+    }
+    
     Alert.alert(
       'Confirmar eliminación',
       '¿Estás seguro de eliminar esta granja?',
@@ -276,7 +282,7 @@ const FarmsScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionButton} 
-            onPress={() => handleDelete(item.id)}
+            onPress={() => handleDelete(item._id)}
           >
             <Ionicons name="trash-outline" size={20} color="#e74c3c" />
           </TouchableOpacity>

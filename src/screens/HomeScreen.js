@@ -28,11 +28,11 @@ const HomeScreen = () => {
       description: 'Administra tus granjas',
     },
     {
-      id: 'vet',
-      title: 'Datos veterinarios',
-      icon: '💊',
-      route: '/(tabs)/explor',
-      description: 'Datos veterinarios y medicamentos',
+      id: 'sales',
+      title: 'Ventas',
+      icon: '💰',
+      route: '/sales',
+      description: 'Historial y registro de ventas',
     },
     {
       id: 'qr',

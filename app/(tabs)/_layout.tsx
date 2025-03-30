@@ -129,11 +129,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="sales"
         options={{
-          title: 'Mi Ganado',
-          headerTitle: () => <CustomHeader title="Mi Ganado" />,
-          tabBarIcon: ({ color, size }) => <Ionicons name="list" color={color} size={size} />,
+          title: 'Ventas',
+          headerTitle: () => <CustomHeader title="Ventas" />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="cash" color={color} size={size} />,
         }}
       />
     </Tabs>

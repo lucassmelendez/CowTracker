@@ -21,11 +21,11 @@ const HomeScreen = () => {
       description: 'Gestiona todo tu ganado',
     },
     {
-      id: 'farms',
-      title: 'Mis Granjas',
-      icon: '🏡',
-      route: '/farms',
-      description: 'Administra tus granjas',
+      id: 'informe',
+      title: 'Informe',
+      icon: '📖',
+      route: '/farms',  //cambiar esta logica cuando se creee el infome
+      description: 'Generar infomes de ganado',
     },
     {
       id: 'sales',

@@ -28,11 +28,11 @@ const HomeScreen = () => {
       description: 'Generar infomes de ganado',
     },
     {
-      id: 'sales',
-      title: 'Ventas',
-      icon: '💰',
-      route: '/sales',
-      description: 'Historial y registro de ventas',
+      id: 'vet',
+      title: 'Datos veterinarios',
+      icon: '💊',
+      route: '/(tabs)/explore',
+      description: 'Datos veterinarios y medicamentos',
     },
     {
       id: 'qr',

@@ -32,6 +32,7 @@ import {
 } from '../services/firestore';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
+import { deleteFarm } from '../services/firestore';
 
 const FarmsScreen = () => {
   const router = useRouter();
@@ -235,33 +236,25 @@ const FarmsScreen = () => {
   };
   
   const handleDelete = async (id) => {
-    console.log('ID de la granja a eliminar:', id);
-    if (!id) {
-      console.error('El ID es inválido o undefined');
-      return;
-    }
-    
-    Alert.alert(
-      'Confirmar eliminación',
-      '¿Estás seguro de eliminar esta granja?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Eliminar', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const docRef = doc(firestore, FARMS_COLLECTION, id);
-              await deleteDoc(docRef);
-              await loadFarms(); // Recargar las granjas
-              Alert.alert('Éxito', 'Granja eliminada correctamente');
-            } catch (error) {
-              console.error('Error al eliminar granja:', error);
-              Alert.alert('Error', 'No se pudo eliminar la granja');
-            }
+  Alert.alert(
+    'Confirmar eliminación',
+    '¿Estás seguro de eliminar esta granja?',
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      { 
+        text: 'Eliminar', 
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteFarm(id);
+            await loadFarms();
+          } catch (error) {
+            console.error('Error al eliminar granja:', error);
+            Alert.alert('Error', 'No se pudo eliminar la granja');
           }
         }
-      ]
+      }
+    ]
     );
   };
 

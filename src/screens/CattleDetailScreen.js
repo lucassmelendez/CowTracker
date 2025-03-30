@@ -43,10 +43,8 @@ const CattleDetailScreen = ({ route }) => {
     console.log('entre');
     try {
       console.log('ID del ganado a eliminar:', cattleId);
-
-      // Llama a la función de servicio para eliminar el documento
       await deleteCattle(cattleId);
-      router.back(); // Navegar hacia atrás
+      router.back(); 
     } catch (error) {
       console.error('Error al eliminar el ganado:', error);
       Alert.alert('Error', 'No se pudo eliminar el ganado');

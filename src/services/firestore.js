@@ -107,14 +107,14 @@ export const updateCattle = async (id, cattleData) => {
   }
 };
 
-export const deleteCattle = async (id) => {
+export const deleteCattle = async (cattleId) => {
+  console.log('ID del ganado a eliminar:', cattleId);
   try {
-    const docRef = doc(firestore, CATTLE_COLLECTION, id);
+    const docRef = doc(firestore, 'cattle', cattleId);
     await deleteDoc(docRef);
-    
-    return { success: true, message: 'Ganado eliminado correctamente' };
+    console.log(`Ganado con ID ${cattleId} eliminado correctamente`);
   } catch (error) {
-    console.error('Error al eliminar ganado:', error);
+    console.error('Error al eliminar el ganado:', error);
     throw error;
   }
 };
@@ -239,6 +239,18 @@ export const updateFarm = async (id, farmData) => {
     };
   } catch (error) {
     console.error('Error al actualizar granja:', error);
+    throw error;
+  }
+};
+
+export const deleteFarm = async (farmId) => {
+  console.log('ID de la granja a eliminar:', farmId);
+  try {
+    const docRef = doc(firestore, 'farms', farmId); // Asegúrate de que 'farms' sea el nombre correcto de la colección
+    await deleteDoc(docRef);
+    console.log(`Granja con ID ${farmId} eliminada correctamente`);
+  } catch (error) {
+    console.error('Error al eliminar la granja:', error);
     throw error;
   }
 };

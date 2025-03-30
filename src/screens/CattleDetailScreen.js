@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
+import { deleteCattle } from '../services/firestore';
 
 const CattleDetailScreen = ({ route }) => {
   const router = useRouter();
@@ -37,23 +38,19 @@ const CattleDetailScreen = ({ route }) => {
     ]
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Confirmar eliminación',
-      `¿Estás seguro de eliminar a ${cattleData.name} (${cattleData.identifier})?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Eliminar', 
-          style: 'destructive',
-          onPress: () => {
-            // Aquí iría la lógica para eliminar
-            Alert.alert('Éxito', 'Ganado eliminado correctamente');
-            router.back();
-          }
-        }
-      ]
-    );
+
+  const handleDelete = async () => {
+    console.log('entre');
+    try {
+      console.log('ID del ganado a eliminar:', cattleId);
+
+      // Llama a la función de servicio para eliminar el documento
+      await deleteCattle(cattleId);
+      router.back(); // Navegar hacia atrás
+    } catch (error) {
+      console.error('Error al eliminar el ganado:', error);
+      Alert.alert('Error', 'No se pudo eliminar el ganado');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -317,4 +314,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CattleDetailScreen; 
+export default CattleDetailScreen;

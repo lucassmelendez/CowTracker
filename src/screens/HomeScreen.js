@@ -24,7 +24,7 @@ const HomeScreen = () => {
       id: 'informe',
       title: 'Informe',
       icon: '📖',
-      route: '/farms',  //cambiar esta logica cuando se creee el infome
+      route: '/report',  //cambiar esta logica cuando se creee el infome
       description: 'Generar infomes de ganado',
     },
     {

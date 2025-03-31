@@ -42,7 +42,7 @@ function RootLayoutNav() {
             <Stack.Screen name="profile" options={{ title: 'Mi Perfil', headerShown: true }} />
             <Stack.Screen name="farms" options={{ title: 'Mis Granjas', headerShown: true }} />
             <Stack.Screen name="sales" options={{ title: 'Ventas', headerShown: true }} />
-            <Stack.Screen name="informe" options={{ title: 'Informe', headerShown: true }} />
+            <Stack.Screen name="report" options={{ title: 'Informe', headerShown: true }} />
           </>
         ) : (
           <>

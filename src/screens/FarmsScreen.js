@@ -30,8 +30,6 @@ import {
   getFarmCattle,
   getUsersByRole
 } from '../services/firestore';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { firestore } from '../config/firebase';
 import { deleteFarm } from '../services/firestore';
 
 const FarmsScreen = () => {
@@ -48,6 +46,36 @@ const FarmsScreen = () => {
   const [managingStaff, setManagingStaff] = useState(false);
   const [loadingStaff, setLoadingStaff] = useState(false);
 
+  // Estado para el modal de agregar/editar granja
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingFarm, setEditingFarm] = useState(null);
+  const [farmName, setFarmName] = useState('');
+  const [farmLocation, setFarmLocation] = useState('');
+  const [farmSize, setFarmSize] = useState('');
+
+  // Estado para el modal de mensajes
+  const [modalMessage, setModalMessage] = useState('');
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
+
+  // Estado para el modal de confirmación de eliminación
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [farmToDelete, setFarmToDelete] = useState(null);
+
+  const showModal = (message) => {
+    setModalMessage(message);
+    setMessageModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setMessageModalVisible(false);
+    setModalMessage('');
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalVisible(false);
+    setFarmToDelete(null);
+  };
+
   useEffect(() => {
     if (userInfo?.uid) {
       loadFarms();
@@ -60,18 +88,11 @@ const FarmsScreen = () => {
       setFarms(userFarms);
     } catch (error) {
       console.error('Error al cargar granjas:', error);
-      Alert.alert('Error', 'No se pudieron cargar las granjas');
+      showModal('Error: No se pudieron cargar las granjas');
     } finally {
       setLoading(false);
     }
   };
-
-  // Estado para el modal de agregar/editar granja
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingFarm, setEditingFarm] = useState(null);
-  const [farmName, setFarmName] = useState('');
-  const [farmLocation, setFarmLocation] = useState('');
-  const [farmSize, setFarmSize] = useState('');
 
   const openAddModal = () => {
     setEditingFarm(null);
@@ -91,7 +112,7 @@ const FarmsScreen = () => {
 
   const handleSave = async () => {
     if (!farmName || !farmLocation || !farmSize) {
-      Alert.alert('Error', 'Por favor, completa todos los campos');
+      showModal('Error: Por favor, completa todos los campos');
       return;
     }
 
@@ -106,16 +127,16 @@ const FarmsScreen = () => {
 
       if (editingFarm) {
         await updateFarm(editingFarm._id, farmData);
-        Alert.alert('Éxito', 'Granja actualizada correctamente');
+        showModal('Éxito: Granja actualizada correctamente');
       } else {
         await createFarm(farmData);
-        Alert.alert('Éxito', 'Granja agregada correctamente');
+        showModal('Éxito: Granja agregada correctamente');
       }
       
       await loadFarms(); // Recargar las granjas
     } catch (error) {
       console.error('Error al guardar granja:', error);
-      Alert.alert('Error', 'No se pudo guardar la granja');
+      showModal('Error: No se pudo guardar la granja');
     }
     
     setModalVisible(false);
@@ -153,7 +174,7 @@ const FarmsScreen = () => {
       ));
     } catch (error) {
       console.error('Error al cargar personal de la granja:', error);
-      Alert.alert('Error', 'No se pudo cargar el personal de la granja');
+      showModal('Error: No se pudo cargar el personal de la granja');
     } finally {
       setLoadingStaff(false);
     }
@@ -169,10 +190,10 @@ const FarmsScreen = () => {
       setFarmWorkers([...farmWorkers, worker]);
       setAvailableWorkers(availableWorkers.filter(w => w._id !== workerId));
       
-      Alert.alert('Éxito', 'Trabajador añadido a la granja correctamente');
+      showModal('Éxito: Trabajador añadido a la granja correctamente');
     } catch (error) {
       console.error('Error al añadir trabajador:', error);
-      Alert.alert('Error', 'No se pudo añadir el trabajador a la granja');
+      showModal('Error: No se pudo añadir el trabajador a la granja');
     }
   };
   
@@ -186,10 +207,10 @@ const FarmsScreen = () => {
       setAvailableWorkers([...availableWorkers, worker]);
       setFarmWorkers(farmWorkers.filter(w => w._id !== workerId));
       
-      Alert.alert('Éxito', 'Trabajador eliminado de la granja correctamente');
+      showModal('Éxito: Trabajador eliminado de la granja correctamente');
     } catch (error) {
       console.error('Error al eliminar trabajador:', error);
-      Alert.alert('Error', 'No se pudo eliminar el trabajador de la granja');
+      showModal('Error: No se pudo eliminar el trabajador de la granja');
     }
   };
   
@@ -203,10 +224,10 @@ const FarmsScreen = () => {
       setFarmVeterinarians([...farmVeterinarians, vet]);
       setAvailableVeterinarians(availableVeterinarians.filter(v => v._id !== vetId));
       
-      Alert.alert('Éxito', 'Veterinario añadido a la granja correctamente');
+      showModal('Éxito: Veterinario añadido a la granja correctamente');
     } catch (error) {
       console.error('Error al añadir veterinario:', error);
-      Alert.alert('Error', 'No se pudo añadir el veterinario a la granja');
+      showModal('Error: No se pudo añadir el veterinario a la granja');
     }
   };
   
@@ -220,10 +241,10 @@ const FarmsScreen = () => {
       setAvailableVeterinarians([...availableVeterinarians, vet]);
       setFarmVeterinarians(farmVeterinarians.filter(v => v._id !== vetId));
       
-      Alert.alert('Éxito', 'Veterinario eliminado de la granja correctamente');
+      showModal('Éxito: Veterinario eliminado de la granja correctamente');
     } catch (error) {
       console.error('Error al eliminar veterinario:', error);
-      Alert.alert('Error', 'No se pudo eliminar el veterinario de la granja');
+      showModal('Error: No se pudo eliminar el veterinario de la granja');
     }
   };
   
@@ -235,27 +256,23 @@ const FarmsScreen = () => {
     });
   };
   
-  const handleDelete = async (id) => {
-  Alert.alert(
-    'Confirmar eliminación',
-    '¿Estás seguro de eliminar esta granja?',
-    [
-      { text: 'Cancelar', style: 'cancel' },
-      { 
-        text: 'Eliminar', 
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteFarm(id);
-            await loadFarms();
-          } catch (error) {
-            console.error('Error al eliminar granja:', error);
-            Alert.alert('Error', 'No se pudo eliminar la granja');
-          }
-        }
-      }
-    ]
-    );
+  const handleDelete = async () => {
+    try {
+      setDeleteModalVisible(false);
+      setLoading(true);
+      await deleteFarm(farmToDelete);
+      await loadFarms();
+    } catch (error) {
+      console.error('Error al eliminar granja:', error);
+      showModal('Error: No se pudo eliminar la granja');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openDeleteModal = (farmId) => {
+    setFarmToDelete(farmId);
+    setDeleteModalVisible(true);
   };
 
   const handleBack = () => {
@@ -275,7 +292,7 @@ const FarmsScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.actionButton} 
-            onPress={() => handleDelete(item._id)}
+            onPress={() => openDeleteModal(item._id)}
           >
             <Ionicons name="trash-outline" size={20} color="#e74c3c" />
           </TouchableOpacity>
@@ -502,6 +519,54 @@ const FarmsScreen = () => {
                 onPress={handleSave}
               >
                 <Text style={styles.saveButtonText}>Guardar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal personalizado */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={messageModalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>{modalMessage}</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={closeModal}>
+              <Text style={styles.modalButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de confirmación de eliminación */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={closeDeleteModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirmar eliminación</Text>
+            <Text style={styles.modalText}>
+              ¿Estás seguro de que deseas eliminar esta granja?
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={closeDeleteModal}
+              >
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={handleDelete}
+              >
+                <Text style={styles.confirmButtonText}>Eliminar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -753,6 +818,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: '#e74c3c',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },

@@ -163,7 +163,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   }
 
   return (
-    <View>
+    <View style={styles.container}>
       <TouchableOpacity 
         style={styles.selectorButton}
         onPress={() => setModalVisible(true)}
@@ -228,15 +228,20 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     padding: 5,
   },
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   selectorButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    marginLeft: 10,
-    maxWidth: 180,
+    minWidth: 180,
+    maxWidth: 220,
     ...getShadowStyle({ height: 1, elevation: 3, opacity: 0.2, radius: 2 }),
   },
   selectorText: {
@@ -245,6 +250,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     flex: 1,
+    textAlign: 'center',
   },
   errorText: {
     color: '#ffffff',

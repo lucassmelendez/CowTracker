@@ -152,10 +152,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#ffffff',
     marginLeft: 5,
+    flex: 1,
   },
   headerRightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 2,
+    justifyContent: 'flex-end',
   },
   profileButton: {
     marginLeft: 10,

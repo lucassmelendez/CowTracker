@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   Alert
@@ -12,7 +11,7 @@ import { useAuth } from '../components/AuthContext';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
 import { Ionicons } from '@expo/vector-icons';
-import { getShadowStyle } from '../utils/styles';
+import { welcomeStyles } from '../styles/welcomeStyles';
 
 const WelcomeScreen = () => {
   const router = useRouter();
@@ -63,106 +62,49 @@ const WelcomeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.welcomeContainer}>
+    <View style={welcomeStyles.container}>
+      <View style={welcomeStyles.welcomeContainer}>
         <Ionicons name="leaf-outline" size={60} color="#27ae60" />
-        <Text style={styles.welcomeTitle}>¡Bienvenido, {userInfo?.name}!</Text>
-        <Text style={styles.welcomeText}>
+        <Text style={welcomeStyles.welcomeTitle}>¡Bienvenido, {userInfo?.name}!</Text>
+        <Text style={welcomeStyles.welcomeText}>
           Para comenzar a usar CowTracker, crea tu primera granja
         </Text>
       </View>
 
-      <View style={styles.formContainer}>
-        <Text style={styles.label}>Nombre de la Granja</Text>
+      <View style={welcomeStyles.formContainer}>
+        <Text style={welcomeStyles.label}>Nombre de la Granja</Text>
         <TextInput
-          style={styles.input}
+          style={welcomeStyles.input}
           value={farmName}
           onChangeText={setFarmName}
           placeholder="Ej: Rancho El Paraíso"
         />
 
-        <Text style={styles.label}>Ubicación</Text>
+        <Text style={welcomeStyles.label}>Ubicación</Text>
         <TextInput
-          style={styles.input}
+          style={welcomeStyles.input}
           value={farmLocation}
           onChangeText={setFarmLocation}
           placeholder="Ej: San Juan"
         />
 
-        <Text style={styles.label}>Tamaño</Text>
+        <Text style={welcomeStyles.label}>Tamaño</Text>
         <TextInput
-          style={styles.input}
+          style={welcomeStyles.input}
           value={farmSize}
           onChangeText={setFarmSize}
           placeholder="Ej: 150 hectáreas"
         />
 
         <TouchableOpacity
-          style={styles.createButton}
+          style={welcomeStyles.createButton}
           onPress={handleCreateFarm}
         >
-          <Text style={styles.buttonText}>Crear Granja</Text>
+          <Text style={welcomeStyles.buttonText}>Crear Granja</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    padding: 20
-  },
-  welcomeContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-    marginBottom: 30
-  },
-  welcomeTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginTop: 20,
-    marginBottom: 10
-  },
-  welcomeText: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
-    marginBottom: 20
-  },
-  formContainer: {
-    ...getShadowStyle(),
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20
-  },
-  label: {
-    fontSize: 16,
-    color: '#2c3e50',
-    marginBottom: 5
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bdc3c7',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 15,
-    fontSize: 16
-  },
-  createButton: {
-    backgroundColor: '#27ae60',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold'
-  }
-});
 
 export default WelcomeScreen;

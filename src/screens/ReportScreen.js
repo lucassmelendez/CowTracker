@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, Button, Platform } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Platform } from 'react-native';
+import { reportStyles } from '../styles/reportStyles';
 
 const farms = [
   { id: '1', name: 'Granja El Sol' },
@@ -9,8 +10,8 @@ const farms = [
 
 const ReportScreen = () => {
   const renderFarm = ({ item }) => (
-    <View style={styles.farmItem}>
-      <Text style={styles.farmName}>{item.name}</Text>
+    <View style={reportStyles.farmItem}>
+      <Text style={reportStyles.farmName}>{item.name}</Text>
     </View>
   );
 
@@ -45,44 +46,23 @@ const ReportScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Lista de Granjas</Text>
+    <View style={reportStyles.container}>
+      <Text style={reportStyles.title}>Lista de Granjas</Text>
       <FlatList
         data={farms}
         keyExtractor={(item) => item.id}
         renderItem={renderFarm}
       />
-      <Button title="Descargar Informe en PDF" onPress={downloadPDF} />
+      <View style={reportStyles.buttonContainer}>
+        <TouchableOpacity 
+          style={reportStyles.downloadButton} 
+          onPress={downloadPDF}
+        >
+          <Text style={reportStyles.buttonText}>Descargar Informe en PDF</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  farmItem: {
-    padding: 15,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  farmName: {
-    fontSize: 18,
-  },
-});
 
 export default ReportScreen;

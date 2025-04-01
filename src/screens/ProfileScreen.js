@@ -1,266 +1,179 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
+import { Ionicons } from '@expo/vector-icons';
+import { profileStyles } from '../styles/profileStyles';
 
 const ProfileScreen = () => {
   const { currentUser, userInfo, updateUserProfile, logout } = useAuth();
   const router = useRouter();
-  const [name, setName] = useState(userInfo?.name || currentUser?.displayName || '');
-  const [email, setEmail] = useState(userInfo?.email || currentUser?.email || '');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [userData, setUserData] = useState({
+    name: userInfo?.name || currentUser?.displayName || '',
+    email: userInfo?.email || currentUser?.email || '',
+    phone: '',
+    role: userInfo?.role === 'admin' ? 'Administrador' : 'Usuario',
+    farm: '',
+  });
+  const [formData, setFormData] = useState({...userData});
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setFormData({...userData});
+  };
 
   const handleSave = async () => {
     try {
-      if (password && password !== confirmPassword) {
+      if (formData.password && formData.password !== formData.confirmPassword) {
         Alert.alert('Error', 'Las contraseñas no coinciden');
         return;
       }
 
       const updateData = {
-        name,
-        email,
-        ...(password ? { password } : {})
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        farm: formData.farm,
+        ...(formData.password ? { password: formData.password } : {})
       };
 
       await updateUserProfile(updateData);
       Alert.alert('Éxito', 'Perfil actualizado correctamente');
       setIsEditing(false);
-      setPassword('');
-      setConfirmPassword('');
+      setFormData({...userData});
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
       Alert.alert('Error', 'No se pudo actualizar el perfil. Por favor, intenta de nuevo.');
     }
   };
 
-  const handleBack = () => {
-    router.back();
+  const handleCancel = () => {
+    setIsEditing(false);
+    setFormData({...userData});
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar sesión',
+      '¿Está seguro que desea cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Cerrar sesión',
+          onPress: () => {
+            logout();
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  };
+
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0))
+      .join('')
+      .toUpperCase();
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mi Perfil</Text>
-        <Text style={styles.subtitle}>Gestiona tu información personal</Text>
+    <View style={profileStyles.container}>
+      <View style={profileStyles.header}>
+        <Text style={profileStyles.title}>Mi Perfil</Text>
+        <Text style={profileStyles.subtitle}>Gestiona tu información personal</Text>
       </View>
-
-      <View style={styles.card}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{userInfo?.name?.charAt(0) || currentUser?.displayName?.charAt(0) || 'U'}</Text>
+      
+      <ScrollView>
+        <View style={profileStyles.card}>
+          <View style={profileStyles.avatarContainer}>
+            <View style={profileStyles.avatar}>
+              <Text style={profileStyles.avatarText}>{getInitials(userData.name)}</Text>
+            </View>
+            <Text style={profileStyles.role}>{userData.role}</Text>
           </View>
-          <Text style={styles.role}>{userInfo?.role === 'admin' ? 'Administrador' : 'Usuario'}</Text>
-        </View>
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.label}>Nombre</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Nombre completo"
-            />
-          ) : (
-            <Text style={styles.infoText}>{userInfo?.name || currentUser?.displayName || 'Sin nombre'}</Text>
-          )}
-
-          <Text style={styles.label}>Correo electrónico</Text>
-          {isEditing ? (
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Correo electrónico"
-              keyboardType="email-address"
-            />
-          ) : (
-            <Text style={styles.infoText}>{userInfo?.email || currentUser?.email || 'Sin correo'}</Text>
-          )}
-
-          {isEditing && (
-            <>
-              <Text style={styles.label}>Nueva contraseña (opcional)</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="Nueva contraseña"
-                secureTextEntry
-              />
-
-              <Text style={styles.label}>Confirmar contraseña</Text>
-              <TextInput
-                style={styles.input}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Confirmar contraseña"
-                secureTextEntry
-              />
-            </>
-          )}
-        </View>
-
-        <View style={styles.buttonContainer}>
-          {isEditing ? (
-            <>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.buttonText}>Guardar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.cancelButton} 
-                onPress={() => {
-                  setIsEditing(false);
-                  setName(userInfo?.name || '');
-                  setEmail(userInfo?.email || '');
-                  setPassword('');
-                  setConfirmPassword('');
-                }}
-              >
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
-              <Text style={styles.buttonText}>Editar perfil</Text>
-            </TouchableOpacity>
-          )}
           
-          <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-            <Text style={styles.buttonText}>Cerrar sesión</Text>
-          </TouchableOpacity>
+          <View style={profileStyles.infoContainer}>
+            <Text style={profileStyles.label}>Nombre completo</Text>
+            {isEditing ? (
+              <TextInput
+                style={profileStyles.input}
+                value={formData.name}
+                onChangeText={(text) => setFormData({...formData, name: text})}
+                placeholder="Nombre completo"
+              />
+            ) : (
+              <Text style={profileStyles.infoText}>{userData.name}</Text>
+            )}
+            
+            <Text style={profileStyles.label}>Correo electrónico</Text>
+            {isEditing ? (
+              <TextInput
+                style={profileStyles.input}
+                value={formData.email}
+                onChangeText={(text) => setFormData({...formData, email: text})}
+                placeholder="Correo electrónico"
+                keyboardType="email-address"
+              />
+            ) : (
+              <Text style={profileStyles.infoText}>{userData.email}</Text>
+            )}
+            
+            <Text style={profileStyles.label}>Teléfono</Text>
+            {isEditing ? (
+              <TextInput
+                style={profileStyles.input}
+                value={formData.phone}
+                onChangeText={(text) => setFormData({...formData, phone: text})}
+                placeholder="Teléfono"
+                keyboardType="phone-pad"
+              />
+            ) : (
+              <Text style={profileStyles.infoText}>{userData.phone}</Text>
+            )}
+            
+            <Text style={profileStyles.label}>Rancho</Text>
+            {isEditing ? (
+              <TextInput
+                style={profileStyles.input}
+                value={formData.farm}
+                onChangeText={(text) => setFormData({...formData, farm: text})}
+                placeholder="Rancho"
+              />
+            ) : (
+              <Text style={profileStyles.infoText}>{userData.farm}</Text>
+            )}
+          </View>
+          
+          <View style={profileStyles.buttonContainer}>
+            {isEditing ? (
+              <>
+                <TouchableOpacity style={profileStyles.saveButton} onPress={handleSave}>
+                  <Text style={profileStyles.buttonText}>Guardar cambios</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={profileStyles.cancelButton} onPress={handleCancel}>
+                  <Text style={profileStyles.cancelText}>Cancelar</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity style={profileStyles.editButton} onPress={handleEdit}>
+                <Text style={profileStyles.buttonText}>Editar perfil</Text>
+              </TouchableOpacity>
+            )}
+            
+            <TouchableOpacity style={profileStyles.logoutButton} onPress={handleLogout}>
+              <Text style={profileStyles.buttonText}>Cerrar sesión</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
-  },
-  header: {
-    padding: 20,
-    paddingTop: 30,
-    backgroundColor: '#27ae60',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.8,
-    marginTop: 5,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    margin: 20,
-    padding: 20,
-    ...getShadowStyle(),
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#27ae60',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  role: {
-    fontSize: 16,
-    color: '#666',
-  },
-  infoContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 12,
-    marginBottom: 5,
-  },
-  infoText: {
-    fontSize: 16,
-    color: '#555',
-    padding: 10,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 5,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    borderRadius: 5,
-    fontSize: 16,
-  },
-  buttonContainer: {
-    marginTop: 10,
-  },
-  editButton: {
-    backgroundColor: '#27ae60',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  saveButton: {
-    backgroundColor: '#27ae60',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  cancelButton: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  logoutButton: {
-    backgroundColor: '#e74c3c',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  cancelText: {
-    color: '#333',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  formContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 20,
-    ...getShadowStyle(),
-  },
-});
 
 export default ProfileScreen;

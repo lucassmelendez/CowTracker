@@ -15,34 +15,100 @@ import { getCattleById, deleteCattle, getMedicalRecords } from '../services/fire
 
 const CattleDetailScreen = () => {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const cattleId = params?.id;
+  
   const [cattle, setCattle] = useState(null);
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
+  // Cargar datos del ganado
   useEffect(() => {
-    const loadCattleData = async () => {
-      try {
-        setLoading(true);
-        const cattleData = await getCattleById(id);
-        setCattle(cattleData);
-        
-        const medicalData = await getMedicalRecords(id);
-        setMedicalRecords(medicalData);
-      } catch (error) {
-        console.error('Error al cargar datos del ganado:', error);
-        Alert.alert('Error', 'No se pudieron cargar los datos del ganado');
-      } finally {
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      if (!cattleId) {
+        setError('ID de ganado no proporcionado');
         setLoading(false);
+        return;
+      }
+      
+      try {
+        // Obtener datos del ganado
+        const cattleData = await getCattleById(cattleId);
+        if (isMounted) {
+          setCattle(cattleData);
+          
+          // Obtener registros médicos
+          try {
+            const records = await getMedicalRecords(cattleId);
+            if (isMounted) {
+              setMedicalRecords(records || []);
+            }
+          } catch (medError) {
+            console.error('Error al cargar registros médicos:', medError);
+            // Continuar incluso si los registros médicos fallan
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError('No se pudo cargar la información del ganado');
+          console.error('Error:', err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [cattleId]);
 
-    loadCattleData();
-  }, [id]);
+  // Formatear fechas (manejo seguro de timestamps de Firestore)
+  const formatDate = (dateValue) => {
+    if (!dateValue) return <Text>No disponible</Text>;
+    
+    try {
+      let date;
+      if (typeof dateValue === 'object' && dateValue.seconds) {
+        // Es un timestamp de Firestore
+        date = new Date(dateValue.seconds * 1000);
+      } else {
+        // Es otro formato de fecha
+        date = new Date(dateValue);
+      }
+      
+      if (isNaN(date.getTime())) {
+        return <Text>Fecha inválida</Text>;
+      }
+      
+      return (
+        <Text>
+          {date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+        </Text>
+      );
+    } catch (err) {
+      console.error('Error al formatear fecha:', err);
+      return <Text>Error en formato</Text>;
+    }
+  };
 
+  // Manejadores de eventos
   const handleEdit = () => {
-    router.push(`/add-cattle?id=${id}`);
+    if (cattleId) {
+      router.push(`/add-cattle?id=${cattleId}`);
+    }
   };
 
   const confirmDelete = () => {
@@ -50,34 +116,23 @@ const CattleDetailScreen = () => {
   };
 
   const handleDelete = async () => {
+    if (!cattleId) {
+      Alert.alert('Error', 'ID de ganado no disponible');
+      return;
+    }
+    
     try {
-      await deleteCattle(id);
+      await deleteCattle(cattleId);
       Alert.alert('Éxito', 'Ganado eliminado correctamente');
       setDeleteModalVisible(false);
       router.replace('/explore');
-    } catch (error) {
-      console.error('Error al eliminar el ganado:', error);
+    } catch (err) {
+      console.error('Error al eliminar:', err);
       Alert.alert('Error', 'No se pudo eliminar el ganado');
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'No disponible';
-    
-    let date;
-    if (typeof dateString === 'object' && dateString.seconds) {
-      date = new Date(dateString.seconds * 1000);
-    } else {
-      date = new Date(dateString);
-    }
-    
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
+  // Pantalla de carga
   if (loading) {
     return (
       <View style={cattleDetailStyles.container}>
@@ -89,11 +144,12 @@ const CattleDetailScreen = () => {
     );
   }
 
-  if (!cattle) {
+  // Pantalla de error
+  if (error || !cattle) {
     return (
       <View style={cattleDetailStyles.container}>
         <View style={cattleDetailStyles.header}>
-          <Text style={cattleDetailStyles.name}>No se encontró el ganado</Text>
+          <Text style={cattleDetailStyles.name}>{error || 'No se encontró el ganado'}</Text>
         </View>
         <TouchableOpacity 
           style={cattleDetailStyles.backButton}
@@ -105,64 +161,89 @@ const CattleDetailScreen = () => {
     );
   }
 
+  // Renderiza el componente principal
   return (
     <View style={cattleDetailStyles.container}>
       <ScrollView>
+        {/* Encabezado */}
         <View style={cattleDetailStyles.header}>
-          <Text style={cattleDetailStyles.identifier}>{cattle.identificationNumber}</Text>
-          <Text style={cattleDetailStyles.name}>{cattle.name || 'Sin nombre'}</Text>
+          <Text style={cattleDetailStyles.identifier}>
+            {cattle.identificationNumber || 'Sin identificación'}
+          </Text>
+          <Text style={cattleDetailStyles.name}>
+            {cattle.name || 'Sin nombre'}
+          </Text>
           
           <View style={cattleDetailStyles.tagContainer}>
             <View style={cattleDetailStyles.tag}>
-              <Text style={cattleDetailStyles.tagText}>{cattle.breed}</Text>
+              <Text style={cattleDetailStyles.tagText}>
+                {cattle.breed || 'Sin raza'}
+              </Text>
             </View>
             <View style={cattleDetailStyles.tag}>
-              <Text style={cattleDetailStyles.tagText}>{cattle.gender === 'macho' ? 'Macho' : 'Hembra'}</Text>
+              <Text style={cattleDetailStyles.tagText}>
+                {cattle.gender ? (cattle.gender === 'macho' ? 'Macho' : 'Hembra') : 'Sin género'}
+              </Text>
             </View>
             <View style={[cattleDetailStyles.tag, cattleDetailStyles.healthTag]}>
-              <Text style={cattleDetailStyles.tagText}>{cattle.healthStatus}</Text>
+              <Text style={cattleDetailStyles.tagText}>
+                {cattle.healthStatus || 'Estado desconocido'}
+              </Text>
             </View>
           </View>
         </View>
 
+        {/* Información General */}
         <View style={cattleDetailStyles.infoCard}>
           <Text style={cattleDetailStyles.sectionTitle}>Información General</Text>
           
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Identificador</Text>
-            <Text style={cattleDetailStyles.infoValue}>{cattle.identificationNumber}</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.identificationNumber || 'No disponible'}
+            </Text>
           </View>
           
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Tipo</Text>
-            <Text style={cattleDetailStyles.infoValue}>{cattle.type}</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.type || 'No disponible'}
+            </Text>
           </View>
           
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Fecha de nacimiento</Text>
-            <Text style={cattleDetailStyles.infoValue}>{formatDate(cattle.birthDate)}</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.birthDate ? formatDate(cattle.birthDate).props.children : 'No disponible'}
+            </Text>
           </View>
           
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Peso</Text>
-            <Text style={cattleDetailStyles.infoValue}>{cattle.weight} kg</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.weight ? `${cattle.weight} kg` : 'No disponible'}
+            </Text>
           </View>
           
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Estado</Text>
-            <Text style={cattleDetailStyles.infoValue}>{cattle.status}</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.status || 'No disponible'}
+            </Text>
           </View>
           
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Salud</Text>
-            <Text style={cattleDetailStyles.infoValue}>{cattle.healthStatus}</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.healthStatus || 'No disponible'}
+            </Text>
           </View>
           
           {cattle.location && cattle.location.farm && (
             <View style={cattleDetailStyles.infoRow}>
               <Text style={cattleDetailStyles.infoLabel}>Rancho</Text>
               <Text style={cattleDetailStyles.infoValue}>
-                {typeof cattle.location.farm === 'object' 
+                {typeof cattle.location.farm === 'object' && cattle.location.farm.name 
                   ? cattle.location.farm.name 
                   : 'Rancho asignado'}
               </Text>
@@ -172,11 +253,14 @@ const CattleDetailScreen = () => {
           {cattle.location && cattle.location.area && (
             <View style={cattleDetailStyles.infoRow}>
               <Text style={cattleDetailStyles.infoLabel}>Área</Text>
-              <Text style={cattleDetailStyles.infoValue}>{cattle.location.area}</Text>
+              <Text style={cattleDetailStyles.infoValue}>
+                {cattle.location.area}
+              </Text>
             </View>
           )}
         </View>
 
+        {/* Información de Compra */}
         {(cattle.purchaseDate || cattle.purchasePrice) && (
           <View style={cattleDetailStyles.infoCard}>
             <Text style={cattleDetailStyles.sectionTitle}>Información de Compra</Text>
@@ -184,43 +268,71 @@ const CattleDetailScreen = () => {
             {cattle.purchaseDate && (
               <View style={cattleDetailStyles.infoRow}>
                 <Text style={cattleDetailStyles.infoLabel}>Fecha de compra</Text>
-                <Text style={cattleDetailStyles.infoValue}>{formatDate(cattle.purchaseDate)}</Text>
+                <Text style={cattleDetailStyles.infoValue}>
+                  {formatDate(cattle.purchaseDate).props.children}
+                </Text>
               </View>
             )}
             
             {cattle.purchasePrice && (
               <View style={cattleDetailStyles.infoRow}>
                 <Text style={cattleDetailStyles.infoLabel}>Precio de compra</Text>
-                <Text style={cattleDetailStyles.infoValue}>${cattle.purchasePrice}</Text>
+                <Text style={cattleDetailStyles.infoValue}>
+                  ${cattle.purchasePrice}
+                </Text>
               </View>
             )}
           </View>
         )}
 
+        {/* Historial Médico */}
         <View style={cattleDetailStyles.infoCard}>
           <Text style={cattleDetailStyles.sectionTitle}>Historial Médico</Text>
           
           {medicalRecords && medicalRecords.length > 0 ? (
             medicalRecords.map((record, index) => (
-              <View key={record._id || index} style={cattleDetailStyles.medicalRecord}>
-                <Text style={cattleDetailStyles.medicalDate}>{formatDate(record.date)}</Text>
-                <Text style={cattleDetailStyles.medicalTreatment}>{record.treatment}</Text>
-                <Text style={cattleDetailStyles.medicalVet}>{record.veterinarian}</Text>
-                {record.notes && <Text style={cattleDetailStyles.medicalNotes}>{record.notes}</Text>}
+              <View key={record._id || `med-${index}`} style={cattleDetailStyles.medicalRecord}>
+                <Text style={cattleDetailStyles.medicalDate}>
+                  {record.date ? formatDate(record.date).props.children : 'Fecha no disponible'}
+                </Text>
+                
+                {record.treatment && (
+                  <Text style={cattleDetailStyles.medicalTreatment}>
+                    {record.treatment}
+                  </Text>
+                )}
+                
+                {record.veterinarian && (
+                  <Text style={cattleDetailStyles.medicalVet}>
+                    {record.veterinarian}
+                  </Text>
+                )}
+                
+                {record.notes && (
+                  <Text style={cattleDetailStyles.medicalNotes}>
+                    {record.notes}
+                  </Text>
+                )}
               </View>
             ))
           ) : (
-            <Text style={cattleDetailStyles.emptyText}>No hay registros médicos disponibles</Text>
+            <Text style={cattleDetailStyles.emptyText}>
+              No hay registros médicos disponibles
+            </Text>
           )}
         </View>
 
+        {/* Notas */}
         {cattle.notes && (
           <View style={cattleDetailStyles.infoCard}>
             <Text style={cattleDetailStyles.sectionTitle}>Notas</Text>
-            <Text style={cattleDetailStyles.notes}>{cattle.notes}</Text>
+            <Text style={cattleDetailStyles.notes}>
+              {cattle.notes}
+            </Text>
           </View>
         )}
 
+        {/* Botones de acción */}
         <View style={cattleDetailStyles.buttonContainer}>
           <TouchableOpacity 
             style={cattleDetailStyles.editButton}
@@ -240,6 +352,7 @@ const CattleDetailScreen = () => {
         </View>
       </ScrollView>
 
+      {/* Modal de confirmación de eliminación */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -248,9 +361,12 @@ const CattleDetailScreen = () => {
       >
         <View style={cattleDetailStyles.modalContainer}>
           <View style={cattleDetailStyles.modalContent}>
-            <Text style={cattleDetailStyles.modalTitle}>Confirmar eliminación</Text>
+            <Text style={cattleDetailStyles.modalTitle}>
+              Confirmar eliminación
+            </Text>
             <Text style={cattleDetailStyles.modalText}>
-              ¿Está seguro que desea eliminar a {cattle?.name || cattle?.identificationNumber}? Esta acción no se puede deshacer.
+              ¿Está seguro que desea eliminar {cattle?.name ? `a ${cattle.name}` : 'este ganado'}? 
+              Esta acción no se puede deshacer.
             </Text>
             
             <View style={cattleDetailStyles.modalButtonsContainer}>
@@ -258,14 +374,18 @@ const CattleDetailScreen = () => {
                 style={[cattleDetailStyles.modalButton, cattleDetailStyles.cancelButton]}
                 onPress={() => setDeleteModalVisible(false)}
               >
-                <Text style={cattleDetailStyles.cancelButtonText}>Cancelar</Text>
+                <Text style={cattleDetailStyles.cancelButtonText}>
+                  Cancelar
+                </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
                 style={[cattleDetailStyles.modalButton, cattleDetailStyles.deleteButton]}
                 onPress={handleDelete}
               >
-                <Text style={cattleDetailStyles.buttonText}>Eliminar</Text>
+                <Text style={cattleDetailStyles.buttonText}>
+                  Eliminar
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

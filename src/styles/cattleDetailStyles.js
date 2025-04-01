@@ -25,6 +25,24 @@ export const cattleDetailStyles = StyleSheet.create({
     color: colors.white,
     marginBottom: 10,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 200,
+  },
+  loadingText: {
+    color: colors.white,
+    marginTop: 10,
+    fontSize: 16,
+  },
+  backButton: {
+    backgroundColor: colors.secondary,
+    padding: 12,
+    margin: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
   tagContainer: {
     flexDirection: 'row',
     marginTop: 10,
@@ -101,6 +119,19 @@ export const cattleDetailStyles = StyleSheet.create({
     color: colors.textLight,
     fontStyle: 'italic',
   },
+  medicalNotes: {
+    fontSize: 13,
+    color: colors.text,
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    padding: 10,
+  },
   notes: {
     fontSize: 15,
     color: colors.text,
@@ -137,4 +168,50 @@ export const cattleDetailStyles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 5,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    ...getShadowStyle(),
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 15,
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    padding: 12,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.background,
+    marginRight: 5,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    color: colors.text,
+    fontWeight: 'bold',
+  }
 }); 

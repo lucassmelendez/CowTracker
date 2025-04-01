@@ -42,6 +42,13 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
     }
   }, [userInfo]);
 
+  // Recargar granjas cuando se abre el selector
+  useEffect(() => {
+    if (modalVisible && userInfo?.uid) {
+      loadFarms();
+    }
+  }, [modalVisible]);
+
   const loadFarms = async () => {
     try {
       setLoading(true);
@@ -230,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginLeft: 10,
     maxWidth: 180,
-    ...getShadowStyle({ height: 1, radius: 2 }),
+    ...getShadowStyle({ height: 1, elevation: 3, opacity: 0.2, radius: 2 }),
   },
   selectorText: {
     color: '#ffffff',
@@ -256,7 +263,7 @@ const styles = StyleSheet.create({
     width: '85%',
     maxHeight: '70%',
     padding: 20,
-    ...getShadowStyle({ height: 5, radius: 10 }),
+    ...getShadowStyle({ height: 5, elevation: 5, opacity: 0.25, radius: 10 }),
   },
   modalHeader: {
     flexDirection: 'row',
@@ -297,7 +304,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    ...getShadowStyle({ height: 1, radius: 2 }),
+    ...getShadowStyle({ height: 1, elevation: 2, opacity: 0.15, radius: 2 }),
   },
   farmInfoContainer: {
     flex: 1,
@@ -328,7 +335,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 15,
-    ...getShadowStyle({ height: 2, radius: 4 }),
+    ...getShadowStyle({ height: 2, elevation: 3, opacity: 0.2, radius: 4 }),
   },
   addFarmButtonText: {
     color: '#fff',

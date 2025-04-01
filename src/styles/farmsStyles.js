@@ -45,7 +45,7 @@ export const farmsStyles = StyleSheet.create({
     borderRadius: 10,
     marginHorizontal: 15,
     marginBottom: 15,
-    ...getShadowStyle(),
+    ...getShadowStyle({ elevation: 3, height: 2, opacity: 0.15, radius: 4 }),
   },
   farmHeader: {
     padding: 15,
@@ -106,7 +106,7 @@ export const farmsStyles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    ...getShadowStyle(),
+    ...getShadowStyle({ elevation: 5, height: 3, opacity: 0.25, radius: 6 }),
   },
   modalContainer: {
     flex: 1,
@@ -118,7 +118,7 @@ export const farmsStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 10,
     padding: 20,
-    ...getShadowStyle(),
+    ...getShadowStyle({ elevation: 4, height: 2, opacity: 0.2, radius: 5 }),
   },
   modalTitle: {
     fontSize: 20,
@@ -257,7 +257,7 @@ export const farmsStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     width: '80%',
-    ...getShadowStyle(),
+    ...getShadowStyle({ elevation: 4, height: 2, opacity: 0.2, radius: 5 }),
   },
   messageText: {
     fontSize: 16,
@@ -288,7 +288,7 @@ export const farmsStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     width: '80%',
-    ...getShadowStyle(),
+    ...getShadowStyle({ elevation: 4, height: 2, opacity: 0.2, radius: 5 }),
   },
   deleteText: {
     fontSize: 16,
@@ -317,5 +317,25 @@ export const farmsStyles = StyleSheet.create({
     marginLeft: 5,
     borderWidth: 1,
     borderColor: colors.border,
+  },
+  addButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    backgroundColor: colors.primary,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...getShadowStyle({ elevation: 5, height: 3, opacity: 0.25, radius: 6 }),
+  },
+  farmItem: {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    marginHorizontal: 10,
+    marginVertical: 6,
+    padding: 15,
+    ...getShadowStyle({ elevation: 3, height: 2, opacity: 0.15, radius: 4 }),
   },
 }); 

@@ -53,7 +53,7 @@ export const cattleListStyles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
     padding: 15,
-    ...getShadowStyle({ height: 1, radius: 2 }),
+    ...getShadowStyle({ height: 1, elevation: 2, opacity: 0.15, radius: 2 }),
   },
   cattleHeader: {
     flexDirection: 'row',
@@ -152,7 +152,7 @@ export const cattleListStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    ...getShadowStyle({ height: 2, radius: 4 }),
+    ...getShadowStyle({ height: 2, elevation: 3, opacity: 0.2, radius: 4 }),
   },
   emptyButtonText: {
     color: colors.white,

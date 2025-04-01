@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
-import { getShadowStyle } from '../utils/styles';
+import { homeStyles } from '../styles/homeStyles';
 
 const HomeScreen = () => {
   const { userData } = useAuth();
@@ -50,42 +50,42 @@ const HomeScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.menuContainer}>
-        <View style={styles.menuGrid}>
+    <View style={homeStyles.container}>
+      <ScrollView style={homeStyles.menuContainer}>
+        <View style={homeStyles.menuGrid}>
           {menuItems.map((item) => (
             <TouchableOpacity
               key={item.id}
-              style={styles.menuItem}
+              style={homeStyles.menuItem}
               onPress={() => navigateTo(item.route)}
             >
-              <Text style={styles.menuIcon}>{item.icon}</Text>
-              <Text style={styles.menuTitle}>{item.title}</Text>
-              <Text style={styles.menuDescription}>{item.description}</Text>
+              <Text style={homeStyles.menuIcon}>{item.icon}</Text>
+              <Text style={homeStyles.menuTitle}>{item.title}</Text>
+              <Text style={homeStyles.menuDescription}>{item.description}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Resumen</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>Cabezas de ganado</Text>
+        <View style={homeStyles.statsContainer}>
+          <Text style={homeStyles.statsTitle}>Resumen</Text>
+          <View style={homeStyles.statsRow}>
+            <View style={homeStyles.statItem}>
+              <Text style={homeStyles.statValue}>0</Text>
+              <Text style={homeStyles.statLabel}>Cabezas de ganado</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>Granjas</Text>
+            <View style={homeStyles.statItem}>
+              <Text style={homeStyles.statValue}>0</Text>
+              <Text style={homeStyles.statLabel}>Granjas</Text>
             </View>
           </View>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>$0</Text>
-              <Text style={styles.statLabel}>Ventas totales</Text>
+          <View style={homeStyles.statsRow}>
+            <View style={homeStyles.statItem}>
+              <Text style={homeStyles.statValue}>$0</Text>
+              <Text style={homeStyles.statLabel}>Ventas totales</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>0</Text>
-              <Text style={styles.statLabel}>Ventas pendientes</Text>
+            <View style={homeStyles.statItem}>
+              <Text style={homeStyles.statValue}>0</Text>
+              <Text style={homeStyles.statLabel}>Ventas pendientes</Text>
             </View>
           </View>
         </View>
@@ -93,82 +93,5 @@ const HomeScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  menuContainer: {
-    flex: 1,
-    padding: 15,
-  },
-  menuGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  menuItem: {
-    backgroundColor: 'white',
-    width: '48%',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 15,
-    ...getShadowStyle(),
-    alignItems: 'center',
-  },
-  menuIcon: {
-    fontSize: 30,
-    marginBottom: 10,
-  },
-  menuTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  menuDescription: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    textAlign: 'center',
-  },
-  statsContainer: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    ...getShadowStyle(),
-  },
-  statsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 15,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  statItem: {
-    width: '48%',
-    backgroundColor: '#f9f9f9',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#27ae60',
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    textAlign: 'center',
-  },
-});
 
 export default HomeScreen;

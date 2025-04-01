@@ -23,13 +23,32 @@ const FARM_VETERINARIANS_COLLECTION = 'farm_veterinarians';
 const FARM_CATTLE_COLLECTION = 'farm_cattle';
 
 
-export const getAllCattle = async (userId = null) => {
+export const getAllCattle = async (userId = null, farmId = null, includeNoFarm = false) => {
   try {
     let cattleQuery;
     
-    if (userId) {
-      cattleQuery = query(collection(firestore, CATTLE_COLLECTION), where('userId', '==', userId));
+    if (userId && farmId) {
+      // Filtrar por usuario y granja específica
+      cattleQuery = query(
+        collection(firestore, CATTLE_COLLECTION), 
+        where('userId', '==', userId),
+        where('farmId', '==', farmId)
+      );
+    } else if (userId && includeNoFarm) {
+      // Filtrar por usuario y ganado sin granja asignada
+      cattleQuery = query(
+        collection(firestore, CATTLE_COLLECTION), 
+        where('userId', '==', userId),
+        where('farmId', '==', null)
+      );
+    } else if (userId) {
+      // Filtrar solo por usuario
+      cattleQuery = query(
+        collection(firestore, CATTLE_COLLECTION), 
+        where('userId', '==', userId)
+      );
     } else {
+      // Sin filtros
       cattleQuery = collection(firestore, CATTLE_COLLECTION);
     }
     

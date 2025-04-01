@@ -21,10 +21,19 @@ export const cattleListStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  headerTextContainer: {
+    flex: 1,
+  },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: colors.textLight,
+    marginTop: 2,
+    fontStyle: 'italic',
   },
   addButton: {
     backgroundColor: colors.primary,
@@ -102,12 +111,13 @@ export const cattleListStyles = StyleSheet.create({
   locationText: {
     fontSize: 12,
     color: colors.textLight,
+    fontStyle: 'italic',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
   },
   errorText: {
     fontSize: 16,
@@ -117,20 +127,19 @@ export const cattleListStyles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 5,
   },
   retryButtonText: {
     color: colors.white,
-    fontSize: 14,
     fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
   },
   emptyText: {
     fontSize: 16,
@@ -140,13 +149,14 @@ export const cattleListStyles = StyleSheet.create({
   },
   emptyButton: {
     backgroundColor: colors.primary,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 5,
+    borderRadius: 8,
+    ...getShadowStyle({ height: 2, radius: 4 }),
   },
   emptyButtonText: {
     color: colors.white,
-    fontSize: 14,
     fontWeight: '600',
+    fontSize: 16,
   },
 }); 

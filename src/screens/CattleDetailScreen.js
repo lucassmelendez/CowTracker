@@ -23,6 +23,7 @@ const CattleDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [debug, setDebug] = useState(null);
 
   // Cargar datos del ganado
   useEffect(() => {
@@ -40,6 +41,7 @@ const CattleDetailScreen = () => {
         const cattleData = await getCattleById(cattleId);
         if (isMounted) {
           setCattle(cattleData);
+          setDebug(JSON.stringify(cattleData, null, 2));
           
           // Obtener registros médicos
           try {
@@ -73,7 +75,7 @@ const CattleDetailScreen = () => {
 
   // Formatear fechas (manejo seguro de timestamps de Firestore)
   const formatDate = (dateValue) => {
-    if (!dateValue) return <Text>No disponible</Text>;
+    if (!dateValue) return 'No disponible';
     
     try {
       let date;
@@ -86,21 +88,17 @@ const CattleDetailScreen = () => {
       }
       
       if (isNaN(date.getTime())) {
-        return <Text>Fecha inválida</Text>;
+        return 'Fecha inválida';
       }
       
-      return (
-        <Text>
-          {date.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
-        </Text>
-      );
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
     } catch (err) {
       console.error('Error al formatear fecha:', err);
-      return <Text>Error en formato</Text>;
+      return 'Error en formato';
     }
   };
 
@@ -161,7 +159,6 @@ const CattleDetailScreen = () => {
     );
   }
 
-  // Renderiza el componente principal
   return (
     <View style={cattleDetailStyles.container}>
       <ScrollView>
@@ -214,7 +211,7 @@ const CattleDetailScreen = () => {
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Fecha de nacimiento</Text>
             <Text style={cattleDetailStyles.infoValue}>
-              {cattle.birthDate ? formatDate(cattle.birthDate).props.children : 'No disponible'}
+              {cattle.birthDate ? formatDate(cattle.birthDate) : 'No disponible'}
             </Text>
           </View>
           
@@ -228,17 +225,18 @@ const CattleDetailScreen = () => {
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Estado</Text>
             <Text style={cattleDetailStyles.infoValue}>
-              {cattle.status || 'No disponible'}
+              {cattle.status ? cattle.status.charAt(0).toUpperCase() + cattle.status.slice(1) : 'No disponible'}
             </Text>
           </View>
           
           <View style={cattleDetailStyles.infoRow}>
             <Text style={cattleDetailStyles.infoLabel}>Salud</Text>
             <Text style={cattleDetailStyles.infoValue}>
-              {cattle.healthStatus || 'No disponible'}
+              {cattle.healthStatus ? cattle.healthStatus.charAt(0).toUpperCase() + cattle.healthStatus.slice(1) : 'No disponible'}
             </Text>
           </View>
           
+          {/* Verificación de ubicación */}
           {cattle.location && cattle.location.farm && (
             <View style={cattleDetailStyles.infoRow}>
               <Text style={cattleDetailStyles.infoLabel}>Rancho</Text>
@@ -269,7 +267,7 @@ const CattleDetailScreen = () => {
               <View style={cattleDetailStyles.infoRow}>
                 <Text style={cattleDetailStyles.infoLabel}>Fecha de compra</Text>
                 <Text style={cattleDetailStyles.infoValue}>
-                  {formatDate(cattle.purchaseDate).props.children}
+                  {formatDate(cattle.purchaseDate)}
                 </Text>
               </View>
             )}
@@ -293,7 +291,7 @@ const CattleDetailScreen = () => {
             medicalRecords.map((record, index) => (
               <View key={record._id || `med-${index}`} style={cattleDetailStyles.medicalRecord}>
                 <Text style={cattleDetailStyles.medicalDate}>
-                  {record.date ? formatDate(record.date).props.children : 'Fecha no disponible'}
+                  {record.date ? formatDate(record.date) : 'Fecha no disponible'}
                 </Text>
                 
                 {record.treatment && (

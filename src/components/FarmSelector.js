@@ -6,12 +6,27 @@ import {
   TouchableOpacity, 
   Modal, 
   FlatList, 
-  ActivityIndicator 
+  ActivityIndicator,
+  Image 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
 import { getAllFarms } from '../services/firestore';
 import { useRouter } from 'expo-router';
+import { colors } from '../styles/commonStyles';
+import { getShadowStyle } from '../utils/styles';
+
+const NO_FARM_OPTION = {
+  _id: 'no-farm',
+  name: 'Sin granja',
+  isSpecialOption: true
+};
+
+const ALL_FARMS_OPTION = {
+  _id: 'all-farms',
+  name: 'Todas las granjas',
+  isSpecialOption: true
+};
 
 const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
@@ -33,10 +48,18 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       setError(null);
       
       const farmsData = await getAllFarms(userInfo.uid);
-      setFarms(farmsData || []);
       
-      if (!selectedFarm && farmsData && farmsData.length > 0) {
-        onSelectFarm(farmsData[0]);
+      // Añadir opciones especiales al principio
+      const farmsWithOptions = [
+        ALL_FARMS_OPTION,
+        NO_FARM_OPTION,
+        ...farmsData || []
+      ];
+      
+      setFarms(farmsWithOptions);
+      
+      if (!selectedFarm && farmsWithOptions.length > 0) {
+        onSelectFarm(farmsWithOptions[0]); // Selecciona "Todas las granjas" por defecto
       }
     } catch (err) {
       console.error('Error loading farms:', err);
@@ -56,15 +79,51 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
     router.push('/farms');
   };
 
-  const renderFarmItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.farmItem} 
-      onPress={() => handleSelectFarm(item)}
-    >
-      <Text style={styles.farmName}>{item.name}</Text>
-      <Text style={styles.farmLocation}>{item.location}</Text>
-    </TouchableOpacity>
-  );
+  const renderFarmItem = ({ item }) => {
+    const isSelected = selectedFarm && selectedFarm._id === item._id;
+    
+    return (
+      <TouchableOpacity 
+        style={[
+          styles.farmItem,
+          isSelected && styles.selectedFarmItem
+        ]} 
+        onPress={() => handleSelectFarm(item)}
+      >
+        <View style={styles.farmIconContainer}>
+          {item.isSpecialOption ? (
+            item._id === 'no-farm' ? (
+              <Ionicons name="ban" size={24} color={colors.textLight} />
+            ) : (
+              <Ionicons name="apps" size={24} color={colors.primary} />
+            )
+          ) : (
+            <Ionicons name="business" size={24} color={colors.secondary} />
+          )}
+        </View>
+        <View style={styles.farmInfoContainer}>
+          <Text style={[
+            styles.farmName, 
+            isSelected && styles.selectedFarmName
+          ]}>
+            {item.name}
+          </Text>
+          {item.location && !item.isSpecialOption && (
+            <Text style={styles.farmLocation}>{item.location}</Text>
+          )}
+          {item.isSpecialOption && item._id === 'no-farm' && (
+            <Text style={styles.farmDescription}>Mostrar ganado sin asignación</Text>
+          )}
+          {item.isSpecialOption && item._id === 'all-farms' && (
+            <Text style={styles.farmDescription}>Mostrar todo el ganado</Text>
+          )}
+        </View>
+        {isSelected && (
+          <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
@@ -77,6 +136,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   if (error) {
     return (
       <TouchableOpacity style={styles.selectorButton} onPress={loadFarms}>
+        <Ionicons name="alert-circle" size={18} color="#ffffff" />
         <Text style={styles.errorText}>Error</Text>
         <Ionicons name="refresh" size={16} color="#ffffff" />
       </TouchableOpacity>
@@ -89,8 +149,8 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         style={styles.selectorButton}
         onPress={handleAddFarm}
       >
+        <Ionicons name="add-circle" size={18} color="#ffffff" />
         <Text style={styles.selectorText}>Añadir granja</Text>
-        <Ionicons name="add-circle" size={16} color="#ffffff" />
       </TouchableOpacity>
     );
   }
@@ -101,6 +161,14 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         style={styles.selectorButton}
         onPress={() => setModalVisible(true)}
       >
+        <Ionicons 
+          name={selectedFarm?.isSpecialOption ? 
+            (selectedFarm._id === 'no-farm' ? 'ban' : 'apps') : 
+            'business'
+          } 
+          size={18} 
+          color="#ffffff" 
+        />
         <Text style={styles.selectorText} numberOfLines={1}>
           {selectedFarm ? selectedFarm.name : 'Seleccionar granja'}
         </Text>
@@ -108,7 +176,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       </TouchableOpacity>
 
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
@@ -131,6 +199,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
               renderItem={renderFarmItem}
               keyExtractor={(item) => item._id}
               contentContainerStyle={styles.farmList}
+              showsVerticalScrollIndicator={false}
             />
             
             <TouchableOpacity 
@@ -156,22 +225,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     marginLeft: 10,
-    maxWidth: 150,
+    maxWidth: 180,
+    ...getShadowStyle({ height: 1, radius: 2 }),
   },
   selectorText: {
     color: '#ffffff',
-    marginRight: 5,
+    marginHorizontal: 8,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     flex: 1,
   },
   errorText: {
     color: '#ffffff',
-    marginRight: 5,
+    marginHorizontal: 5,
     fontSize: 14,
   },
   modalOverlay: {
@@ -182,56 +252,89 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    width: '80%',
+    borderRadius: 16,
+    width: '85%',
     maxHeight: '70%',
     padding: 20,
+    ...getShadowStyle({ height: 5, radius: 10 }),
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
-    paddingBottom: 10,
+    paddingBottom: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text,
   },
   farmList: {
     flexGrow: 1,
   },
   farmItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  selectedFarmItem: {
+    backgroundColor: '#f0f8ff',
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  farmIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    ...getShadowStyle({ height: 1, radius: 2 }),
+  },
+  farmInfoContainer: {
+    flex: 1,
   },
   farmName: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: 2,
+  },
+  selectedFarmName: {
+    color: colors.primary,
   },
   farmLocation: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textLight,
+  },
+  farmDescription: {
+    fontSize: 13,
+    color: colors.textLight,
+    fontStyle: 'italic',
   },
   addFarmButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#27ae60',
-    paddingVertical: 10,
-    borderRadius: 5,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 10,
     marginTop: 15,
+    ...getShadowStyle({ height: 2, radius: 4 }),
   },
   addFarmButtonText: {
     color: '#fff',
     fontWeight: '600',
-    marginRight: 5,
+    marginRight: 8,
+    fontSize: 15,
   },
 });
 

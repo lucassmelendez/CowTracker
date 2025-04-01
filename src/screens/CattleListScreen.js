@@ -14,10 +14,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import { cattleListStyles } from '../styles/cattleListStyles';
 import { colors } from '../styles/commonStyles';
 import { useFarm } from '../components/FarmContext';
+import { useAuth } from '../components/AuthContext';
 
 const CattleListScreen = () => {
   const router = useRouter();
   const { selectedFarm } = useFarm();
+  const { userInfo } = useAuth();
   const [cattle, setCattle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -29,16 +31,22 @@ const CattleListScreen = () => {
       setLoading(true);
       setError(null);
       
+      if (!userInfo?.uid) {
+        setError('No se pudo obtener información del usuario');
+        setLoading(false);
+        return;
+      }
+      
       let data;
       if (!selectedFarm || selectedFarm._id === 'all-farms') {
         // Cargar todo el ganado si no hay granja seleccionada o si es "Todas las granjas"
-        data = await getAllCattle();
+        data = await getAllCattle(userInfo.uid);
       } else if (selectedFarm._id === 'no-farm') {
         // Cargar ganado sin granja asignada
-        data = await getAllCattle(null, null, true);
+        data = await getAllCattle(userInfo.uid, null, true);
       } else {
         // Cargar ganado específico de la granja seleccionada
-        data = await getAllCattle(null, selectedFarm._id);
+        data = await getAllCattle(userInfo.uid, selectedFarm._id);
       }
       
       setCattle(data || []); 
@@ -66,9 +74,8 @@ const CattleListScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       loadCattle();
-      return () => {
-      };
-    }, [selectedFarm])
+      return () => {};
+    }, [selectedFarm, userInfo])
   );
 
   const renderCattleItem = ({ item }) => {
@@ -105,6 +112,19 @@ const CattleListScreen = () => {
       return status.charAt(0).toUpperCase() + status.slice(1);
     };
 
+    // Buscar el nombre de la granja si existe
+    const getFarmName = () => {
+      if (!item.farmId) return 'Sin granja asignada';
+      
+      // Si estamos en modo "granja específica", podemos usar el nombre de la granja seleccionada
+      if (selectedFarm && !selectedFarm.isSpecialOption && selectedFarm._id === item.farmId) {
+        return selectedFarm.name;
+      }
+      
+      // Si no tenemos el nombre de la granja en los datos del ganado, mostramos el ID
+      return item.farmName || `Granja: ${item.farmId}`;
+    };
+
     return (
       <TouchableOpacity 
         style={cattleListStyles.cattleItem}
@@ -130,9 +150,7 @@ const CattleListScreen = () => {
           <View style={[cattleListStyles.healthBadge, { backgroundColor: getHealthStatusColor(item.healthStatus) }]}>
             <Text style={cattleListStyles.healthText}>{formatStatus(item.healthStatus)}</Text>
           </View>
-          <Text style={cattleListStyles.locationText}>
-            {item.location && item.location.farm ? item.location.farm.name : 'Sin granja asignada'}
-          </Text>
+          <Text style={cattleListStyles.locationText}>{getFarmName()}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -199,7 +217,9 @@ const CattleListScreen = () => {
         <View style={cattleListStyles.emptyContainer}>
           <Text style={cattleListStyles.emptyText}>
             {selectedFarm && selectedFarm._id !== 'all-farms' 
-              ? `No hay ganado ${selectedFarm._id === 'no-farm' ? 'sin granja asignada' : 'en esta granja'}`
+              ? (selectedFarm._id === 'no-farm' 
+                  ? 'No hay ganado sin granja asignada' 
+                  : `No hay ganado en la granja "${selectedFarm.name}"`)
               : 'No tienes ganado registrado'
             }
           </Text>

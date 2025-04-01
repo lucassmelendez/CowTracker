@@ -24,7 +24,6 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       await login(email, password);
-      // La redirección se maneja automáticamente en el archivo index.tsx
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
     }

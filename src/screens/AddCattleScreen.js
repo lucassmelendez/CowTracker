@@ -24,7 +24,6 @@ const AddCattleScreen = ({ route }) => {
   const isEditMode = !!cattleId;
   const { userInfo } = useAuth();
 
-  // Estados para los campos del formulario
   const [identifier, setIdentifier] = useState(isEditMode ? 'BOV-2023-001' : '');
   const [name, setName] = useState(isEditMode ? 'Estrella' : '');
   const [type, setType] = useState(isEditMode ? 'Vaca' : '');
@@ -39,7 +38,6 @@ const AddCattleScreen = ({ route }) => {
   const [loadingFarms, setLoadingFarms] = useState(false);
   
   useEffect(() => {
-    // Cargar las granjas disponibles
     const loadFarms = async () => {
       try {
         setLoadingFarms(true);
@@ -59,14 +57,11 @@ const AddCattleScreen = ({ route }) => {
       loadFarms();
     }
     
-    // Aquí podría ir lógica para cargar datos iniciales si es modo edición
   }, [userInfo]);
   
-  // Fechas
   const [dateOfBirth, setDateOfBirth] = useState(isEditMode ? new Date('2020-05-15') : new Date());
   const [purchaseDate, setPurchaseDate] = useState(isEditMode ? new Date('2021-01-10') : new Date());
 
-  // Estado para los selectores de fecha
   const [showDateOfBirthPicker, setShowDateOfBirthPicker] = useState(false);
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
 
@@ -87,13 +82,11 @@ const AddCattleScreen = ({ route }) => {
     }
 
     try {
-      // Verificar que tenemos la información del usuario
       if (!userInfo || !userInfo.uid) {
         Alert.alert('Error', 'No se pudo obtener la información del usuario');
         return;
       }
       
-      // Preparar datos del ganado
       const cattleData = {
         identifier,
         name,
@@ -109,15 +102,13 @@ const AddCattleScreen = ({ route }) => {
         status: 'activo',
         healthStatus: 'saludable',
         userId: userInfo.uid,
-        farmId: selectedFarmId, // Add farmId directly to cattle data
+        farmId: selectedFarmId,
         createdAt: new Date(),
         updatedAt: new Date()
       };
       
-      // Guardar el ganado en Firestore (ahora incluye directamente el farmId)
       const newCattle = await createCattle(cattleData);
       
-      // Mostrar alerta y volver atrás
       Alert.alert(
         isEditMode ? 'Ganado Actualizado' : 'Ganado Agregado',
         isEditMode ? 'Los datos se han actualizado correctamente.' : 'El ganado se ha agregado correctamente.',
@@ -321,7 +312,6 @@ const AddCattleScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  // Estilos para selector de granjas
   farmSelector: {
     flexDirection: 'row',
     flexWrap: 'wrap',

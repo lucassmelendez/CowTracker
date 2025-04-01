@@ -577,7 +577,6 @@ const FarmsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // Estilos para la gestión de personal
   staffContainer: {
     flex: 1,
     backgroundColor: '#fff',

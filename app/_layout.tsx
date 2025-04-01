@@ -11,12 +11,11 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (!loading && !currentUser) {
-      // Redirigir a login si no hay usuario autenticado
+      
       router.replace('/login');
     }
   }, [currentUser, loading]);
 
-  // Mostrar indicador de carga mientras se verifica la autenticación
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -30,7 +29,7 @@ function RootLayoutNav() {
     <>
       <Stack 
         screenOptions={{
-          headerShown: false, // Completely hide the header
+          headerShown: false, 
         }}
       >
         {currentUser ? (

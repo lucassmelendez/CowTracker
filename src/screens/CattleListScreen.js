@@ -28,7 +28,7 @@ const CattleListScreen = () => {
       setLoading(true);
       setError(null);
       const data = await getAllCattle();
-      setCattle(data || []); // Garantizar que siempre sea un array
+      setCattle(data || []); 
       setDataLoaded(true);
     } catch (error) {
       console.error('Error cargando ganado:', error);
@@ -46,17 +46,14 @@ const CattleListScreen = () => {
     setRefreshing(false);
   };
 
-  // Cargar datos iniciales
   useEffect(() => {
     loadCattle();
   }, []);
 
-  // Recargar datos cuando la pantalla obtiene el foco
   useFocusEffect(
     React.useCallback(() => {
       loadCattle();
       return () => {
-        // Cleanup opcional si es necesario
       };
     }, [])
   );

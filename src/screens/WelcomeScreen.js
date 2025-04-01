@@ -24,7 +24,7 @@ const WelcomeScreen = () => {
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateFarm = async () => {
-    if (isCreating) return; // Prevenir múltiples envíos
+    if (isCreating) return;
 
     if (!farmName || !farmLocation || !farmSize) {
       Alert.alert('Error', 'Por favor, completa todos los campos');

@@ -11,11 +11,9 @@ const QRScanner = () => {
     router.back();
   };
 
-  // Simulación de escaneo para pruebas
   const simulateQRScan = () => {
     setScanned(true);
     
-    // Datos de ejemplo para simular un escaneo exitoso
     const mockData = JSON.stringify({ id: "12345", name: "Vaca de prueba" });
     
     Alert.alert(

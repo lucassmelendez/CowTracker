@@ -16,7 +16,6 @@ const ReportScreen = () => {
 
   const downloadPDF = () => {
     if (Platform.OS === 'web') {
-      // Crear contenido HTML para el PDF
       const content = `
         <html>
           <head>
@@ -31,17 +30,14 @@ const ReportScreen = () => {
         </html>
       `;
 
-      // Crear un blob con el contenido HTML
       const blob = new Blob([content], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
 
-      // Crear un enlace para descargar el archivo
       const link = document.createElement('a');
       link.href = url;
       link.download = 'Informe_Granjas.pdf';
       link.click();
 
-      // Liberar el objeto URL
       URL.revokeObjectURL(url);
     } else {
       alert('La descarga de PDF solo está disponible en la web.');

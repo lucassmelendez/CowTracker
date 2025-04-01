@@ -18,7 +18,6 @@ import { getShadowStyle } from '../utils/styles';
 
 const SalesScreen = () => {
   const router = useRouter();
-  // Datos de ejemplo para ventas
   const [sales, setSales] = useState([
     { 
       id: '1', 
@@ -45,22 +44,17 @@ const SalesScreen = () => {
     },
   ]);
 
-  // Estado para filtros
   const [filterMonth, setFilterMonth] = useState('Todos');
   const months = ['Todos', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-  // Estado para modales
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [addModalVisible, setAddModalVisible] = useState(false);
-
-  // Estado para el formulario de nueva venta
   const [formDate, setFormDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [customer, setCustomer] = useState('');
   const [selectedCattle, setSelectedCattle] = useState([]);
   
-  // Simulación de ganado disponible para vender
   const availableCattle = [
     { id: 'c6', name: 'Vaca Holstein', identifier: 'BOV-2023-154', price: 1700 },
     { id: 'c7', name: 'Toro Angus', identifier: 'BOV-2023-167', price: 2100 },
@@ -124,7 +118,6 @@ const SalesScreen = () => {
     Alert.alert('Éxito', 'Venta registrada correctamente');
   };
 
-  // Filtrar ventas por mes si se ha seleccionado uno
   const filteredSales = filterMonth === 'Todos' 
     ? sales 
     : sales.filter(sale => {

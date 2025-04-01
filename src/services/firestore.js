@@ -14,7 +14,6 @@ import {
   arrayRemove
 } from 'firebase/firestore';
 
-// Colecciones de Firestore
 const CATTLE_COLLECTION = 'cattle';
 const FARMS_COLLECTION = 'farms';
 const MEDICAL_RECORDS_COLLECTION = 'medicalRecords';
@@ -23,16 +22,14 @@ const FARM_WORKERS_COLLECTION = 'farm_workers';
 const FARM_VETERINARIANS_COLLECTION = 'farm_veterinarians';
 const FARM_CATTLE_COLLECTION = 'farm_cattle';
 
-// Funciones para el manejo de ganado
+
 export const getAllCattle = async (userId = null) => {
   try {
     let cattleQuery;
     
     if (userId) {
-      // Si se proporciona un userId, filtrar por ese usuario
       cattleQuery = query(collection(firestore, CATTLE_COLLECTION), where('userId', '==', userId));
     } else {
-      // Si no se proporciona userId, obtener todos los registros
       cattleQuery = collection(firestore, CATTLE_COLLECTION);
     }
     
@@ -119,7 +116,6 @@ export const deleteCattle = async (cattleId) => {
   }
 };
 
-// Funciones para el manejo de registros médicos
 export const addMedicalRecord = async (cattleId, medicalData) => {
   try {
     const dataWithTimestamp = {
@@ -158,7 +154,6 @@ export const getMedicalRecords = async (cattleId) => {
   }
 };
 
-// Funciones para el manejo de usuarios
 export const getUsersByRole = async (role) => {
   try {
     const usersQuery = query(
@@ -178,16 +173,13 @@ export const getUsersByRole = async (role) => {
   }
 };
 
-// Funciones para el manejo de granjas
 export const getAllFarms = async (userId = null) => {
   try {
     let farmsQuery;
     
     if (userId) {
-      // Si se proporciona un userId, filtrar por ese usuario
       farmsQuery = query(collection(firestore, FARMS_COLLECTION), where('userId', '==', userId));
     } else {
-      // Si no se proporciona userId, obtener todas las granjas
       farmsQuery = collection(firestore, FARMS_COLLECTION);
     }
     
@@ -255,13 +247,6 @@ export const deleteFarm = async (farmId) => {
   }
 };
 
-
-
-// Funciones para gestionar ganado en granjas
-
-
-
-
 export const getFarmCattle = async (farmId) => {
   try {
     const cattleQuery = query(
@@ -281,10 +266,8 @@ export const getFarmCattle = async (farmId) => {
   }
 };
 
-// Funciones para gestionar trabajadores en granjas
 export const addWorkerToFarm = async (farmId, workerId) => {
   try {
-    // Crear un documento en la colección de relación farm_workers
     const dataWithTimestamp = {
       farmId,
       workerId,
@@ -302,7 +285,6 @@ export const addWorkerToFarm = async (farmId, workerId) => {
 
 export const removeWorkerFromFarm = async (farmId, workerId) => {
   try {
-    // Buscar el documento que relaciona la granja con el trabajador
     const workerQuery = query(
       collection(firestore, FARM_WORKERS_COLLECTION),
       where('farmId', '==', farmId),
@@ -315,7 +297,6 @@ export const removeWorkerFromFarm = async (farmId, workerId) => {
       throw new Error('Relación entre trabajador y granja no encontrada');
     }
     
-    // Eliminar todos los documentos encontrados (debería ser solo uno)
     const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
     
@@ -328,7 +309,6 @@ export const removeWorkerFromFarm = async (farmId, workerId) => {
 
 export const getFarmWorkers = async (farmId) => {
   try {
-    // Buscar todas las relaciones para esta granja
     const workerQuery = query(
       collection(firestore, FARM_WORKERS_COLLECTION),
       where('farmId', '==', farmId)
@@ -340,10 +320,8 @@ export const getFarmWorkers = async (farmId) => {
       return [];
     }
     
-    // Obtener los IDs de los trabajadores
     const workerIds = querySnapshot.docs.map(doc => doc.data().workerId);
     
-    // Obtener los datos de cada trabajador
     const workerData = await Promise.all(
       workerIds.map(async (id) => {
         const workerDoc = await getDoc(doc(firestore, USERS_COLLECTION, id));
@@ -357,7 +335,6 @@ export const getFarmWorkers = async (farmId) => {
       })
     );
     
-    // Filtrar posibles nulos
     return workerData.filter(worker => worker !== null);
   } catch (error) {
     console.error('Error al obtener trabajadores de la granja:', error);
@@ -365,10 +342,8 @@ export const getFarmWorkers = async (farmId) => {
   }
 };
 
-// Funciones para gestionar veterinarios en granjas
 export const addVeterinarianToFarm = async (farmId, vetId) => {
   try {
-    // Crear un documento en la colección de relación farm_veterinarians
     const dataWithTimestamp = {
       farmId,
       vetId,
@@ -386,7 +361,6 @@ export const addVeterinarianToFarm = async (farmId, vetId) => {
 
 export const removeVeterinarianFromFarm = async (farmId, vetId) => {
   try {
-    // Buscar el documento que relaciona la granja con el veterinario
     const vetQuery = query(
       collection(firestore, FARM_VETERINARIANS_COLLECTION),
       where('farmId', '==', farmId),
@@ -399,7 +373,6 @@ export const removeVeterinarianFromFarm = async (farmId, vetId) => {
       throw new Error('Relación entre veterinario y granja no encontrada');
     }
     
-    // Eliminar todos los documentos encontrados (debería ser solo uno)
     const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
     
@@ -412,7 +385,6 @@ export const removeVeterinarianFromFarm = async (farmId, vetId) => {
 
 export const getFarmVeterinarians = async (farmId) => {
   try {
-    // Buscar todas las relaciones para esta granja
     const vetQuery = query(
       collection(firestore, FARM_VETERINARIANS_COLLECTION),
       where('farmId', '==', farmId)
@@ -424,10 +396,8 @@ export const getFarmVeterinarians = async (farmId) => {
       return [];
     }
     
-    // Obtener los IDs de los veterinarios
     const vetIds = querySnapshot.docs.map(doc => doc.data().vetId);
     
-    // Obtener los datos de cada veterinario
     const vetData = await Promise.all(
       vetIds.map(async (id) => {
         const vetDoc = await getDoc(doc(firestore, USERS_COLLECTION, id));
@@ -441,7 +411,6 @@ export const getFarmVeterinarians = async (farmId) => {
       })
     );
     
-    // Filtrar posibles nulos
     return vetData.filter(vet => vet !== null);
   } catch (error) {
     console.error('Error al obtener veterinarios de la granja:', error);

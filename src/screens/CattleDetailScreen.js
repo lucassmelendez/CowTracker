@@ -10,8 +10,6 @@ const CattleDetailScreen = ({ route }) => {
   const params = useLocalSearchParams();
   const cattleId = route?.params?.cattleId || params.id;
   
-  // En un escenario real, obtendríamos estos datos del backend
-  // Para demostración, creamos unos datos ficticios
   const cattleData = {
     id: '1',
     identifier: 'BOV-2023-001',

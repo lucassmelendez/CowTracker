@@ -32,11 +32,9 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       setLoading(true);
       setError(null);
       
-      // Obtener granjas del usuario desde Firebase
       const farmsData = await getAllFarms(userInfo.uid);
       setFarms(farmsData || []);
       
-      // Si no hay granja seleccionada y tenemos granjas, seleccionar la primera
       if (!selectedFarm && farmsData && farmsData.length > 0) {
         onSelectFarm(farmsData[0]);
       }

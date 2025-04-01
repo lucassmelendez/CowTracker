@@ -41,15 +41,63 @@ export const AuthProvider = ({ children }) => {
 
   // Efecto para escuchar cambios en el estado de autenticación
   useEffect(() => {
+    let isInitialLoad = true;
+    
+    const loadSavedUser = async () => {
+      try {
+        const savedUserToken = await AsyncStorage.getItem('@user_token');
+        const savedUserInfo = await AsyncStorage.getItem('@user_info');
+        
+        if (savedUserToken && savedUserInfo) {
+          setUserInfo(JSON.parse(savedUserInfo));
+          // Configurar token en el cliente API
+          api.setAuthToken(savedUserToken);
+        }
+      } catch (error) {
+        console.error('Error al cargar usuario guardado:', error);
+      }
+    };
+    
+    // Cargar usuario guardado en AsyncStorage primero
+    loadSavedUser();
+    
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const additionalInfo = await getUserInfo(user.uid);
         setCurrentUser(user);
         setUserInfo(additionalInfo);
+        
+        // Actualizar datos persistentes
+        try {
+          const token = await user.getIdToken();
+          await AsyncStorage.setItem('@user_token', token);
+          await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
+          
+          // Configurar token en el cliente API
+          api.setAuthToken(token);
+        } catch (error) {
+          console.error('Error al guardar datos de usuario:', error);
+        }
       } else {
         setCurrentUser(null);
         setUserInfo(null);
+        
+        // Limpiar datos persistentes
+        try {
+          await AsyncStorage.removeItem('@user_token');
+          await AsyncStorage.removeItem('@user_info');
+          
+          // Limpiar token de API
+          api.clearAuthToken();
+        } catch (error) {
+          console.error('Error al limpiar datos de usuario:', error);
+        }
       }
+      
+      if (isInitialLoad) {
+        isInitialLoad = false;
+      }
+      
       setLoading(false);
     });
 
@@ -134,10 +182,27 @@ export const AuthProvider = ({ children }) => {
       setUserInfo(additionalInfo);
       setCurrentUser(userCredential.user);
 
+      // Guardar los datos del usuario en AsyncStorage para persistencia
+      await AsyncStorage.setItem('@user_token', await userCredential.user.getIdToken());
+      await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
+
       return userCredential.user;
     } catch (error) {
       console.error('Error de inicio de sesión:', error);
-      setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
+      
+      // Manejo específico de errores
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
+      } else if (error.code === 'auth/invalid-email') {
+        setError('El formato del email es inválido.');
+      } else if (error.code === 'auth/user-disabled') {
+        setError('Esta cuenta ha sido deshabilitada.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setError('Demasiados intentos fallidos. Inténtalo más tarde.');
+      } else {
+        setError('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
+      }
+      
       throw error;
     } finally {
       setLoading(false);
@@ -237,65 +302,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
-  // Efecto para observar cambios en la autenticación
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) {
-          // Usuario autenticado
-          setCurrentUser(user);
-          
-          // Obtener token para API
-          const token = await user.getIdToken();
-          await AsyncStorage.setItem('@user_token', token);
-          
-          // Configurar token en el cliente API
-          api.setAuthToken(token);
-          
-          // Obtener información adicional del usuario desde Firestore
-          const userInfo = await getUserInfo(user.uid);
-          setUserInfo(userInfo);
-          
-          // Guardar información del usuario en AsyncStorage
-          if (userInfo) {
-            await AsyncStorage.setItem('@user_info', JSON.stringify(userInfo));
-          }
-        } else {
-          // Usuario no autenticado
-          setCurrentUser(null);
-          setUserInfo(null);
-          await AsyncStorage.removeItem('@user_token');
-          await AsyncStorage.removeItem('@user_info');
-          api.clearAuthToken();
-        }
-      } catch (error) {
-        console.error('Error en onAuthStateChanged:', error);
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    // Restaurar estado desde AsyncStorage al iniciar
-    const restoreUserFromStorage = async () => {
-      try {
-        const storedUserInfo = await AsyncStorage.getItem('@user_info');
-        const storedToken = await AsyncStorage.getItem('@user_token');
-        
-        if (storedUserInfo && storedToken) {
-          setUserInfo(JSON.parse(storedUserInfo));
-          api.setAuthToken(storedToken);
-        }
-      } catch (error) {
-        console.error('Error al restaurar usuario desde AsyncStorage:', error);
-      }
-    };
-
-    restoreUserFromStorage();
-
-    // Limpiar suscripción al desmontar
-    return () => unsubscribe();
-  }, []);
 
   // Valor del contexto
   const value = {

@@ -42,7 +42,6 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
     }
   }, [userInfo]);
 
-  // Recargar granjas cuando se abre el selector
   useEffect(() => {
     if (modalVisible && userInfo?.uid) {
       loadFarms();
@@ -56,7 +55,6 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       
       const farmsData = await getAllFarms(userInfo.uid);
       
-      // Añadir opciones especiales al principio
       const farmsWithOptions = [
         ALL_FARMS_OPTION,
         NO_FARM_OPTION,
@@ -66,7 +64,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       setFarms(farmsWithOptions);
       
       if (!selectedFarm && farmsWithOptions.length > 0) {
-        onSelectFarm(farmsWithOptions[0]); // Selecciona "Todas las granjas" por defecto
+        onSelectFarm(farmsWithOptions[0]);
       }
     } catch (err) {
       console.error('Error loading farms:', err);

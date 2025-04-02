@@ -1,9 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Cattle = require('../models/cattleModel');
 
-// @desc    Obtener todos los ganados
-// @route   GET /api/cattle
-// @access  Private
 const getCattle = asyncHandler(async (req, res) => {
   const cattle = await Cattle.find({ owner: req.user._id })
     .populate('location.farm', 'name')
@@ -12,9 +9,6 @@ const getCattle = asyncHandler(async (req, res) => {
   res.json(cattle);
 });
 
-// @desc    Obtener un ganado por ID
-// @route   GET /api/cattle/:id
-// @access  Private
 const getCattleById = asyncHandler(async (req, res) => {
   const cattle = await Cattle.findById(req.params.id)
     .populate('location.farm', 'name location')
@@ -28,9 +22,6 @@ const getCattleById = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Crear un nuevo ganado
-// @route   POST /api/cattle
-// @access  Private
 const createCattle = asyncHandler(async (req, res) => {
   const {
     identificationNumber,
@@ -78,14 +69,10 @@ const createCattle = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Actualizar un ganado
-// @route   PUT /api/cattle/:id
-// @access  Private
 const updateCattle = asyncHandler(async (req, res) => {
   const cattle = await Cattle.findById(req.params.id);
 
   if (cattle) {
-    // Verificar si el usuario es el propietario
     if (cattle.owner.toString() !== req.user._id.toString()) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
@@ -136,14 +123,10 @@ const updateCattle = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Eliminar un ganado
-// @route   DELETE /api/cattle/:id
-// @access  Private
 const deleteCattle = asyncHandler(async (req, res) => {
   const cattle = await Cattle.findById(req.params.id);
 
   if (cattle) {
-    // Verificar si el usuario es el propietario
     if (cattle.owner.toString() !== req.user._id.toString()) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
@@ -157,16 +140,12 @@ const deleteCattle = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Agregar un registro médico al ganado
-// @route   POST /api/cattle/:id/medical
-// @access  Private
 const addMedicalRecord = asyncHandler(async (req, res) => {
   const { date, treatment, diagnosis, medication, veterinarian, notes } = req.body;
 
   const cattle = await Cattle.findById(req.params.id);
 
   if (cattle) {
-    // Verificar si el usuario es el propietario
     if (cattle.owner.toString() !== req.user._id.toString()) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');

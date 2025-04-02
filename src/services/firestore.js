@@ -28,27 +28,23 @@ export const getAllCattle = async (userId = null, farmId = null, includeNoFarm =
     let cattleQuery;
     
     if (userId && farmId) {
-      // Filtrar por usuario y granja específica
       cattleQuery = query(
         collection(firestore, CATTLE_COLLECTION), 
         where('userId', '==', userId),
         where('farmId', '==', farmId)
       );
     } else if (userId && includeNoFarm) {
-      // Filtrar por usuario y ganado sin granja asignada
       cattleQuery = query(
         collection(firestore, CATTLE_COLLECTION), 
         where('userId', '==', userId),
         where('farmId', '==', null)
       );
     } else if (userId) {
-      // Filtrar solo por usuario
       cattleQuery = query(
         collection(firestore, CATTLE_COLLECTION), 
         where('userId', '==', userId)
       );
     } else {
-      // Sin filtros
       cattleQuery = collection(firestore, CATTLE_COLLECTION);
     }
     
@@ -257,7 +253,7 @@ export const updateFarm = async (id, farmData) => {
 export const deleteFarm = async (farmId) => {
   console.log('ID de la granja a eliminar:', farmId);
   try {
-    const docRef = doc(firestore, 'farms', farmId); // Asegúrate de que 'farms' sea el nombre correcto de la colección
+    const docRef = doc(firestore, 'farms', farmId);
     await deleteDoc(docRef);
     console.log(`Granja con ID ${farmId} eliminada correctamente`);
   } catch (error) {

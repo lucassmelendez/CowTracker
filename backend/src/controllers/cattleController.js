@@ -256,107 +256,113 @@ const getMedicalRecords = asyncHandler(async (req, res) => {
  */
 const getCattleWithFarmInfo = asyncHandler(async (req, res) => {
   try {
-    console.log('Solicitando todo el ganado con información de granja');
+    console.log('==== DEPURACIÓN: Solicitando todo el ganado con información de granja ====');
     console.log('Usuario solicitante:', req.user.uid);
     
-    // Primero obtenemos todas las granjas a las que el usuario tiene acceso
+    // ENFOQUE ALTERNATIVO: Obtener primero TODO el ganado, luego filtrar
+    console.log('Consultando todo el ganado disponible en el sistema...');
+    const allCattleQuery = await cattleCollection.get();
+    let allCattle = [];
+    
+    if (!allCattleQuery.empty) {
+      allCattle = allCattleQuery.docs.map(doc => ({
+        _id: doc.id,
+        ...doc.data()
+      }));
+      console.log(`Se encontraron ${allCattle.length} animales en total en el sistema`);
+    } else {
+      console.log('No se encontró ningún animal en el sistema');
+    }
+    
+    // Filtramos para obtener el ganado que le pertenece al usuario
+    let userCattle = allCattle.filter(animal => animal.owner === req.user.uid);
+    console.log(`El usuario es propietario de ${userCattle.length} animales`);
+    
+    // Obtenemos las granjas del usuario
     const farmsQuery = await db.collection('farms')
       .where('owner', '==', req.user.uid)
       .get();
     
-    // También buscaremos granjas donde el usuario es trabajador
+    const userFarmIds = new Set();
+    
+    if (!farmsQuery.empty) {
+      farmsQuery.docs.forEach(doc => {
+        userFarmIds.add(doc.id);
+        console.log(`Granja encontrada: ${doc.id} - ${doc.data().name}`);
+      });
+      console.log(`El usuario posee ${userFarmIds.size} granjas`);
+    } else {
+      console.log('El usuario no tiene granjas propias');
+    }
+    
+    // Obtenemos granjas donde el usuario es trabajador
     const workerFarmsQuery = await db.collection('farmWorkers')
       .where('workerId', '==', req.user.uid)
       .get();
     
-    // Recolectamos todos los IDs de granjas
-    const farmIds = new Set();
-    
-    // Añadir granjas que el usuario posee
-    if (!farmsQuery.empty) {
-      farmsQuery.docs.forEach(doc => {
-        farmIds.add(doc.id);
-      });
-    }
-    
-    // Añadir granjas donde el usuario es trabajador
     if (!workerFarmsQuery.empty) {
+      console.log(`El usuario es trabajador en ${workerFarmsQuery.size} granjas`);
       for (const workerDoc of workerFarmsQuery.docs) {
-        farmIds.add(workerDoc.data().farmId);
+        const farmId = workerDoc.data().farmId;
+        userFarmIds.add(farmId);
+        console.log(`Granja de trabajo: ${farmId}`);
+      }
+    } else {
+      console.log('El usuario no es trabajador en ninguna granja');
+    }
+    
+    console.log(`Total de granjas accesibles: ${userFarmIds.size}`);
+    
+    // Obtenemos ganado en esas granjas
+    const farmCattle = allCattle.filter(animal => {
+      if (animal.farmId && userFarmIds.has(animal.farmId)) {
+        console.log(`Animal en granja accesible: ${animal._id} (farmId: ${animal.farmId})`);
+        return true;
+      }
+      return false;
+    });
+    
+    console.log(`Se encontraron ${farmCattle.length} animales en granjas accesibles`);
+    
+    // Combinamos los resultados (ganado propio + ganado en granjas accesibles)
+    const combinedCattle = [...userCattle];
+    
+    // Agregamos solo los que no están ya incluidos
+    for (const animal of farmCattle) {
+      if (!combinedCattle.some(existing => existing._id === animal._id)) {
+        combinedCattle.push(animal);
       }
     }
     
-    console.log(`El usuario tiene acceso a ${farmIds.size} granjas`);
-    
-    // Ahora obtenemos todo el ganado que pertenece al usuario 
-    // o está en granjas a las que tiene acceso
-    const cattleQuery = await cattleCollection
-      .where('owner', '==', req.user.uid)
-      .get();
-    
-    let cattle = [];
-    
-    if (!cattleQuery.empty) {
-      cattle = cattleQuery.docs.map(doc => ({
-        _id: doc.id,
-        ...doc.data()
-      }));
-    }
-    
-    // Para cada granja, obtenemos su ganado
-    const farmCattlePromises = [];
-    for (const farmId of farmIds) {
-      const farmCattleQuery = cattleCollection
-        .where('farmId', '==', farmId)
-        .get();
-      farmCattlePromises.push(farmCattleQuery);
-    }
-    
-    // Esperamos todas las consultas
-    const farmCattleResults = await Promise.all(farmCattlePromises);
-    
-    // Procesamos cada resultado
-    for (const querySnapshot of farmCattleResults) {
-      if (!querySnapshot.empty) {
-        querySnapshot.docs.forEach(doc => {
-          const animalData = {
-            _id: doc.id,
-            ...doc.data()
-          };
-          
-          // Verificamos si ya tenemos este animal (para evitar duplicados)
-          const existingIndex = cattle.findIndex(animal => animal._id === animalData._id);
-          if (existingIndex === -1) {
-            cattle.push(animalData);
-          }
-        });
-      }
-    }
-    
-    console.log(`Total de ganado encontrado: ${cattle.length}`);
+    console.log(`Ganado combinado (sin duplicados): ${combinedCattle.length}`);
     
     // Obtener información de granjas para cada animal
     const cattleWithFarmInfo = await Promise.all(
-      cattle.map(async (animal) => {
+      combinedCattle.map(async (animal) => {
         if (animal.farmId) {
           try {
             const farmDoc = await farmsCollection.doc(animal.farmId).get();
             if (farmDoc.exists) {
               const farmData = farmDoc.data();
+              console.log(`Añadiendo información de granja para animal ${animal._id}: ${farmData.name}`);
               return {
                 ...animal,
                 farmName: farmData.name
               };
+            } else {
+              console.log(`Granja no encontrada para animal ${animal._id} (farmId: ${animal.farmId})`);
             }
           } catch (error) {
-            console.error(`Error al obtener información de granja para el animal ${animal._id}:`, error);
+            console.error(`Error al obtener información de granja para animal ${animal._id}:`, error);
           }
+        } else {
+          console.log(`Animal sin granja asignada: ${animal._id}`);
         }
         return animal;
       })
     );
     
-    console.log(`Enviando ${cattleWithFarmInfo.length} cabezas de ganado con información de granja`);
+    console.log(`==== RESULTADO FINAL: ${cattleWithFarmInfo.length} cabezas de ganado con información de granja ====`);
     res.json(cattleWithFarmInfo);
   } catch (error) {
     console.error('Error al obtener ganado con información de granja:', error);

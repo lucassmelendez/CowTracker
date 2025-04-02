@@ -3,6 +3,7 @@ const { db } = require('../config/firebase');
 
 const cattleCollection = db.collection('cattle');
 const medicalRecordsCollection = db.collection('medicalRecords');
+const farmsCollection = db.collection('farms');
 
 const getCattle = asyncHandler(async (req, res) => {
   try {
@@ -248,6 +249,58 @@ const getMedicalRecords = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc    Obtener todo el ganado con información de granja
+ * @route   GET /api/cattle/with-farm-info
+ * @access  Private
+ */
+const getCattleWithFarmInfo = asyncHandler(async (req, res) => {
+  try {
+    console.log('Solicitando todo el ganado con información de granja');
+    console.log('Usuario solicitante:', req.user.uid);
+    
+    const cattleQuery = await cattleCollection
+      .where('owner', '==', req.user.uid)
+      .get();
+    
+    if (cattleQuery.empty) {
+      return res.json([]);
+    }
+    
+    const cattle = cattleQuery.docs.map(doc => ({
+      _id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Obtener información de granjas para cada animal
+    const cattleWithFarmInfo = await Promise.all(
+      cattle.map(async (animal) => {
+        if (animal.farmId) {
+          try {
+            const farmDoc = await farmsCollection.doc(animal.farmId).get();
+            if (farmDoc.exists) {
+              const farmData = farmDoc.data();
+              return {
+                ...animal,
+                farmName: farmData.name
+              };
+            }
+          } catch (error) {
+            console.error(`Error al obtener información de granja para el animal ${animal._id}:`, error);
+          }
+        }
+        return animal;
+      })
+    );
+    
+    res.json(cattleWithFarmInfo);
+  } catch (error) {
+    console.error('Error al obtener ganado con información de granja:', error);
+    res.status(500);
+    throw new Error('Error al obtener ganado: ' + error.message);
+  }
+});
+
 module.exports = {
   getCattle,
   getCattleById,
@@ -255,5 +308,6 @@ module.exports = {
   updateCattle,
   deleteCattle,
   addMedicalRecord,
-  getMedicalRecords
+  getMedicalRecords,
+  getCattleWithFarmInfo
 }; 

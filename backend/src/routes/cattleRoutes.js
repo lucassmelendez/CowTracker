@@ -7,13 +7,17 @@ const {
   updateCattle,
   deleteCattle,
   addMedicalRecord,
-  getMedicalRecords
+  getMedicalRecords,
+  getCattleWithFarmInfo
 } = require('../controllers/cattleController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
   .get(protect, getCattle)
   .post(protect, createCattle);
+
+router.route('/with-farm-info')
+  .get(protect, getCattleWithFarmInfo);
 
 router.route('/:id')
   .get(protect, getCattleById)

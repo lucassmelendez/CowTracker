@@ -101,6 +101,7 @@ const users = {
 // API para ganado
 const cattle = {
   getAll: () => instance.get('cattle'),
+  getAllWithFarmInfo: () => instance.get('cattle/with-farm-info'),
   getById: (id) => instance.get(`cattle/${id}`),
   create: (cattleData) => instance.post('cattle', cattleData),
   update: (id, cattleData) => instance.put(`cattle/${id}`, cattleData),

@@ -1,23 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
 import { Ionicons } from '@expo/vector-icons';
 import { profileStyles } from '../styles/profileStyles';
+import api from '../services/api';
 
 const ProfileScreen = () => {
-  const { currentUser, userInfo, updateUserProfile, logout } = useAuth();
+  const { currentUser, userInfo, updateProfile, logout } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState({
-    name: userInfo?.name || currentUser?.displayName || '',
-    email: userInfo?.email || currentUser?.email || '',
+    name: '',
+    email: '',
     phone: '',
-    role: userInfo?.role === 'admin' ? 'Administrador' : 'Usuario',
-    farm: '',
+    role: ''
   });
   const [formData, setFormData] = useState({...userData});
+
+  // Cargar datos del perfil al montar el componente
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setIsLoading(true);
+        // Intentar obtener el perfil actualizado del servidor
+        const profileData = await api.users.getProfile();
+        
+        const formattedData = {
+          name: profileData.name || '',
+          email: profileData.email || '',
+          phone: profileData.phone || '',
+          role: profileData.role === 'admin' ? 'Administrador' : 'Usuario'
+        };
+        
+        setUserData(formattedData);
+        setFormData(formattedData);
+      } catch (error) {
+        console.error('Error al cargar perfil:', error);
+        // Si falla, usar datos del contexto
+        if (userInfo) {
+          const fallbackData = {
+            name: userInfo.name || currentUser?.displayName || '',
+            email: userInfo.email || currentUser?.email || '',
+            phone: userInfo.phone || '',
+            role: userInfo.role === 'admin' ? 'Administrador' : 'Usuario'
+          };
+          setUserData(fallbackData);
+          setFormData(fallbackData);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, [currentUser, userInfo]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -35,17 +74,28 @@ const ProfileScreen = () => {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        farm: formData.farm,
         ...(formData.password ? { password: formData.password } : {})
       };
 
-      await updateUserProfile(updateData);
+      setIsLoading(true);
+      // Usar la función correcta del contexto de autenticación
+      await updateProfile(updateData);
+      
+      // Actualizar los datos locales
+      setUserData({
+        ...userData,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone
+      });
+      
       Alert.alert('Éxito', 'Perfil actualizado correctamente');
       setIsEditing(false);
-      setFormData({...userData});
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
       Alert.alert('Error', 'No se pudo actualizar el perfil. Por favor, intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,12 +125,22 @@ const ProfileScreen = () => {
   };
 
   const getInitials = (name) => {
+    if (!name) return '?';
     return name
       .split(' ')
       .map(part => part.charAt(0))
       .join('')
       .toUpperCase();
   };
+
+  if (isLoading) {
+    return (
+      <View style={[profileStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#0066CC" />
+        <Text style={{ marginTop: 10 }}>Cargando perfil...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={profileStyles.container}>
@@ -134,19 +194,29 @@ const ProfileScreen = () => {
                 keyboardType="phone-pad"
               />
             ) : (
-              <Text style={profileStyles.infoText}>{userData.phone}</Text>
+              <Text style={profileStyles.infoText}>{userData.phone || 'No especificado'}</Text>
             )}
             
-            <Text style={profileStyles.label}>Rancho</Text>
-            {isEditing ? (
-              <TextInput
-                style={profileStyles.input}
-                value={formData.farm}
-                onChangeText={(text) => setFormData({...formData, farm: text})}
-                placeholder="Rancho"
-              />
-            ) : (
-              <Text style={profileStyles.infoText}>{userData.farm}</Text>
+            {isEditing && (
+              <>
+                <Text style={profileStyles.label}>Nueva contraseña (opcional)</Text>
+                <TextInput
+                  style={profileStyles.input}
+                  value={formData.password || ''}
+                  onChangeText={(text) => setFormData({...formData, password: text})}
+                  placeholder="Nueva contraseña"
+                  secureTextEntry
+                />
+                
+                <Text style={profileStyles.label}>Confirmar contraseña</Text>
+                <TextInput
+                  style={profileStyles.input}
+                  value={formData.confirmPassword || ''}
+                  onChangeText={(text) => setFormData({...formData, confirmPassword: text})}
+                  placeholder="Confirmar contraseña"
+                  secureTextEntry
+                />
+              </>
             )}
           </View>
           

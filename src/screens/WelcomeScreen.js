@@ -8,10 +8,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { firestore } from '../config/firebase';
 import { Ionicons } from '@expo/vector-icons';
 import { welcomeStyles } from '../styles/welcomeStyles';
+import api from '../services/api';
 
 const WelcomeScreen = () => {
   const router = useRouter();
@@ -42,14 +41,13 @@ const WelcomeScreen = () => {
       const farmData = {
         name: farmName,
         location: farmLocation,
-        size: farmSize,
-        userId: userInfo.uid,
-        cattleCount: 0,
-        createdAt: serverTimestamp()
+        size: farmSize
       };
 
-      const docRef = await addDoc(collection(firestore, 'farms'), farmData);
-      console.log('Granja creada exitosamente con ID:', docRef.id);
+      // Usar la API en lugar de Firestore directamente
+      const result = await api.farms.create(farmData);
+      console.log('Granja creada exitosamente con ID:', result._id);
+      
       setIsCreating(false);
       Alert.alert('Éxito', 'Granja creada exitosamente', [
         { text: 'OK', onPress: () => router.push('/farms') }

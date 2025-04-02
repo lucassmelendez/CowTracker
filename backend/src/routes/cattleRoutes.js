@@ -7,12 +7,17 @@ const {
   updateCattle,
   deleteCattle,
   addMedicalRecord,
+  getMedicalRecords,
+  getCattleWithFarmInfo
 } = require('../controllers/cattleController');
 const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
   .get(protect, getCattle)
   .post(protect, createCattle);
+
+router.route('/with-farm-info')
+  .get(protect, getCattleWithFarmInfo);
 
 router.route('/:id')
   .get(protect, getCattleById)
@@ -21,5 +26,8 @@ router.route('/:id')
 
 router.route('/:id/medical')
   .post(protect, addMedicalRecord);
+
+router.route('/:id/medical-records')
+  .get(protect, getMedicalRecords);
 
 module.exports = router; 

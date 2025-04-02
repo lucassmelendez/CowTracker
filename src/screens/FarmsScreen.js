@@ -15,22 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
 import { useAuth } from '../components/AuthContext';
-import { 
-  getAllFarms, 
-  createFarm, 
-  updateFarm, 
-  addWorkerToFarm, 
-  removeWorkerFromFarm, 
-  getFarmWorkers,
-  addVeterinarianToFarm,
-  removeVeterinarianFromFarm,
-  getFarmVeterinarians,
-  addCattleToFarm,
-  removeCattleFromFarm,
-  getFarmCattle,
-  getUsersByRole
-} from '../services/firestore';
-import { deleteFarm } from '../services/firestore';
+import api from '../services/api';
 import { farmsStyles } from '../styles/farmsStyles';
 
 const FarmsScreen = () => {
@@ -38,6 +23,7 @@ const FarmsScreen = () => {
   const { userInfo } = useAuth();
   const [farms, setFarms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [selectedFarm, setSelectedFarm] = useState(null);
   const [farmWorkers, setFarmWorkers] = useState([]);
   const [farmVeterinarians, setFarmVeterinarians] = useState([]);
@@ -48,10 +34,14 @@ const FarmsScreen = () => {
   const [loadingStaff, setLoadingStaff] = useState(false);
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    location: '',
+    size: '',
+    type: ''
+  });
+  const [errorMessage, setErrorMessage] = useState('');
   const [editingFarm, setEditingFarm] = useState(null);
-  const [farmName, setFarmName] = useState('');
-  const [farmLocation, setFarmLocation] = useState('');
-  const [farmSize, setFarmSize] = useState('');
 
   const [modalMessage, setModalMessage] = useState('');
   const [messageModalVisible, setMessageModalVisible] = useState(false);
@@ -75,69 +65,100 @@ const FarmsScreen = () => {
   };
 
   useEffect(() => {
-    if (userInfo?.uid) {
-      loadFarms();
-    }
-  }, [userInfo]);
+    loadFarms();
+  }, []);
 
   const loadFarms = async () => {
     try {
-      const userFarms = await getAllFarms(userInfo.uid);
-      setFarms(userFarms);
+      setLoading(true);
+      setErrorMessage('');
+      
+      // Usar la API en lugar de Firestore directamente
+      const response = await api.farms.getAll();
+      setFarms(response);
     } catch (error) {
-      console.error('Error al cargar granjas:', error);
-      showModal('Error: No se pudieron cargar las granjas');
+      console.error('Error al obtener granjas:', error);
+      setErrorMessage('No se pudieron cargar las granjas');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const openAddModal = () => {
+  const handleCreateFarm = async () => {
+    try {
+      setErrorMessage('');
+      if (!formData.name) {
+        setErrorMessage('El nombre de la granja es obligatorio');
+        return;
+      }
+
+      const farmData = {
+        ...formData,
+        type: formData.type || 'general'
+      };
+
+      if (editingFarm) {
+        // Actualizar granja existente
+        await api.farms.update(editingFarm._id, farmData);
+      } else {
+        // Crear nueva granja
+        await api.farms.create(farmData);
+      }
+
+      setModalVisible(false);
+      resetForm();
+      loadFarms();
+    } catch (error) {
+      console.error('Error al crear/actualizar granja:', error);
+      setErrorMessage('Error al guardar la granja');
+    }
+  };
+
+  const handleDeleteFarm = async (farmId) => {
+    try {
+      await api.farms.delete(farmId);
+      loadFarms();
+    } catch (error) {
+      console.error('Error al eliminar granja:', error);
+      Alert.alert('Error', 'No se pudo eliminar la granja');
+    }
+  };
+
+  const confirmDelete = (farm) => {
+    Alert.alert(
+      'Confirmar eliminación',
+      `¿Estás seguro de que quieres eliminar la granja "${farm.name}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Eliminar', 
+          style: 'destructive',
+          onPress: () => handleDeleteFarm(farm._id)
+        }
+      ]
+    );
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      location: '',
+      size: '',
+      type: ''
+    });
     setEditingFarm(null);
-    setFarmName('');
-    setFarmLocation('');
-    setFarmSize('');
-    setModalVisible(true);
   };
 
   const openEditModal = (farm) => {
     setEditingFarm(farm);
-    setFarmName(farm.name);
-    setFarmLocation(farm.location);
-    setFarmSize(farm.size);
+    setFormData({
+      name: farm.name || '',
+      location: farm.location || '',
+      size: farm.size?.toString() || '',
+      type: farm.type || 'general'
+    });
     setModalVisible(true);
-  };
-
-  const handleSave = async () => {
-    if (!farmName || !farmLocation || !farmSize) {
-      showModal('Error: Por favor, completa todos los campos');
-      return;
-    }
-
-    try {
-      const farmData = {
-        name: farmName,
-        location: farmLocation,
-        size: farmSize,
-        userId: userInfo.uid,
-        cattleCount: editingFarm ? editingFarm.cattleCount : 0
-      };
-
-      if (editingFarm) {
-        await updateFarm(editingFarm._id, farmData);
-        showModal('Éxito: Granja actualizada correctamente');
-      } else {
-        await createFarm(farmData);
-        showModal('Éxito: Granja agregada correctamente');
-      }
-      
-      await loadFarms(); // Recargar las granjas
-    } catch (error) {
-      console.error('Error al guardar granja:', error);
-      showModal('Error: No se pudo guardar la granja');
-    }
-    
-    setModalVisible(false);
   };
 
   const handleManageStaff = async (farm) => {
@@ -237,20 +258,6 @@ const FarmsScreen = () => {
       pathname: '/explore',
       params: { farmId: farm._id }
     });
-  };
-  
-  const handleDelete = async () => {
-    try {
-      setDeleteModalVisible(false);
-      setLoading(true);
-      await deleteFarm(farmToDelete);
-      await loadFarms();
-    } catch (error) {
-      console.error('Error al eliminar granja:', error);
-      showModal('Error: No se pudo eliminar la granja');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const openDeleteModal = (farmId) => {
@@ -446,7 +453,7 @@ const FarmsScreen = () => {
             }
           />
 
-          <TouchableOpacity style={farmsStyles.addButton} onPress={openAddModal}>
+          <TouchableOpacity style={farmsStyles.addButton} onPress={() => setModalVisible(true)}>
             <Ionicons name="add" size={30} color="#fff" />
           </TouchableOpacity>
         </>
@@ -466,25 +473,33 @@ const FarmsScreen = () => {
             <Text style={farmsStyles.label}>Nombre</Text>
             <TextInput 
               style={farmsStyles.input}
-              value={farmName}
-              onChangeText={setFarmName}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
               placeholder="Nombre de la granja"
             />
 
             <Text style={farmsStyles.label}>Ubicación</Text>
             <TextInput 
               style={farmsStyles.input}
-              value={farmLocation}
-              onChangeText={setFarmLocation}
+              value={formData.location}
+              onChangeText={(text) => setFormData({ ...formData, location: text })}
               placeholder="Ubicación"
             />
 
             <Text style={farmsStyles.label}>Tamaño</Text>
             <TextInput 
               style={farmsStyles.input}
-              value={farmSize}
-              onChangeText={setFarmSize}
+              value={formData.size}
+              onChangeText={(text) => setFormData({ ...formData, size: text })}
               placeholder="Ej. 150 hectáreas"
+            />
+
+            <Text style={farmsStyles.label}>Tipo</Text>
+            <TextInput 
+              style={farmsStyles.input}
+              value={formData.type}
+              onChangeText={(text) => setFormData({ ...formData, type: text })}
+              placeholder="Tipo de granja"
             />
 
             <View style={farmsStyles.modalButtons}>
@@ -496,7 +511,7 @@ const FarmsScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity 
                 style={farmsStyles.saveButton}
-                onPress={handleSave}
+                onPress={handleCreateFarm}
               >
                 <Text style={farmsStyles.saveButtonText}>Guardar</Text>
               </TouchableOpacity>
@@ -542,7 +557,7 @@ const FarmsScreen = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={farmsStyles.confirmButton}
-                onPress={handleDelete}
+                onPress={() => handleDeleteFarm(farmToDelete)}
               >
                 <Text style={farmsStyles.confirmButtonText}>Eliminar</Text>
               </TouchableOpacity>

@@ -8,7 +8,7 @@ import {
   Alert,
   RefreshControl
 } from 'react-native';
-import { getAllCattle } from '../services/firestore';
+import api from '../services/api';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { cattleListStyles } from '../styles/cattleListStyles';
@@ -26,57 +26,87 @@ const CattleListScreen = () => {
   const [error, setError] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCattle();
+      return () => {}; // Cleanup function
+    }, [selectedFarm])
+  );
+
   const loadCattle = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      if (!userInfo?.uid) {
-        setError('No se pudo obtener información del usuario');
-        setLoading(false);
-        return;
+      let cattleData = [];
+      
+      // Si seleccionó la opción "Todas las granjas"
+      if (!selectedFarm || selectedFarm?._id === 'all-farms') {
+        console.log('Cargando ganado de todas las granjas...');
+        
+        // Primero obtenemos todas las granjas
+        const farmsData = await api.farms.getAll();
+        console.log(`Se encontraron ${farmsData.length} granjas`);
+        
+        // Para cada granja, cargamos su ganado
+        const allCattlePromises = farmsData.map(farm => 
+          api.farms.getCattle(farm._id)
+            .then(cattle => {
+              // Añadimos el nombre de la granja a cada animal
+              return cattle.map(animal => ({
+                ...animal,
+                farmName: farm.name
+              }));
+            })
+            .catch(err => {
+              console.error(`Error al cargar ganado de granja ${farm.name}:`, err);
+              return [];
+            })
+        );
+        
+        // Esperamos que todas las promesas se resuelvan
+        const allCattleResults = await Promise.all(allCattlePromises);
+        
+        // Combinamos todos los resultados
+        cattleData = allCattleResults.flat();
+        console.log(`Cargadas ${cattleData.length} cabezas de ganado (todas las granjas)`);
+      }
+      // Si seleccionó una granja específica
+      else if (selectedFarm?._id) {
+        // Cargamos ganado de esa granja específica
+        cattleData = await api.farms.getCattle(selectedFarm._id);
+        // Añadimos el nombre de la granja a cada animal
+        cattleData = cattleData.map(animal => ({
+          ...animal,
+          farmName: selectedFarm.name
+        }));
+        console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name})`);
       }
       
-      let data;
-      if (!selectedFarm || selectedFarm._id === 'all-farms') {
-        // Cargar todo el ganado si no hay granja seleccionada o si es "Todas las granjas"
-        data = await getAllCattle(userInfo.uid);
-      } else if (selectedFarm._id === 'no-farm') {
-        // Cargar ganado sin granja asignada
-        data = await getAllCattle(userInfo.uid, null, true);
-      } else {
-        // Cargar ganado específico de la granja seleccionada
-        data = await getAllCattle(userInfo.uid, selectedFarm._id);
-      }
-      
-      setCattle(data || []); 
+      setCattle(cattleData);
       setDataLoaded(true);
-    } catch (error) {
-      console.error('Error cargando ganado:', error);
-      setError('Error al cargar el ganado: ' + error);
-      setCattle([]);
-      Alert.alert('Error', 'No se pudo cargar el listado de ganado');
+    } catch (err) {
+      console.error('Error cargando ganado:', err);
+      setError('Error al cargar el ganado');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const onRefresh = async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    await loadCattle();
-    setRefreshing(false);
+    loadCattle();
   };
 
-  useEffect(() => {
-    loadCattle();
-  }, [selectedFarm]); // Cargar cuando cambie la granja seleccionada
+  const navigateToDetail = (id) => {
+    router.push(`/cattle/${id}`);
+  };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      loadCattle();
-      return () => {};
-    }, [selectedFarm, userInfo])
-  );
+  const navigateToAdd = () => {
+    console.log('Navegando a añadir ganado...');
+    router.push('/add-cattle');
+  };
 
   const renderCattleItem = ({ item }) => {
     const getStatusColor = (status) => {
@@ -156,11 +186,6 @@ const CattleListScreen = () => {
     );
   };
 
-  const handleAddCattle = () => {
-    console.log('Navegando a agregar ganado');
-    router.push('/add-cattle');
-  };
-
   if (loading && !refreshing && !dataLoaded) {
     return (
       <View style={cattleListStyles.centered}>
@@ -171,11 +196,7 @@ const CattleListScreen = () => {
 
   const getSubtitle = () => {
     if (selectedFarm && selectedFarm._id !== 'all-farms') {
-      if (selectedFarm._id === 'no-farm') {
-        return 'Ganado sin granja asignada';
-      } else {
-        return `Granja: ${selectedFarm.name}`;
-      }
+      return `Granja: ${selectedFarm.name}`;
     }
     return null;
   };
@@ -197,7 +218,7 @@ const CattleListScreen = () => {
         </View>
         <TouchableOpacity 
           style={cattleListStyles.addButton}
-          onPress={handleAddCattle}
+          onPress={navigateToAdd}
         >
           <Text style={cattleListStyles.addButtonText}>+ Añadir</Text>
         </TouchableOpacity>
@@ -217,15 +238,13 @@ const CattleListScreen = () => {
         <View style={cattleListStyles.emptyContainer}>
           <Text style={cattleListStyles.emptyText}>
             {selectedFarm && selectedFarm._id !== 'all-farms' 
-              ? (selectedFarm._id === 'no-farm' 
-                  ? 'No hay ganado sin granja asignada' 
-                  : `No hay ganado en la granja "${selectedFarm.name}"`)
+              ? `No hay ganado en la granja "${selectedFarm.name}"`
               : 'No tienes ganado registrado'
             }
           </Text>
           <TouchableOpacity
             style={cattleListStyles.emptyButton}
-            onPress={handleAddCattle}
+            onPress={navigateToAdd}
           >
             <Text style={cattleListStyles.emptyButtonText}>Añadir ganado</Text>
           </TouchableOpacity>

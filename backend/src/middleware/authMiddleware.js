@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const { auth } = require('../config/firebase');
+const authService = require('../services/authService');
 const firebaseUserModel = require('../models/firebaseUserModel');
 
 const protect = asyncHandler(async (req, res, next) => {
@@ -9,14 +9,9 @@ const protect = asyncHandler(async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       
-      const decodedToken = await auth.verifyIdToken(token);
+      const user = await authService.verifyToken(token);
       
-      const user = await firebaseUserModel.getUserById(decodedToken.uid);
-      
-      req.user = {
-        ...decodedToken,
-        ...user
-      };
+      req.user = user;
       
       next();
     } catch (error) {
@@ -28,7 +23,7 @@ const protect = asyncHandler(async (req, res, next) => {
   
   if (!token) {
     res.status(401);
-    throw new Error('No autorizado, no se proporcionó token');
+    throw new Error('No autorizado, no hay token');
   }
 });
 

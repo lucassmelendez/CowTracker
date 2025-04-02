@@ -6,17 +6,22 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cattleDetailStyles } from '../styles/cattleDetailStyles';
-import { getCattleById, deleteCattle, getMedicalRecords } from '../services/firestore';
+import { useAuth } from '../components/AuthContext';
+import api from '../services/api';
 
 const CattleDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = params?.id;
+  const { user } = useAuth();
+  
+  console.log('Parámetros recibidos:', { id: cattleId });
   
   const [cattle, setCattle] = useState(null);
   const [medicalRecords, setMedicalRecords] = useState([]);
@@ -37,15 +42,15 @@ const CattleDetailScreen = () => {
       }
       
       try {
-        // Obtener datos del ganado
-        const cattleData = await getCattleById(cattleId);
+        // Obtener datos del ganado usando la API
+        const cattleData = await api.cattle.getById(cattleId);
         if (isMounted) {
           setCattle(cattleData);
           setDebug(JSON.stringify(cattleData, null, 2));
           
-          // Obtener registros médicos
+          // Obtener registros médicos usando la API
           try {
-            const records = await getMedicalRecords(cattleId);
+            const records = await api.cattle.getMedicalRecords(cattleId);
             if (isMounted) {
               setMedicalRecords(records || []);
             }
@@ -57,7 +62,7 @@ const CattleDetailScreen = () => {
       } catch (err) {
         if (isMounted) {
           setError('No se pudo cargar la información del ganado');
-          console.error('Error:', err);
+          console.error('Error al obtener detalles del ganado:', err);
         }
       } finally {
         if (isMounted) {
@@ -120,7 +125,8 @@ const CattleDetailScreen = () => {
     }
     
     try {
-      await deleteCattle(cattleId);
+      // Eliminar ganado usando la API
+      await api.cattle.delete(cattleId);
       Alert.alert('Éxito', 'Ganado eliminado correctamente');
       setDeleteModalVisible(false);
       router.replace('/explore');

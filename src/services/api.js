@@ -44,6 +44,7 @@ const clearAuthToken = () => {
 const users = {
   register: (userData) => instance.post('/users/register', userData),
   login: (credentials) => instance.post('/users/login', credentials),
+  verifyToken: (token) => instance.post('/users/verify-token', { token }),
   getProfile: () => instance.get('/users/profile'),
   updateProfile: (userData) => instance.put('/users/profile', userData),
   getAll: () => instance.get('/users'),
@@ -68,6 +69,13 @@ const farms = {
   create: (farmData) => instance.post('/farms', farmData),
   update: (id, farmData) => instance.put(`/farms/${id}`, farmData),
   delete: (id) => instance.delete(`/farms/${id}`),
+  getWorkers: (id) => instance.get(`/farms/${id}/workers`),
+  addWorker: (id, workerId) => instance.post(`/farms/${id}/workers`, { workerId }),
+  removeWorker: (id, workerId) => instance.delete(`/farms/${id}/workers/${workerId}`),
+  getVeterinarians: (id) => instance.get(`/farms/${id}/veterinarians`),
+  addVeterinarian: (id, veterinarianId) => instance.post(`/farms/${id}/veterinarians`, { veterinarianId }),
+  removeVeterinarian: (id, veterinarianId) => instance.delete(`/farms/${id}/veterinarians/${veterinarianId}`),
+  getCattle: (id) => instance.get(`/farms/${id}/cattle`),
 };
 
 const api = {

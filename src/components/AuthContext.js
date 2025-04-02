@@ -1,28 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, firestore } from '../config/firebase';
 import { useRouter } from 'expo-router';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut,
-  updateProfile,
-  updateEmail,
-  updatePassword,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  getDoc,
-  getDocs,
-  query,
-  where,
-  serverTimestamp 
-} from 'firebase/firestore';
 import api from '../services/api';
 
 const AuthContext = createContext();
@@ -30,71 +9,45 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [user, setUser] = useState(null);
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const isWeb = Platform.OS === 'web';
   const router = useRouter();
 
+  // Cargar usuario guardado localmente al inicio
   useEffect(() => {
-    let isInitialLoad = true;
-    
     const loadSavedUser = async () => {
       try {
+        setLoading(true);
         const savedUserToken = await AsyncStorage.getItem('@user_token');
         const savedUserInfo = await AsyncStorage.getItem('@user_info');
         
         if (savedUserToken && savedUserInfo) {
-          setUserInfo(JSON.parse(savedUserInfo));
+          const userInfo = JSON.parse(savedUserInfo);
+          setUserInfo(userInfo);
+          setUser(userInfo);
           api.setAuthToken(savedUserToken);
+          
+          // Verificar el token en el backend
+          try {
+            await api.users.verifyToken(savedUserToken);
+          } catch (verifyError) {
+            console.warn('Token inválido, cerrando sesión');
+            await logout();
+          }
         }
       } catch (error) {
         console.error('Error al cargar usuario guardado:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
     loadSavedUser();
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const additionalInfo = await getUserInfo(user.uid);
-        setCurrentUser(user);
-        setUserInfo(additionalInfo);
-        
-        try {
-          const token = await user.getIdToken();
-          await AsyncStorage.setItem('@user_token', token);
-          await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
-          
-          api.setAuthToken(token);
-        } catch (error) {
-          console.error('Error al guardar datos de usuario:', error);
-        }
-      } else {
-        setCurrentUser(null);
-        setUserInfo(null);
-        
-        try {
-          await AsyncStorage.removeItem('@user_token');
-          await AsyncStorage.removeItem('@user_info');
-          
-          api.clearAuthToken();
-        } catch (error) {
-          console.error('Error al limpiar datos de usuario:', error);
-        }
-      }
-      
-      if (isInitialLoad) {
-        isInitialLoad = false;
-      }
-      
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
   }, []);
 
+  // Registro de usuario
   const register = async (name, email, password, role = 'user') => {
     try {
       setLoading(true);
@@ -102,51 +55,36 @@ export const AuthProvider = ({ children }) => {
       
       const normalizedEmail = email.toLowerCase();
       
-      const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-      
-      await updateProfile(userCredential.user, {
-        displayName: name
-      });
-
-      await setDoc(doc(firestore, 'users', userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        name: name,
+      // Registrar a través del backend
+      const response = await api.users.register({
+        name,
         email: normalizedEmail,
-        role: role,
-        createdAt: serverTimestamp(),
+        password,
+        role
       });
-
-      setCurrentUser(userCredential.user);
-      setUserInfo({
-        uid: userCredential.user.uid,
-        name: name,
-        email: email,
-        role: role,
-        createdAt: serverTimestamp(),
-      });
+      
+      setUser(response);
+      setUserInfo(response);
+      
+      // Guardar token
+      await AsyncStorage.setItem('@user_token', response.token);
+      await AsyncStorage.setItem('@user_info', JSON.stringify(response));
+      
+      api.setAuthToken(response.token);
 
       router.push('/welcome');
 
-      try {
-        await api.post('/users/register', {
-          name,
-          email,
-          password,
-          role
-        });
-      } catch (backendError) {
-        console.error('Error al registrar en el backend:', backendError);
-      }
-
-      return userCredential.user;
+      return response;
     } catch (error) {
-      setError(error.message);
+      console.error('Error de registro:', error);
+      setError(error.message || 'Error al registrar usuario');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  // Login de usuario
   const login = async (email, password) => {
     try {
       setLoading(true);
@@ -154,44 +92,41 @@ export const AuthProvider = ({ children }) => {
 
       const normalizedEmail = email.toLowerCase();
       
-      const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+      // Iniciar sesión a través del backend
+      const response = await api.users.login({
+        email: normalizedEmail,
+        password
+      });
       
-      const additionalInfo = await getUserInfo(userCredential.user.uid);
-      setUserInfo(additionalInfo);
-      setCurrentUser(userCredential.user);
+      setUser(response);
+      setUserInfo(response);
 
-      await AsyncStorage.setItem('@user_token', await userCredential.user.getIdToken());
-      await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
+      // Guardar token JWT del backend
+      await AsyncStorage.setItem('@user_token', response.token);
+      await AsyncStorage.setItem('@user_info', JSON.stringify(response));
+      
+      api.setAuthToken(response.token);
 
-      return userCredential.user;
+      return response;
     } catch (error) {
       console.error('Error de inicio de sesión:', error);
       
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
-      } else if (error.code === 'auth/invalid-email') {
-        setError('El formato del email es inválido.');
-      } else if (error.code === 'auth/user-disabled') {
-        setError('Esta cuenta ha sido deshabilitada.');
-      } else if (error.code === 'auth/too-many-requests') {
-        setError('Demasiados intentos fallidos. Inténtalo más tarde.');
-      } else {
-        setError('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
-      }
-      
-      throw error;
+      const errorMessage = error.message || 'Error al iniciar sesión';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  // Cierre de sesión
   const logout = async () => {
     try {
       setLoading(true);
-      await signOut(auth);
       await AsyncStorage.removeItem('@user_token');
       await AsyncStorage.removeItem('@user_info');
-      setCurrentUser(null);
+      api.clearAuthToken();
+      setUser(null);
       setUserInfo(null);
     } catch (error) {
       setError(error.message);
@@ -201,20 +136,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const getUserInfo = async (uid) => {
-    try {
-      const userDoc = await getDoc(doc(firestore, 'users', uid));
-
-      if (userDoc.exists()) {
-        return userDoc.data();
-      }
-      return null;
-    } catch (error) {
-      console.error('Error al obtener información del usuario:', error);
-      return null;
-    }
-  };
-
+  // Verificación de rol
   const hasRole = (role) => {
     if (!userInfo || !userInfo.role) return false;
     
@@ -223,47 +145,24 @@ export const AuthProvider = ({ children }) => {
     return userInfo.role === role;
   };
 
+  // Actualización de perfil
   const updateUserProfile = async (data) => {
     try {
       setLoading(true);
       setError(null);
 
-      const { name, email, password } = data;
-      const user = auth.currentUser;
+      // Actualizar en el backend
+      const response = await api.users.updateProfile(data);
 
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
-
-      if (name) {
-        await updateProfile(user, {
-          displayName: name
-        });
-      }
-
-      if (email && email !== user.email) {
-        await updateEmail(user, email);
-      }
-
-      if (password) {
-        await updatePassword(user, password);
-      }
-
-      const updateData = {};
-      if (name) updateData.name = name;
-      if (email) updateData.email = email;
+      setUser(response);
+      setUserInfo(response);
       
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        ...updateData,
-        updatedAt: serverTimestamp()
-      });
+      // Actualizar información guardada
+      await AsyncStorage.setItem('@user_info', JSON.stringify(response));
 
-      const updatedUserInfo = await getUserInfo(user.uid);
-      setUserInfo(updatedUserInfo);
-
-      return updatedUserInfo;
+      return response;
     } catch (error) {
-      setError(error.message);
+      setError(error.message || 'Error al actualizar perfil');
       throw error;
     } finally {
       setLoading(false);
@@ -271,7 +170,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const value = {
-    currentUser,
+    currentUser: user, // Para mantener compatibilidad con el código existente
     userInfo,
     loading,
     error,

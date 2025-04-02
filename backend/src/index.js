@@ -3,6 +3,7 @@ const cors = require('cors');
 const { errorHandler } = require('./middleware/errorMiddleware');
 const userRoutes = require('./routes/userRoutes');
 const cattleRoutes = require('./routes/cattleRoutes');
+const farmRoutes = require('./routes/farmRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,6 +13,7 @@ app.use(express.json());
 
 app.use('/api/users', userRoutes);
 app.use('/api/cattle', cattleRoutes);
+app.use('/api/farms', farmRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'API de CowTracker funcionando correctamente' });

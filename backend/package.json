@@ -5,6 +5,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "firebase:deploy": "firebase deploy --config firebase-config/firebase.json",
+    "firebase:serve": "firebase serve --config firebase-config/firebase.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

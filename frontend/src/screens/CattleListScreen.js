@@ -8,7 +8,7 @@ import {
   Alert,
   RefreshControl
 } from 'react-native';
-import { getAllCattle } from '../services/firestore';
+import { getAllCattle } from '../services/services';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { cattleListStyles } from '../styles/cattleListStyles';

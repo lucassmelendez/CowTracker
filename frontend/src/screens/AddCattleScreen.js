@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
-import { getAllFarms, createCattle, getCattleById, updateCattle } from '../services/firestore';
+import { getAllFarms, createCattle, getCattleById, updateCattle } from '../services/services';
 import { useAuth } from '../components/AuthContext';
 
 const AddCattleScreen = ({ route }) => {

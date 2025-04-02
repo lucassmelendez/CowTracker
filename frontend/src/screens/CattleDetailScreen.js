@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cattleDetailStyles } from '../styles/cattleDetailStyles';
-import { getCattleById, deleteCattle, getMedicalRecords } from '../services/firestore';
+import { getCattleById, deleteCattle, getMedicalRecords } from '../services/services';
 
 const CattleDetailScreen = () => {
   const router = useRouter();

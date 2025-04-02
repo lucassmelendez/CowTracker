@@ -29,8 +29,8 @@ import {
   removeCattleFromFarm,
   getFarmCattle,
   getUsersByRole
-} from '../services/firestore';
-import { deleteFarm } from '../services/firestore';
+} from '../services/services';
+import { deleteFarm } from '../services/services';
 import { farmsStyles } from '../styles/farmsStyles';
 
 const FarmsScreen = () => {

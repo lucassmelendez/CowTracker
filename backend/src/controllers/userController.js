@@ -101,7 +101,8 @@ const getUserProfile = asyncHandler(async (req, res) => {
         uid: user.uid,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        phone: user.phone || ''
       });
     } else {
       res.status(404);
@@ -115,12 +116,13 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
 const updateUserProfile = asyncHandler(async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone } = req.body;
     
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (password) updateData.password = password;
+    if (phone !== undefined) updateData.phone = phone;
     
     const updatedUser = await firebaseUserModel.updateUser(req.user.uid, updateData);
     
@@ -128,7 +130,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       uid: updatedUser.uid,
       name: updatedUser.name,
       email: updatedUser.email,
-      role: updatedUser.role
+      role: updatedUser.role,
+      phone: updatedUser.phone || ''
     });
   } catch (error) {
     res.status(500);

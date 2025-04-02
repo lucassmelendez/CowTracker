@@ -36,10 +36,21 @@ instance.interceptors.response.use(
   (error) => {
     if (error.response) {
       console.error('Error de respuesta:', error.response.status, error.response.data);
-      return Promise.reject(error.response.data);
+      // Si el backend envía un mensaje de error, usarlo
+      const errorMessage = error.response.data && error.response.data.message 
+        ? error.response.data.message 
+        : 'Error en la operación';
+      
+      return Promise.reject({ 
+        status: error.response.status,
+        message: errorMessage, 
+        data: error.response.data 
+      });
     } else if (error.request) {
       console.error('Error de solicitud (no hay respuesta):', error.request);
-      return Promise.reject({ message: 'No se pudo conectar con el servidor' });
+      return Promise.reject({ 
+        message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet o intenta más tarde.' 
+      });
     } else {
       console.error('Error en la configuración:', error.message);
       return Promise.reject({ message: error.message });

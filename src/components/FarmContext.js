@@ -9,7 +9,6 @@ export const FarmProvider = ({ children }) => {
   const [selectedFarm, setSelectedFarm] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load saved farm from storage on initial render
   useEffect(() => {
     const loadSavedFarm = async () => {
       try {
@@ -27,7 +26,6 @@ export const FarmProvider = ({ children }) => {
     loadSavedFarm();
   }, []);
 
-  // Save selected farm to storage whenever it changes
   useEffect(() => {
     const saveFarm = async () => {
       try {

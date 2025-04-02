@@ -1,4 +1,3 @@
-// Datos simulados para desarrollo cuando el servidor no está disponible
 export const mockCattle = [
   {
     _id: '1',

@@ -9,7 +9,7 @@ export default function CattleDetailPage() {
   
   return (
     <View style={styles.container}>
-      <CattleDetailScreen route={{ params: { cattleId: params.id } }} />
+      <CattleDetailScreen />
     </View>
   );
 }

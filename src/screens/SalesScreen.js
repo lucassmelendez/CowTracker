@@ -15,10 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
+import { salesStyles } from '../styles/salesStyles';
 
 const SalesScreen = () => {
   const router = useRouter();
-  // Datos de ejemplo para ventas
   const [sales, setSales] = useState([
     { 
       id: '1', 
@@ -45,22 +45,17 @@ const SalesScreen = () => {
     },
   ]);
 
-  // Estado para filtros
   const [filterMonth, setFilterMonth] = useState('Todos');
   const months = ['Todos', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-  // Estado para modales
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
   const [addModalVisible, setAddModalVisible] = useState(false);
-
-  // Estado para el formulario de nueva venta
   const [formDate, setFormDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [customer, setCustomer] = useState('');
   const [selectedCattle, setSelectedCattle] = useState([]);
   
-  // Simulación de ganado disponible para vender
   const availableCattle = [
     { id: 'c6', name: 'Vaca Holstein', identifier: 'BOV-2023-154', price: 1700 },
     { id: 'c7', name: 'Toro Angus', identifier: 'BOV-2023-167', price: 2100 },
@@ -124,7 +119,6 @@ const SalesScreen = () => {
     Alert.alert('Éxito', 'Venta registrada correctamente');
   };
 
-  // Filtrar ventas por mes si se ha seleccionado uno
   const filteredSales = filterMonth === 'Todos' 
     ? sales 
     : sales.filter(sale => {
@@ -134,23 +128,23 @@ const SalesScreen = () => {
 
   const renderSaleItem = ({ item }) => (
     <TouchableOpacity 
-      style={styles.saleCard}
+      style={salesStyles.saleCard}
       onPress={() => openDetailsModal(item)}
     >
-      <View style={styles.cardHeader}>
-        <Text style={styles.dateText}>{formatDate(item.date)}</Text>
-        <View style={styles.amountContainer}>
-          <Text style={styles.amountText}>${item.totalAmount}</Text>
+      <View style={salesStyles.cardHeader}>
+        <Text style={salesStyles.dateText}>{formatDate(item.date)}</Text>
+        <View style={salesStyles.amountContainer}>
+          <Text style={salesStyles.amountText}>${item.totalAmount}</Text>
         </View>
       </View>
 
-      <View style={styles.cardBody}>
-        <Text style={styles.customerText}>{item.customer}</Text>
-        <Text style={styles.cattleCount}>{item.cattleCount} {item.cattleCount === 1 ? 'animal' : 'animales'}</Text>
+      <View style={salesStyles.cardBody}>
+        <Text style={salesStyles.customerText}>{item.customer}</Text>
+        <Text style={salesStyles.cattleCount}>{item.cattleCount} {item.cattleCount === 1 ? 'animal' : 'animales'}</Text>
       </View>
 
-      <View style={styles.cardFooter}>
-        <Text style={styles.viewDetails}>Ver detalles</Text>
+      <View style={salesStyles.cardFooter}>
+        <Text style={salesStyles.viewDetails}>Ver detalles</Text>
         <Ionicons name="chevron-forward" size={16} color="#27ae60" />
       </View>
     </TouchableOpacity>
@@ -159,17 +153,17 @@ const SalesScreen = () => {
   const renderCattleItem = ({ item }) => (
     <TouchableOpacity 
       style={[
-        styles.cattleItem, 
-        selectedCattle.some(c => c.id === item.id) && styles.selectedCattle
+        salesStyles.cattleItem, 
+        selectedCattle.some(c => c.id === item.id) && salesStyles.selectedCattle
       ]}
       onPress={() => toggleCattleSelection(item)}
     >
-      <View style={styles.cattleInfo}>
-        <Text style={styles.cattleName}>{item.name}</Text>
-        <Text style={styles.cattleId}>{item.identifier}</Text>
+      <View style={salesStyles.cattleInfo}>
+        <Text style={salesStyles.cattleName}>{item.name}</Text>
+        <Text style={salesStyles.cattleId}>{item.identifier}</Text>
       </View>
-      <View style={styles.cattlePriceContainer}>
-        <Text style={styles.cattlePrice}>${item.price}</Text>
+      <View style={salesStyles.cattlePriceContainer}>
+        <Text style={salesStyles.cattlePrice}>${item.price}</Text>
         {selectedCattle.some(c => c.id === item.id) && (
           <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
         )}
@@ -182,32 +176,32 @@ const SalesScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Ventas</Text>
-        <Text style={styles.subtitle}>Registro de todas tus transacciones</Text>
+    <View style={salesStyles.container}>
+      <View style={salesStyles.header}>
+        <Text style={salesStyles.title}>Ventas</Text>
+        <Text style={salesStyles.subtitle}>Registro de todas tus transacciones</Text>
       </View>
 
-      <View style={styles.filterContainer}>
-        <Text style={styles.filterLabel}>Filtrar por mes:</Text>
+      <View style={salesStyles.filterContainer}>
+        <Text style={salesStyles.filterLabel}>Filtrar por mes:</Text>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.monthsContainer}
+          contentContainerStyle={salesStyles.monthsContainer}
         >
           {months.map((month) => (
             <TouchableOpacity
               key={month}
               style={[
-                styles.monthButton,
-                filterMonth === month && styles.selectedMonthButton
+                salesStyles.monthButton,
+                filterMonth === month && salesStyles.selectedMonthButton
               ]}
               onPress={() => setFilterMonth(month)}
             >
               <Text 
                 style={[
-                  styles.monthText,
-                  filterMonth === month && styles.selectedMonthText
+                  salesStyles.monthText,
+                  filterMonth === month && salesStyles.selectedMonthText
                 ]}
               >
                 {month}
@@ -221,17 +215,17 @@ const SalesScreen = () => {
         data={filteredSales}
         renderItem={renderSaleItem}
         keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={salesStyles.listContainer}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
+          <View style={salesStyles.emptyContainer}>
             <Ionicons name="cart-outline" size={60} color="#ddd" />
-            <Text style={styles.emptyText}>No hay ventas registradas</Text>
-            <Text style={styles.emptySubtext}>Agrega una nueva venta para comenzar</Text>
+            <Text style={salesStyles.emptyText}>No hay ventas registradas</Text>
+            <Text style={salesStyles.emptySubtext}>Agrega una nueva venta para comenzar</Text>
           </View>
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={openAddModal}>
+      <TouchableOpacity style={salesStyles.fab} onPress={openAddModal}>
         <Ionicons name="add" size={30} color="#fff" />
       </TouchableOpacity>
 
@@ -242,10 +236,10 @@ const SalesScreen = () => {
         visible={detailsModalVisible}
         onRequestClose={() => setDetailsModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Detalles de la venta</Text>
+        <View style={salesStyles.modalContainer}>
+          <View style={salesStyles.modalContent}>
+            <View style={salesStyles.modalHeader}>
+              <Text style={salesStyles.modalTitle}>Detalles de la venta</Text>
               <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
@@ -253,32 +247,38 @@ const SalesScreen = () => {
 
             {selectedSale && (
               <>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Fecha:</Text>
-                  <Text style={styles.detailValue}>{formatDate(selectedSale.date)}</Text>
+                <View style={salesStyles.detailRow}>
+                  <Text style={salesStyles.detailLabel}>Fecha:</Text>
+                  <Text style={salesStyles.detailValue}>{formatDate(selectedSale.date)}</Text>
                 </View>
                 
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Cliente:</Text>
-                  <Text style={styles.detailValue}>{selectedSale.customer}</Text>
+                <View style={salesStyles.detailRow}>
+                  <Text style={salesStyles.detailLabel}>Cliente:</Text>
+                  <Text style={salesStyles.detailValue}>{selectedSale.customer}</Text>
                 </View>
                 
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Total:</Text>
-                  <Text style={styles.detailValue}>${selectedSale.totalAmount}</Text>
+                <View style={salesStyles.detailRow}>
+                  <Text style={salesStyles.detailLabel}>Total:</Text>
+                  <Text style={salesStyles.detailValue}>${selectedSale.totalAmount}</Text>
                 </View>
-
-                <Text style={styles.sectionTitle}>Animales vendidos</Text>
                 
-                {selectedSale.items.map((item) => (
-                  <View key={item.id} style={styles.itemRow}>
-                    <View>
-                      <Text style={styles.itemName}>{item.name}</Text>
-                      <Text style={styles.itemId}>{item.identifier}</Text>
+                <Text style={salesStyles.itemsTitle}>Animales vendidos:</Text>
+                
+                <ScrollView style={{ maxHeight: 200 }}>
+                  {selectedSale.items.map((item, index) => (
+                    <View key={item.id} style={salesStyles.itemContainer}>
+                      <View style={salesStyles.itemInfo}>
+                        <Text style={salesStyles.itemName}>{item.name}</Text>
+                        <Text style={salesStyles.itemId}>{item.identifier}</Text>
+                      </View>
+                      <Text style={salesStyles.itemPrice}>${item.price}</Text>
                     </View>
-                    <Text style={styles.itemPrice}>${item.price}</Text>
-                  </View>
-                ))}
+                  ))}
+                </ScrollView>
+                
+                <View style={salesStyles.totalContainer}>
+                  <Text style={salesStyles.totalText}>Total: ${selectedSale.totalAmount}</Text>
+                </View>
               </>
             )}
           </View>
@@ -292,81 +292,96 @@ const SalesScreen = () => {
         visible={addModalVisible}
         onRequestClose={() => setAddModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Nueva venta</Text>
+        <View style={salesStyles.modalContainer}>
+          <View style={salesStyles.modalContent}>
+            <View style={salesStyles.modalHeader}>
+              <Text style={salesStyles.modalTitle}>Nueva venta</Text>
               <TouchableOpacity onPress={() => setAddModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-
-            <Text style={styles.label}>Fecha</Text>
-            <TouchableOpacity 
-              style={styles.datePickerButton} 
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.dateText}>{formatDate(formDate.toISOString())}</Text>
-              <Ionicons name="calendar-outline" size={20} color="#555" />
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={formDate}
-                mode="date"
-                display="default"
-                onChange={onChangeDate}
-              />
-            )}
-
-            <Text style={styles.label}>Cliente</Text>
-            <TextInput 
-              style={styles.input}
-              value={customer}
-              onChangeText={setCustomer}
-              placeholder="Nombre del cliente"
-            />
-
-            <Text style={styles.label}>Animales seleccionados ({selectedCattle.length})</Text>
-            <TouchableOpacity 
-              style={styles.selectCattleButton}
-              onPress={() => setSelectCattleModalVisible(true)}
-            >
-              <Text style={styles.selectCattleText}>Seleccionar animales</Text>
-              <Ionicons name="chevron-forward" size={16} color="#27ae60" />
-            </TouchableOpacity>
-
-            {selectedCattle.length > 0 && (
-              <View style={styles.selectedCattleList}>
-                {selectedCattle.map(cattle => (
-                  <View key={cattle.id} style={styles.selectedCattleItem}>
-                    <Text style={styles.selectedCattleName}>{cattle.name}</Text>
-                    <Text style={styles.selectedCattlePrice}>${cattle.price}</Text>
-                  </View>
-                ))}
-                <View style={styles.totalContainer}>
-                  <Text style={styles.totalLabel}>Total:</Text>
-                  <Text style={styles.totalAmount}>
-                    ${selectedCattle.reduce((sum, cattle) => sum + cattle.price, 0)}
+            
+            <ScrollView>
+              <View style={salesStyles.formGroup}>
+                <Text style={salesStyles.formLabel}>Fecha</Text>
+                <TouchableOpacity 
+                  style={salesStyles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={salesStyles.dateText}>
+                    {formDate.toLocaleDateString()}
                   </Text>
-                </View>
+                  <Ionicons name="calendar-outline" size={20} color="#666" />
+                </TouchableOpacity>
+                
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={formDate}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeDate}
+                  />
+                )}
               </View>
-            )}
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={styles.cancelButton} 
-                onPress={() => setAddModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.saveButton}
-                onPress={handleSave}
-              >
-                <Text style={styles.saveButtonText}>Registrar venta</Text>
-              </TouchableOpacity>
-            </View>
+              
+              <View style={salesStyles.formGroup}>
+                <Text style={salesStyles.formLabel}>Cliente</Text>
+                <TextInput
+                  style={salesStyles.input}
+                  value={customer}
+                  onChangeText={setCustomer}
+                  placeholder="Nombre del comprador"
+                />
+              </View>
+              
+              <View style={salesStyles.formGroup}>
+                <Text style={salesStyles.formLabel}>Animales</Text>
+                <TouchableOpacity 
+                  style={salesStyles.selectCattleButton}
+                  onPress={() => setSelectCattleModalVisible(true)}
+                >
+                  <Text style={salesStyles.selectCattleText}>Seleccionar animales</Text>
+                </TouchableOpacity>
+                
+                {selectedCattle.length > 0 && (
+                  <View style={salesStyles.selectedCattleContainer}>
+                    <Text style={salesStyles.selectedCattleCount}>
+                      {selectedCattle.length} {selectedCattle.length === 1 ? 'animal' : 'animales'} seleccionado(s)
+                    </Text>
+                    {selectedCattle.map(cattle => (
+                      <View key={cattle.id} style={salesStyles.cattleItem}>
+                        <View style={salesStyles.cattleInfo}>
+                          <Text style={salesStyles.cattleName}>{cattle.name}</Text>
+                          <Text style={salesStyles.cattleId}>{cattle.identifier}</Text>
+                        </View>
+                        <Text style={salesStyles.cattlePrice}>${cattle.price}</Text>
+                      </View>
+                    ))}
+                    <View style={salesStyles.totalContainer}>
+                      <Text style={salesStyles.totalText}>
+                        Total: ${selectedCattle.reduce((sum, item) => sum + item.price, 0)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+              
+              <View style={salesStyles.buttonContainer}>
+                <TouchableOpacity 
+                  style={salesStyles.cancelButton}
+                  onPress={() => setAddModalVisible(false)}
+                >
+                  <Text style={salesStyles.cancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={salesStyles.saveButton}
+                  onPress={handleSave}
+                >
+                  <Text style={salesStyles.saveButtonText}>Guardar</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -378,400 +393,35 @@ const SalesScreen = () => {
         visible={selectCattleModalVisible}
         onRequestClose={() => setSelectCattleModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Seleccionar animales</Text>
+        <View style={salesStyles.modalContainer}>
+          <View style={salesStyles.modalContent}>
+            <View style={salesStyles.modalHeader}>
+              <Text style={salesStyles.modalTitle}>Seleccionar ganado</Text>
               <TouchableOpacity onPress={() => setSelectCattleModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-
+            
             <FlatList
               data={availableCattle}
               renderItem={renderCattleItem}
               keyExtractor={item => item.id}
-              contentContainerStyle={styles.cattleListContainer}
+              style={{ maxHeight: 300 }}
             />
-
-            <TouchableOpacity 
-              style={styles.confirmButton}
-              onPress={() => setSelectCattleModalVisible(false)}
-            >
-              <Text style={styles.confirmButtonText}>Confirmar selección</Text>
-            </TouchableOpacity>
+            
+            <View style={salesStyles.buttonContainer}>
+              <TouchableOpacity 
+                style={salesStyles.saveButton}
+                onPress={() => setSelectCattleModalVisible(false)}
+              >
+                <Text style={salesStyles.saveButtonText}>Confirmar selección</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    padding: 20,
-    paddingTop: 30,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.8,
-    marginTop: 5,
-  },
-  filterContainer: {
-    padding: 15,
-    backgroundColor: '#fff',
-  },
-  filterLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#555',
-    marginBottom: 10,
-  },
-  monthsContainer: {
-    paddingBottom: 10,
-  },
-  monthButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    backgroundColor: '#f0f0f0',
-  },
-  selectedMonthButton: {
-    backgroundColor: '#27ae60',
-  },
-  monthText: {
-    color: '#555',
-    fontWeight: '500',
-  },
-  selectedMonthText: {
-    color: '#fff',
-  },
-  listContainer: {
-    padding: 15,
-    paddingBottom: 80,
-  },
-  saleCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    ...getShadowStyle(),
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  dateText: {
-    fontSize: 14,
-    color: '#555',
-  },
-  amountContainer: {
-    backgroundColor: '#f0f8f2',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 5,
-  },
-  amountText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#27ae60',
-  },
-  cardBody: {
-    marginBottom: 12,
-  },
-  customerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  cattleCount: {
-    fontSize: 14,
-    color: '#777',
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 10,
-  },
-  viewDetails: {
-    fontSize: 14,
-    color: '#27ae60',
-    marginRight: 5,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#27ae60',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...getShadowStyle({ elevation: 5, opacity: 0.25 }),
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 50,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#555',
-    marginTop: 20,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#777',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    width: '90%',
-    maxHeight: '80%',
-    ...getShadowStyle({ elevation: 5 }),
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  detailLabel: {
-    fontSize: 16,
-    color: '#555',
-  },
-  detailValue: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  itemId: {
-    fontSize: 14,
-    color: '#777',
-    marginTop: 2,
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#27ae60',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
-    marginTop: 15,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  datePickerButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-  },
-  selectCattleButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f7f7f7',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-  },
-  selectCattleText: {
-    fontSize: 16,
-    color: '#27ae60',
-  },
-  selectedCattleList: {
-    marginTop: 15,
-    backgroundColor: '#f7f7f7',
-    borderRadius: 8,
-    padding: 10,
-  },
-  selectedCattleItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  selectedCattleName: {
-    fontSize: 14,
-    color: '#333',
-  },
-  selectedCattlePrice: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#27ae60',
-  },
-  totalContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  totalAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#27ae60',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 25,
-  },
-  cancelButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  cancelButtonText: {
-    color: '#555',
-    fontWeight: '500',
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: '#27ae60',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginLeft: 8,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cattleListContainer: {
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  cattleItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  selectedCattle: {
-    backgroundColor: '#f0f8f2',
-  },
-  cattleInfo: {
-    flex: 1,
-  },
-  cattleName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
-  cattleId: {
-    fontSize: 14,
-    color: '#777',
-    marginTop: 2,
-  },
-  cattlePriceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cattlePrice: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#27ae60',
-    marginRight: 10,
-  },
-  confirmButton: {
-    backgroundColor: '#27ae60',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  confirmButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-});
 
 export default SalesScreen; 

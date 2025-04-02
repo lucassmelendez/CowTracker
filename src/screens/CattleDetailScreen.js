@@ -1,315 +1,396 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  ActivityIndicator
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { getShadowStyle } from '../utils/styles';
-import { deleteCattle } from '../services/firestore';
+import { cattleDetailStyles } from '../styles/cattleDetailStyles';
+import { getCattleById, deleteCattle, getMedicalRecords } from '../services/firestore';
 
-const CattleDetailScreen = ({ route }) => {
+const CattleDetailScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const cattleId = route?.params?.cattleId || params.id;
+  const cattleId = params?.id;
   
-  // En un escenario real, obtendríamos estos datos del backend
-  // Para demostración, creamos unos datos ficticios
-  const cattleData = {
-    id: '1',
-    identifier: 'BOV-2023-001',
-    name: 'Estrella',
-    type: 'Vaca',
-    breed: 'Holstein',
-    gender: 'Hembra',
-    dateOfBirth: '2020-05-15',
-    weight: 450,
-    healthStatus: 'Saludable',
-    purchaseDate: '2021-01-10',
-    purchasePrice: 1200,
-    location: 'Potrero Norte',
-    notes: 'Excelente productora de leche. Vacunada en marzo 2023.',
-    milkProduction: [
-      { date: '2023-01-15', amount: 28 },
-      { date: '2023-01-16', amount: 30 },
-      { date: '2023-01-17', amount: 27 },
-      { date: '2023-01-18', amount: 29 },
-    ],
-    medicalRecords: [
-      { date: '2022-10-05', treatment: 'Vacunación anual', veterinarian: 'Dr. García' },
-      { date: '2023-03-12', treatment: 'Desparasitación', veterinarian: 'Dra. Pérez' },
-    ]
+  const [cattle, setCattle] = useState(null);
+  const [medicalRecords, setMedicalRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [debug, setDebug] = useState(null);
+
+  // Cargar datos del ganado
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      if (!cattleId) {
+        setError('ID de ganado no proporcionado');
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // Obtener datos del ganado
+        const cattleData = await getCattleById(cattleId);
+        if (isMounted) {
+          setCattle(cattleData);
+          setDebug(JSON.stringify(cattleData, null, 2));
+          
+          // Obtener registros médicos
+          try {
+            const records = await getMedicalRecords(cattleId);
+            if (isMounted) {
+              setMedicalRecords(records || []);
+            }
+          } catch (medError) {
+            console.error('Error al cargar registros médicos:', medError);
+            // Continuar incluso si los registros médicos fallan
+          }
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError('No se pudo cargar la información del ganado');
+          console.error('Error:', err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [cattleId]);
+
+  // Formatear fechas (manejo seguro de timestamps de Firestore)
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'No disponible';
+    
+    try {
+      let date;
+      if (typeof dateValue === 'object' && dateValue.seconds) {
+        // Es un timestamp de Firestore
+        date = new Date(dateValue.seconds * 1000);
+      } else {
+        // Es otro formato de fecha
+        date = new Date(dateValue);
+      }
+      
+      if (isNaN(date.getTime())) {
+        return 'Fecha inválida';
+      }
+      
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (err) {
+      console.error('Error al formatear fecha:', err);
+      return 'Error en formato';
+    }
   };
 
+  // Manejadores de eventos
+  const handleEdit = () => {
+    if (cattleId) {
+      router.push(`/add-cattle?id=${cattleId}`);
+    }
+  };
+
+  const confirmDelete = () => {
+    setDeleteModalVisible(true);
+  };
 
   const handleDelete = async () => {
-    console.log('entre');
+    if (!cattleId) {
+      Alert.alert('Error', 'ID de ganado no disponible');
+      return;
+    }
+    
     try {
-      console.log('ID del ganado a eliminar:', cattleId);
       await deleteCattle(cattleId);
-      router.back(); 
-    } catch (error) {
-      console.error('Error al eliminar el ganado:', error);
+      Alert.alert('Éxito', 'Ganado eliminado correctamente');
+      setDeleteModalVisible(false);
+      router.replace('/explore');
+    } catch (err) {
+      console.error('Error al eliminar:', err);
       Alert.alert('Error', 'No se pudo eliminar el ganado');
     }
   };
 
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('es-ES', options);
-  };
+  // Pantalla de carga
+  if (loading) {
+    return (
+      <View style={cattleDetailStyles.container}>
+        <View style={[cattleDetailStyles.header, cattleDetailStyles.loadingContainer]}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={cattleDetailStyles.loadingText}>Cargando datos...</Text>
+        </View>
+      </View>
+    );
+  }
 
-  const handleEdit = () => {
-    console.log('Navegando a editar ganado:', cattleId);
-    router.push('/add-cattle?id=' + cattleId);
-  };
-
-  const handleGoBack = () => {
-    router.back();
-  };
+  // Pantalla de error
+  if (error || !cattle) {
+    return (
+      <View style={cattleDetailStyles.container}>
+        <View style={cattleDetailStyles.header}>
+          <Text style={cattleDetailStyles.name}>{error || 'No se encontró el ganado'}</Text>
+        </View>
+        <TouchableOpacity 
+          style={cattleDetailStyles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={cattleDetailStyles.buttonText}>Volver</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.identifier}>{cattleData.identifier}</Text>
-        <Text style={styles.name}>{cattleData.name}</Text>
-        <View style={styles.tagContainer}>
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>{cattleData.type}</Text>
+    <View style={cattleDetailStyles.container}>
+      <ScrollView>
+        {/* Encabezado */}
+        <View style={cattleDetailStyles.header}>
+          <Text style={cattleDetailStyles.identifier}>
+            {cattle.identificationNumber || 'Sin identificación'}
+          </Text>
+          <Text style={cattleDetailStyles.name}>
+            {cattle.name || 'Sin nombre'}
+          </Text>
+          
+          <View style={cattleDetailStyles.tagContainer}>
+            <View style={cattleDetailStyles.tag}>
+              <Text style={cattleDetailStyles.tagText}>
+                {cattle.breed || 'Sin raza'}
+              </Text>
+            </View>
+            <View style={cattleDetailStyles.tag}>
+              <Text style={cattleDetailStyles.tagText}>
+                {cattle.gender ? (cattle.gender === 'macho' ? 'Macho' : 'Hembra') : 'Sin género'}
+              </Text>
+            </View>
+            <View style={[cattleDetailStyles.tag, cattleDetailStyles.healthTag]}>
+              <Text style={cattleDetailStyles.tagText}>
+                {cattle.healthStatus || 'Estado desconocido'}
+              </Text>
+            </View>
           </View>
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>{cattleData.breed}</Text>
+        </View>
+
+        {/* Información General */}
+        <View style={cattleDetailStyles.infoCard}>
+          <Text style={cattleDetailStyles.sectionTitle}>Información General</Text>
+          
+          <View style={cattleDetailStyles.infoRow}>
+            <Text style={cattleDetailStyles.infoLabel}>Identificador</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.identificationNumber || 'No disponible'}
+            </Text>
           </View>
-          <View style={[styles.tag, styles.healthTag]}>
-            <Text style={styles.tagText}>{cattleData.healthStatus}</Text>
+          
+          <View style={cattleDetailStyles.infoRow}>
+            <Text style={cattleDetailStyles.infoLabel}>Tipo</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.type || 'No disponible'}
+            </Text>
+          </View>
+          
+          <View style={cattleDetailStyles.infoRow}>
+            <Text style={cattleDetailStyles.infoLabel}>Fecha de nacimiento</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.birthDate ? formatDate(cattle.birthDate) : 'No disponible'}
+            </Text>
+          </View>
+          
+          <View style={cattleDetailStyles.infoRow}>
+            <Text style={cattleDetailStyles.infoLabel}>Peso</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.weight ? `${cattle.weight} kg` : 'No disponible'}
+            </Text>
+          </View>
+          
+          <View style={cattleDetailStyles.infoRow}>
+            <Text style={cattleDetailStyles.infoLabel}>Estado</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.status ? cattle.status.charAt(0).toUpperCase() + cattle.status.slice(1) : 'No disponible'}
+            </Text>
+          </View>
+          
+          <View style={cattleDetailStyles.infoRow}>
+            <Text style={cattleDetailStyles.infoLabel}>Salud</Text>
+            <Text style={cattleDetailStyles.infoValue}>
+              {cattle.healthStatus ? cattle.healthStatus.charAt(0).toUpperCase() + cattle.healthStatus.slice(1) : 'No disponible'}
+            </Text>
+          </View>
+          
+          {/* Verificación de ubicación */}
+          {cattle.location && cattle.location.farm && (
+            <View style={cattleDetailStyles.infoRow}>
+              <Text style={cattleDetailStyles.infoLabel}>Rancho</Text>
+              <Text style={cattleDetailStyles.infoValue}>
+                {typeof cattle.location.farm === 'object' && cattle.location.farm.name 
+                  ? cattle.location.farm.name 
+                  : 'Rancho asignado'}
+              </Text>
+            </View>
+          )}
+          
+          {cattle.location && cattle.location.area && (
+            <View style={cattleDetailStyles.infoRow}>
+              <Text style={cattleDetailStyles.infoLabel}>Área</Text>
+              <Text style={cattleDetailStyles.infoValue}>
+                {cattle.location.area}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Información de Compra */}
+        {(cattle.purchaseDate || cattle.purchasePrice) && (
+          <View style={cattleDetailStyles.infoCard}>
+            <Text style={cattleDetailStyles.sectionTitle}>Información de Compra</Text>
+            
+            {cattle.purchaseDate && (
+              <View style={cattleDetailStyles.infoRow}>
+                <Text style={cattleDetailStyles.infoLabel}>Fecha de compra</Text>
+                <Text style={cattleDetailStyles.infoValue}>
+                  {formatDate(cattle.purchaseDate)}
+                </Text>
+              </View>
+            )}
+            
+            {cattle.purchasePrice && (
+              <View style={cattleDetailStyles.infoRow}>
+                <Text style={cattleDetailStyles.infoLabel}>Precio de compra</Text>
+                <Text style={cattleDetailStyles.infoValue}>
+                  ${cattle.purchasePrice}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Historial Médico */}
+        <View style={cattleDetailStyles.infoCard}>
+          <Text style={cattleDetailStyles.sectionTitle}>Historial Médico</Text>
+          
+          {medicalRecords && medicalRecords.length > 0 ? (
+            medicalRecords.map((record, index) => (
+              <View key={record._id || `med-${index}`} style={cattleDetailStyles.medicalRecord}>
+                <Text style={cattleDetailStyles.medicalDate}>
+                  {record.date ? formatDate(record.date) : 'Fecha no disponible'}
+                </Text>
+                
+                {record.treatment && (
+                  <Text style={cattleDetailStyles.medicalTreatment}>
+                    {record.treatment}
+                  </Text>
+                )}
+                
+                {record.veterinarian && (
+                  <Text style={cattleDetailStyles.medicalVet}>
+                    {record.veterinarian}
+                  </Text>
+                )}
+                
+                {record.notes && (
+                  <Text style={cattleDetailStyles.medicalNotes}>
+                    {record.notes}
+                  </Text>
+                )}
+              </View>
+            ))
+          ) : (
+            <Text style={cattleDetailStyles.emptyText}>
+              No hay registros médicos disponibles
+            </Text>
+          )}
+        </View>
+
+        {/* Notas */}
+        {cattle.notes && (
+          <View style={cattleDetailStyles.infoCard}>
+            <Text style={cattleDetailStyles.sectionTitle}>Notas</Text>
+            <Text style={cattleDetailStyles.notes}>
+              {cattle.notes}
+            </Text>
+          </View>
+        )}
+
+        {/* Botones de acción */}
+        <View style={cattleDetailStyles.buttonContainer}>
+          <TouchableOpacity 
+            style={cattleDetailStyles.editButton}
+            onPress={handleEdit}
+          >
+            <Ionicons name="pencil" size={18} color="#fff" />
+            <Text style={cattleDetailStyles.buttonText}>Editar</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={cattleDetailStyles.deleteButton}
+            onPress={confirmDelete}
+          >
+            <Ionicons name="trash" size={18} color="#fff" />
+            <Text style={cattleDetailStyles.buttonText}>Eliminar</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Modal de confirmación de eliminación */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={cattleDetailStyles.modalContainer}>
+          <View style={cattleDetailStyles.modalContent}>
+            <Text style={cattleDetailStyles.modalTitle}>
+              Confirmar eliminación
+            </Text>
+            <Text style={cattleDetailStyles.modalText}>
+              ¿Está seguro que desea eliminar {cattle?.name ? `a ${cattle.name}` : 'este ganado'}? 
+              Esta acción no se puede deshacer.
+            </Text>
+            
+            <View style={cattleDetailStyles.modalButtonsContainer}>
+              <TouchableOpacity
+                style={[cattleDetailStyles.modalButton, cattleDetailStyles.cancelButton]}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <Text style={cattleDetailStyles.cancelButtonText}>
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[cattleDetailStyles.modalButton, cattleDetailStyles.deleteButton]}
+                onPress={handleDelete}
+              >
+                <Text style={cattleDetailStyles.buttonText}>
+                  Eliminar
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>Información general</Text>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Género:</Text>
-          <Text style={styles.infoValue}>{cattleData.gender}</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Fecha de nacimiento:</Text>
-          <Text style={styles.infoValue}>{formatDate(cattleData.dateOfBirth)}</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Peso:</Text>
-          <Text style={styles.infoValue}>{cattleData.weight} kg</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Ubicación:</Text>
-          <Text style={styles.infoValue}>{cattleData.location}</Text>
-        </View>
-      </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>Información económica</Text>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Fecha de compra:</Text>
-          <Text style={styles.infoValue}>{formatDate(cattleData.purchaseDate)}</Text>
-        </View>
-        
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Precio de compra:</Text>
-          <Text style={styles.infoValue}>${cattleData.purchasePrice}</Text>
-        </View>
-      </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>Producción de leche reciente</Text>
-        {cattleData.milkProduction.map((record, index) => (
-          <View key={index} style={styles.infoRow}>
-            <Text style={styles.infoLabel}>{formatDate(record.date)}:</Text>
-            <Text style={styles.infoValue}>{record.amount} litros</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>Historial médico</Text>
-        {cattleData.medicalRecords.map((record, index) => (
-          <View key={index} style={styles.medicalRecord}>
-            <Text style={styles.medicalDate}>{formatDate(record.date)}</Text>
-            <Text style={styles.medicalTreatment}>{record.treatment}</Text>
-            <Text style={styles.medicalVet}>Por: {record.veterinarian}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.infoCard}>
-        <Text style={styles.sectionTitle}>Notas</Text>
-        <Text style={styles.notes}>{cattleData.notes}</Text>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.editButton}
-          onPress={handleEdit}
-        >
-          <Ionicons name="create-outline" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Editar</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <Ionicons name="trash-outline" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </Modal>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    padding: 20,
-    paddingTop: 30,
-    paddingBottom: 30,
-    alignItems: 'center',
-  },
-  identifier: {
-    fontSize: 16,
-    color: '#e0e0e0',
-    marginBottom: 5,
-  },
-  name: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  tagContainer: {
-    flexDirection: 'row',
-    marginTop: 10,
-  },
-  tag: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginHorizontal: 5,
-  },
-  healthTag: {
-    backgroundColor: '#2ecc71',
-  },
-  tagText: {
-    color: '#fff',
-    fontWeight: '500',
-  },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    margin: 10,
-    ...getShadowStyle(),
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingBottom: 8,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  infoLabel: {
-    fontSize: 15,
-    color: '#555',
-    flex: 1,
-  },
-  infoValue: {
-    fontSize: 15,
-    color: '#333',
-    fontWeight: '500',
-    flex: 1,
-    textAlign: 'right',
-  },
-  medicalRecord: {
-    paddingBottom: 12,
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  medicalDate: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#333',
-  },
-  medicalTreatment: {
-    fontSize: 15,
-    color: '#555',
-    marginTop: 4,
-  },
-  medicalVet: {
-    fontSize: 14,
-    color: '#777',
-    marginTop: 2,
-    fontStyle: 'italic',
-  },
-  notes: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
-    marginBottom: 30,
-  },
-  editButton: {
-    backgroundColor: '#27ae60',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 8,
-  },
-  deleteButton: {
-    backgroundColor: '#e74c3c',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 1,
-    marginLeft: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginVertical: 10,
-    ...getShadowStyle(),
-  },
-});
 
 export default CattleDetailScreen;

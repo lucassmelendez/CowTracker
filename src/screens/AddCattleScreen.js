@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
-import { getAllFarms, createCattle, addCattleToFarm } from '../services/firestore';
+import { getAllFarms, createCattle, getCattleById, updateCattle } from '../services/firestore';
 import { useAuth } from '../components/AuthContext';
 
 const AddCattleScreen = ({ route }) => {
@@ -24,22 +24,33 @@ const AddCattleScreen = ({ route }) => {
   const isEditMode = !!cattleId;
   const { userInfo } = useAuth();
 
-  // Estados para los campos del formulario
-  const [identifier, setIdentifier] = useState(isEditMode ? 'BOV-2023-001' : '');
-  const [name, setName] = useState(isEditMode ? 'Estrella' : '');
-  const [type, setType] = useState(isEditMode ? 'Vaca' : '');
-  const [breed, setBreed] = useState(isEditMode ? 'Holstein' : '');
-  const [gender, setGender] = useState(isEditMode ? 'Hembra' : '');
-  const [weight, setWeight] = useState(isEditMode ? '450' : '');
-  const [location, setLocation] = useState(isEditMode ? 'Potrero Norte' : '');
-  const [notes, setNotes] = useState(isEditMode ? 'Excelente productora de leche. Vacunada en marzo 2023.' : '');
-  const [purchasePrice, setPurchasePrice] = useState(isEditMode ? '1200' : '');
+  // Estados del formulario
+  const [identifier, setIdentifier] = useState('');
+  const [name, setName] = useState('');
+  const [type, setType] = useState('');
+  const [breed, setBreed] = useState('');
+  const [gender, setGender] = useState('');
+  const [weight, setWeight] = useState('');
+  const [location, setLocation] = useState('');
+  const [notes, setNotes] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
   const [selectedFarmId, setSelectedFarmId] = useState('');
+  const [healthStatus, setHealthStatus] = useState('saludable');
+  const [status, setStatus] = useState('activo');
+  
+  // Estados para fecha
+  const [dateOfBirth, setDateOfBirth] = useState(new Date());
+  const [purchaseDate, setPurchaseDate] = useState(new Date());
+  const [showDateOfBirthPicker, setShowDateOfBirthPicker] = useState(false);
+  const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
+  
+  // Estados para carga
   const [farms, setFarms] = useState([]);
   const [loadingFarms, setLoadingFarms] = useState(false);
+  const [loadingCattle, setLoadingCattle] = useState(isEditMode);
   
+  // Cargar granjas
   useEffect(() => {
-    // Cargar las granjas disponibles
     const loadFarms = async () => {
       try {
         setLoadingFarms(true);
@@ -58,17 +69,77 @@ const AddCattleScreen = ({ route }) => {
     if (userInfo) {
       loadFarms();
     }
-    
-    // Aquí podría ir lógica para cargar datos iniciales si es modo edición
   }, [userInfo]);
   
-  // Fechas
-  const [dateOfBirth, setDateOfBirth] = useState(isEditMode ? new Date('2020-05-15') : new Date());
-  const [purchaseDate, setPurchaseDate] = useState(isEditMode ? new Date('2021-01-10') : new Date());
-
-  // Estado para los selectores de fecha
-  const [showDateOfBirthPicker, setShowDateOfBirthPicker] = useState(false);
-  const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
+  // Cargar datos del ganado si estamos en modo edición
+  useEffect(() => {
+    const loadCattleData = async () => {
+      if (!isEditMode || !cattleId) return;
+      
+      try {
+        setLoadingCattle(true);
+        const cattleData = await getCattleById(cattleId);
+        
+        if (cattleData) {
+          // Establecer todos los valores del formulario desde los datos del ganado
+          setIdentifier(cattleData.identificationNumber || '');
+          setName(cattleData.name || '');
+          setType(cattleData.type || '');
+          setBreed(cattleData.breed || '');
+          setGender(cattleData.gender || '');
+          setWeight(cattleData.weight ? cattleData.weight.toString() : '');
+          setNotes(cattleData.notes || '');
+          setPurchasePrice(cattleData.purchasePrice ? cattleData.purchasePrice.toString() : '');
+          setStatus(cattleData.status || 'activo');
+          setHealthStatus(cattleData.healthStatus || 'saludable');
+          
+          // Establecer fecha de nacimiento
+          if (cattleData.birthDate) {
+            if (typeof cattleData.birthDate === 'object' && cattleData.birthDate.seconds) {
+              setDateOfBirth(new Date(cattleData.birthDate.seconds * 1000));
+            } else {
+              setDateOfBirth(new Date(cattleData.birthDate));
+            }
+          }
+          
+          // Establecer fecha de compra
+          if (cattleData.purchaseDate) {
+            if (typeof cattleData.purchaseDate === 'object' && cattleData.purchaseDate.seconds) {
+              setPurchaseDate(new Date(cattleData.purchaseDate.seconds * 1000));
+            } else {
+              setPurchaseDate(new Date(cattleData.purchaseDate));
+            }
+          }
+          
+          // Establecer la ubicación
+          if (cattleData.location) {
+            if (cattleData.location.area) {
+              setLocation(cattleData.location.area);
+            }
+            
+            if (cattleData.location.farm) {
+              if (typeof cattleData.location.farm === 'object' && cattleData.location.farm._id) {
+                setSelectedFarmId(cattleData.location.farm._id);
+              } else if (cattleData.farmId) {
+                setSelectedFarmId(cattleData.farmId);
+              }
+            } else if (cattleData.farmId) {
+              setSelectedFarmId(cattleData.farmId);
+            }
+          } else if (cattleData.farmId) {
+            setSelectedFarmId(cattleData.farmId);
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar datos del ganado:', error);
+        Alert.alert('Error', 'No se pudieron cargar los datos del ganado');
+      } finally {
+        setLoadingCattle(false);
+      }
+    };
+    
+    loadCattleData();
+  }, [cattleId, isEditMode]);
 
   const handleCancel = () => {
     router.back();
@@ -87,37 +158,40 @@ const AddCattleScreen = ({ route }) => {
     }
 
     try {
-      // Verificar que tenemos la información del usuario
       if (!userInfo || !userInfo.uid) {
         Alert.alert('Error', 'No se pudo obtener la información del usuario');
         return;
       }
       
-      // Preparar datos del ganado
       const cattleData = {
-        identifier,
+        identificationNumber: identifier,
         name,
         type,
         breed,
         gender,
         weight: parseFloat(weight) || 0,
-        location,
+        location: {
+          area: location || '',
+          farm: selectedFarmId
+        },
         notes,
         purchasePrice: parseFloat(purchasePrice) || 0,
-        dateOfBirth,
-        purchaseDate,
-        status: 'activo',
-        healthStatus: 'saludable',
+        birthDate: dateOfBirth,
+        purchaseDate: purchaseDate,
+        status: status || 'activo',
+        healthStatus: healthStatus || 'saludable',
         userId: userInfo.uid,
-        farmId: selectedFarmId, // Add farmId directly to cattle data
-        createdAt: new Date(),
-        updatedAt: new Date()
+        farmId: selectedFarmId
       };
       
-      // Guardar el ganado en Firestore (ahora incluye directamente el farmId)
-      const newCattle = await createCattle(cattleData);
+      if (isEditMode) {
+        // Actualizar ganado existente
+        await updateCattle(cattleId, cattleData);
+      } else {
+        // Crear nuevo ganado
+        await createCattle(cattleData);
+      }
       
-      // Mostrar alerta y volver atrás
       Alert.alert(
         isEditMode ? 'Ganado Actualizado' : 'Ganado Agregado',
         isEditMode ? 'Los datos se han actualizado correctamente.' : 'El ganado se ha agregado correctamente.',
@@ -144,6 +218,15 @@ const AddCattleScreen = ({ route }) => {
     setShowPurchaseDatePicker(Platform.OS === 'ios');
     setPurchaseDate(currentDate);
   };
+
+  if (loadingCattle) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#27ae60" />
+        <Text style={styles.loadingText}>Cargando datos...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -231,7 +314,57 @@ const AddCattleScreen = ({ route }) => {
           placeholder="Ej. Potrero Norte, Establo 2"
         />
 
+        <Text style={styles.sectionTitle}>Estado y Salud</Text>
+        
+        <Text style={styles.label}>Estado</Text>
+        <View style={styles.optionsContainer}>
+          {['activo', 'vendido', 'fallecido'].map(option => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, status === option && styles.selectedOption]}
+              onPress={() => setStatus(option)}
+            >
+              <Text style={[styles.optionText, status === option && styles.selectedOptionText]}>
+                {option.charAt(0).toUpperCase() + option.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        <Text style={styles.label}>Estado de Salud</Text>
+        <View style={styles.optionsContainer}>
+          {['saludable', 'enfermo', 'en tratamiento', 'en cuarentena'].map(option => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, healthStatus === option && styles.selectedOption]}
+              onPress={() => setHealthStatus(option)}
+            >
+              <Text style={[styles.optionText, healthStatus === option && styles.selectedOptionText]}>
+                {option.charAt(0).toUpperCase() + option.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <Text style={styles.sectionTitle}>Información económica</Text>
+
+        <Text style={styles.label}>Fecha de compra</Text>
+        <TouchableOpacity 
+          style={styles.datePickerButton} 
+          onPress={() => setShowPurchaseDatePicker(true)}
+        >
+          <Text style={styles.dateText}>{formatDate(purchaseDate)}</Text>
+          <Ionicons name="calendar-outline" size={20} color="#555" />
+        </TouchableOpacity>
+
+        {showPurchaseDatePicker && (
+          <DateTimePicker
+            value={purchaseDate}
+            mode="date"
+            display="default"
+            onChange={onChangePurchaseDate}
+          />
+        )}
 
         <Text style={styles.label}>Precio de compra</Text>
         <TextInput
@@ -240,6 +373,17 @@ const AddCattleScreen = ({ route }) => {
           onChangeText={setPurchasePrice}
           placeholder="Ej. 1200"
           keyboardType="numeric"
+        />
+
+        <Text style={styles.label}>Notas</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Información adicional sobre el animal"
+          multiline
+          numberOfLines={4}
+          textAlignVertical="top"
         />
 
         <Text style={styles.sectionTitle}>Asignación a Granja</Text>
@@ -261,58 +405,22 @@ const AddCattleScreen = ({ route }) => {
             ))}
           </View>
         ) : (
-          <View style={styles.noFarmsContainer}>
-            <Text style={styles.noFarmsText}>No tienes granjas disponibles</Text>
-            <TouchableOpacity
-              style={styles.createFarmButton}
-              onPress={() => router.push('/farms')}
-            >
-              <Text style={styles.createFarmButtonText}>Crear Granja</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.noFarmsText}>No hay granjas disponibles. Por favor, crea una granja primero.</Text>
         )}
-
-        <Text style={styles.label}>Fecha de compra</Text>
-        <TouchableOpacity 
-          style={styles.datePickerButton} 
-          onPress={() => setShowPurchaseDatePicker(true)}
-        >
-          <Text style={styles.dateText}>{formatDate(purchaseDate)}</Text>
-          <Ionicons name="calendar-outline" size={20} color="#555" />
-        </TouchableOpacity>
-
-        {showPurchaseDatePicker && (
-          <DateTimePicker
-            value={purchaseDate}
-            mode="date"
-            display="default"
-            onChange={onChangePurchaseDate}
-          />
-        )}
-
-        <Text style={styles.label}>Notas adicionales</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Información adicional relevante"
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.buttonText}>
-              {isEditMode ? 'Actualizar' : 'Registrar'}
-            </Text>
-          </TouchableOpacity>
-          
           <TouchableOpacity 
             style={styles.cancelButton} 
             onPress={handleCancel}
           >
-            <Text style={styles.cancelText}>Cancelar</Text>
+            <Text style={styles.cancelButtonText}>Cancelar</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={handleSave}
+          >
+            <Text style={styles.saveButtonText}>{isEditMode ? 'Actualizar' : 'Guardar'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -321,78 +429,36 @@ const AddCattleScreen = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  // Estilos para selector de granjas
-  farmSelector: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 15,
-  },
-  farmOption: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  selectedFarmOption: {
-    backgroundColor: '#27ae60',
-    borderColor: '#27ae60',
-  },
-  farmOptionText: {
-    color: '#333',
-    fontSize: 14,
-  },
-  selectedFarmOptionText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  noFarmsContainer: {
-    alignItems: 'center',
-    marginVertical: 15,
-    padding: 15,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#eee',
-  },
-  noFarmsText: {
-    color: '#777',
-    marginBottom: 10,
-  },
-  createFarmButton: {
-    backgroundColor: '#3498db',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 5,
-  },
-  createFarmButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#555',
+  },
   header: {
     backgroundColor: '#27ae60',
     padding: 20,
-    paddingBottom: 30,
+    paddingTop: 30,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    textAlign: 'center',
   },
   formContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 10,
-    padding: 20,
     margin: 15,
-    marginTop: -15,
+    padding: 20,
     ...getShadowStyle(),
   },
   sectionTitle: {
@@ -402,13 +468,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#f0f0f0',
     paddingBottom: 8,
   },
   label: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '500',
-    color: '#555',
+    color: '#333',
     marginBottom: 8,
   },
   input: {
@@ -418,7 +484,6 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     marginBottom: 15,
-    backgroundColor: '#fafafa',
   },
   textArea: {
     height: 100,
@@ -432,39 +497,89 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     marginBottom: 15,
-    backgroundColor: '#fafafa',
   },
   dateText: {
     fontSize: 16,
     color: '#333',
   },
-  buttonContainer: {
-    marginTop: 20,
+  optionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 15,
   },
-  saveButton: {
-    backgroundColor: '#27ae60',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
+  optionButton: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
     marginBottom: 10,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  selectedOption: {
+    backgroundColor: '#27ae60',
   },
-  cancelButton: {
-    backgroundColor: '#fff',
+  optionText: {
+    color: '#555',
+  },
+  selectedOptionText: {
+    color: '#fff',
+  },
+  farmSelector: {
+    marginBottom: 15,
+  },
+  farmOption: {
+    padding: 12,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
+    marginBottom: 8,
   },
-  cancelText: {
+  selectedFarmOption: {
+    borderColor: '#27ae60',
+    backgroundColor: '#f0f8f1',
+  },
+  farmOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  selectedFarmOptionText: {
+    color: '#27ae60',
+    fontWeight: '500',
+  },
+  noFarmsText: {
+    color: '#e74c3c',
+    fontStyle: 'italic',
+    marginBottom: 15,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  cancelButtonText: {
     color: '#555',
     fontWeight: '500',
-    fontSize: 16,
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#27ae60',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 

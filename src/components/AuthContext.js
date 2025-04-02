@@ -25,10 +25,8 @@ import {
 } from 'firebase/firestore';
 import api from '../services/api';
 
-// Crear contexto de autenticación
 const AuthContext = createContext();
 
-// Hook personalizado para usar el contexto de autenticación
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -39,7 +37,6 @@ export const AuthProvider = ({ children }) => {
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
 
-  // Efecto para escuchar cambios en el estado de autenticación
   useEffect(() => {
     let isInitialLoad = true;
     
@@ -50,7 +47,6 @@ export const AuthProvider = ({ children }) => {
         
         if (savedUserToken && savedUserInfo) {
           setUserInfo(JSON.parse(savedUserInfo));
-          // Configurar token en el cliente API
           api.setAuthToken(savedUserToken);
         }
       } catch (error) {
@@ -58,7 +54,6 @@ export const AuthProvider = ({ children }) => {
       }
     };
     
-    // Cargar usuario guardado en AsyncStorage primero
     loadSavedUser();
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -67,13 +62,11 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(user);
         setUserInfo(additionalInfo);
         
-        // Actualizar datos persistentes
         try {
           const token = await user.getIdToken();
           await AsyncStorage.setItem('@user_token', token);
           await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
           
-          // Configurar token en el cliente API
           api.setAuthToken(token);
         } catch (error) {
           console.error('Error al guardar datos de usuario:', error);
@@ -82,12 +75,10 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(null);
         setUserInfo(null);
         
-        // Limpiar datos persistentes
         try {
           await AsyncStorage.removeItem('@user_token');
           await AsyncStorage.removeItem('@user_info');
           
-          // Limpiar token de API
           api.clearAuthToken();
         } catch (error) {
           console.error('Error al limpiar datos de usuario:', error);
@@ -104,24 +95,19 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  // Función para registrar un nuevo usuario
   const register = async (name, email, password, role = 'user') => {
     try {
       setLoading(true);
       setError(null);
-
-      // Convertir email a minúsculas antes de registrar
+      
       const normalizedEmail = email.toLowerCase();
       
-      // Registrar usuario con Firebase Auth primero
       const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
       
-      // Actualizar perfil con el nombre
       await updateProfile(userCredential.user, {
         displayName: name
       });
 
-      // Guardar datos adicionales en Firestore
       await setDoc(doc(firestore, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
         name: name,
@@ -130,7 +116,6 @@ export const AuthProvider = ({ children }) => {
         createdAt: serverTimestamp(),
       });
 
-      // Establecer el usuario y su información antes de redirigir
       setCurrentUser(userCredential.user);
       setUserInfo({
         uid: userCredential.user.uid,
@@ -140,10 +125,8 @@ export const AuthProvider = ({ children }) => {
         createdAt: serverTimestamp(),
       });
 
-      // Redirigir al usuario a la pantalla de bienvenida para crear su primera granja
       router.push('/welcome');
 
-      // También registrar en el backend para sincronización
       try {
         await api.post('/users/register', {
           name,
@@ -153,7 +136,6 @@ export const AuthProvider = ({ children }) => {
         });
       } catch (backendError) {
         console.error('Error al registrar en el backend:', backendError);
-        // Continuamos aunque falle el backend, ya que el usuario ya está en Firebase
       }
 
       return userCredential.user;
@@ -165,24 +147,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Función para iniciar sesión
   const login = async (email, password) => {
     try {
       setLoading(true);
       setError(null);
 
-      // Convertir email a minúsculas antes de iniciar sesión
       const normalizedEmail = email.toLowerCase();
       
-      // Iniciar sesión con Firebase Auth
       const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
       
-      // Obtener información adicional del usuario
       const additionalInfo = await getUserInfo(userCredential.user.uid);
       setUserInfo(additionalInfo);
       setCurrentUser(userCredential.user);
 
-      // Guardar los datos del usuario en AsyncStorage para persistencia
       await AsyncStorage.setItem('@user_token', await userCredential.user.getIdToken());
       await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
 
@@ -190,7 +167,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Error de inicio de sesión:', error);
       
-      // Manejo específico de errores
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
       } else if (error.code === 'auth/invalid-email') {
@@ -209,7 +185,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Función para cerrar sesión
   const logout = async () => {
     try {
       setLoading(true);
@@ -226,7 +201,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Función para obtener información adicional del usuario desde Firestore
   const getUserInfo = async (uid) => {
     try {
       const userDoc = await getDoc(doc(firestore, 'users', uid));
@@ -241,18 +215,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Función para verificar si el usuario tiene un rol específico
   const hasRole = (role) => {
     if (!userInfo || !userInfo.role) return false;
     
-    // Si el usuario es admin, tiene acceso a todo
     if (userInfo.role === 'admin') return true;
     
-    // Verificar si el usuario tiene el rol específico
     return userInfo.role === role;
   };
 
-  // Función para actualizar el perfil del usuario
   const updateUserProfile = async (data) => {
     try {
       setLoading(true);
@@ -265,7 +235,6 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Usuario no autenticado');
       }
 
-      // Actualizar datos en Firebase Auth
       if (name) {
         await updateProfile(user, {
           displayName: name
@@ -280,7 +249,6 @@ export const AuthProvider = ({ children }) => {
         await updatePassword(user, password);
       }
 
-      // Actualizar datos en Firestore
       const updateData = {};
       if (name) updateData.name = name;
       if (email) updateData.email = email;
@@ -290,7 +258,6 @@ export const AuthProvider = ({ children }) => {
         updatedAt: serverTimestamp()
       });
 
-      // Actualizar información del usuario en el estado
       const updatedUserInfo = await getUserInfo(user.uid);
       setUserInfo(updatedUserInfo);
 
@@ -303,7 +270,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Valor del contexto
   const value = {
     currentUser,
     userInfo,

@@ -2,21 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   FlatList, 
   TouchableOpacity, 
   ActivityIndicator,
   Alert,
-  RefreshControl,
-  Platform
+  RefreshControl
 } from 'react-native';
-import { getAllCattle } from '../services';
+import { getAllCattle } from '../services/firestore';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { getShadowStyle } from '../utils/styles';
+import { cattleListStyles } from '../styles/cattleListStyles';
+import { colors } from '../styles/commonStyles';
+import { useFarm } from '../components/FarmContext';
+import { useAuth } from '../components/AuthContext';
 
 const CattleListScreen = () => {
   const router = useRouter();
+  const { selectedFarm } = useFarm();
+  const { userInfo } = useAuth();
   const [cattle, setCattle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -27,8 +30,26 @@ const CattleListScreen = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getAllCattle();
-      setCattle(data || []); // Garantizar que siempre sea un array
+      
+      if (!userInfo?.uid) {
+        setError('No se pudo obtener información del usuario');
+        setLoading(false);
+        return;
+      }
+      
+      let data;
+      if (!selectedFarm || selectedFarm._id === 'all-farms') {
+        // Cargar todo el ganado si no hay granja seleccionada o si es "Todas las granjas"
+        data = await getAllCattle(userInfo.uid);
+      } else if (selectedFarm._id === 'no-farm') {
+        // Cargar ganado sin granja asignada
+        data = await getAllCattle(userInfo.uid, null, true);
+      } else {
+        // Cargar ganado específico de la granja seleccionada
+        data = await getAllCattle(userInfo.uid, selectedFarm._id);
+      }
+      
+      setCattle(data || []); 
       setDataLoaded(true);
     } catch (error) {
       console.error('Error cargando ganado:', error);
@@ -46,78 +67,90 @@ const CattleListScreen = () => {
     setRefreshing(false);
   };
 
-  // Cargar datos iniciales
   useEffect(() => {
     loadCattle();
-  }, []);
+  }, [selectedFarm]); // Cargar cuando cambie la granja seleccionada
 
-  // Recargar datos cuando la pantalla obtiene el foco
   useFocusEffect(
     React.useCallback(() => {
       loadCattle();
-      return () => {
-        // Cleanup opcional si es necesario
-      };
-    }, [])
+      return () => {};
+    }, [selectedFarm, userInfo])
   );
 
   const renderCattleItem = ({ item }) => {
     const getStatusColor = (status) => {
-      switch (status) {
+      switch (status?.toLowerCase()) {
         case 'activo':
-          return '#27ae60';
+          return colors.primary;
         case 'vendido':
-          return '#3498db';
+          return colors.secondary;
         case 'fallecido':
-          return '#e74c3c';
+          return colors.error;
         default:
-          return '#7f8c8d';
+          return colors.textLight;
       }
     };
 
     const getHealthStatusColor = (status) => {
-      switch (status) {
+      switch (status?.toLowerCase()) {
         case 'saludable':
-          return '#27ae60';
+          return colors.primary;
         case 'enfermo':
-          return '#e74c3c';
+          return colors.error;
         case 'en tratamiento':
-          return '#f39c12';
+          return colors.warning;
         case 'en cuarentena':
-          return '#9b59b6';
+          return colors.info;
         default:
-          return '#7f8c8d';
+          return colors.textLight;
       }
+    };
+
+    const formatStatus = (status) => {
+      if (!status) return 'No disponible';
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    };
+
+    // Buscar el nombre de la granja si existe
+    const getFarmName = () => {
+      if (!item.farmId) return 'Sin granja asignada';
+      
+      // Si estamos en modo "granja específica", podemos usar el nombre de la granja seleccionada
+      if (selectedFarm && !selectedFarm.isSpecialOption && selectedFarm._id === item.farmId) {
+        return selectedFarm.name;
+      }
+      
+      // Si no tenemos el nombre de la granja en los datos del ganado, mostramos el ID
+      return item.farmName || `Granja: ${item.farmId}`;
     };
 
     return (
       <TouchableOpacity 
-        style={styles.cattleItem}
+        style={cattleListStyles.cattleItem}
         onPress={() => router.push({
           pathname: '/cattle-detail',
           params: { id: item._id }
         })}
       >
-        <View style={styles.cattleHeader}>
-          <Text style={styles.cattleId}>ID: {item.identificationNumber}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-            <Text style={styles.statusText}>{item.status}</Text>
+        <View style={cattleListStyles.cattleHeader}>
+          <Text style={cattleListStyles.cattleId}>ID: {item.identificationNumber}</Text>
+          <View style={[cattleListStyles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={cattleListStyles.statusText}>{formatStatus(item.status)}</Text>
           </View>
         </View>
 
-        <View style={styles.cattleBody}>
-          <Text style={styles.cattleType}>{item.type} - {item.breed}</Text>
-          <Text style={styles.cattleGender}>{item.gender}</Text>
-          <Text style={styles.cattleWeight}>{item.weight} kg</Text>
+        <View style={cattleListStyles.cattleBody}>
+          <Text style={cattleListStyles.cattleType}>{item.type} - {item.breed}</Text>
+          <Text style={cattleListStyles.cattleGender}>{item.gender}</Text>
+          <Text style={cattleListStyles.cattleWeight}>{item.weight} kg</Text>
         </View>
 
-        <View style={styles.cattleFooter}>
-          <View style={[styles.healthBadge, { backgroundColor: getHealthStatusColor(item.healthStatus) }]}>
-            <Text style={styles.healthText}>{item.healthStatus}</Text>
+        <View style={cattleListStyles.cattleFooter}>
+          <View style={[cattleListStyles.healthBadge, { backgroundColor: getHealthStatusColor(item.healthStatus) }]}>
+            <Text style={cattleListStyles.healthText}>{formatStatus(item.healthStatus)}</Text>
           </View>
-          <Text style={styles.locationText}>
-            {item.location && item.location.farm ? item.location.farm.name : 'Sin granja asignada'}
-          </Text>
+          <Text style={cattleListStyles.locationText}>{getFarmName()}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -130,44 +163,71 @@ const CattleListScreen = () => {
 
   if (loading && !refreshing && !dataLoaded) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#27ae60" />
+      <View style={cattleListStyles.centered}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
+  const getSubtitle = () => {
+    if (selectedFarm && selectedFarm._id !== 'all-farms') {
+      if (selectedFarm._id === 'no-farm') {
+        return 'Ganado sin granja asignada';
+      } else {
+        return `Granja: ${selectedFarm.name}`;
+      }
+    }
+    return null;
+  };
+
+  const farmSubtitle = getSubtitle();
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          Total: {cattle.length} {cattle.length === 1 ? 'animal' : 'animales'}
-        </Text>
+    <View style={cattleListStyles.container}>
+      <View style={cattleListStyles.header}>
+        <View style={cattleListStyles.headerTextContainer}>
+          <Text style={cattleListStyles.headerTitle}>
+            Total: {cattle.length} {cattle.length === 1 ? 'animal' : 'animales'}
+          </Text>
+          {farmSubtitle && (
+            <Text style={cattleListStyles.headerSubtitle}>
+              {farmSubtitle}
+            </Text>
+          )}
+        </View>
         <TouchableOpacity 
-          style={styles.addButton}
+          style={cattleListStyles.addButton}
           onPress={handleAddCattle}
         >
-          <Text style={styles.addButtonText}>+ Añadir</Text>
+          <Text style={cattleListStyles.addButtonText}>+ Añadir</Text>
         </TouchableOpacity>
       </View>
 
       {error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
+        <View style={cattleListStyles.errorContainer}>
+          <Text style={cattleListStyles.errorText}>{error}</Text>
           <TouchableOpacity 
-            style={styles.retryButton}
+            style={cattleListStyles.retryButton}
             onPress={loadCattle}
           >
-            <Text style={styles.retryButtonText}>Reintentar</Text>
+            <Text style={cattleListStyles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       ) : cattle.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No tienes ganado registrado</Text>
+        <View style={cattleListStyles.emptyContainer}>
+          <Text style={cattleListStyles.emptyText}>
+            {selectedFarm && selectedFarm._id !== 'all-farms' 
+              ? (selectedFarm._id === 'no-farm' 
+                  ? 'No hay ganado sin granja asignada' 
+                  : `No hay ganado en la granja "${selectedFarm.name}"`)
+              : 'No tienes ganado registrado'
+            }
+          </Text>
           <TouchableOpacity
-            style={styles.emptyButton}
+            style={cattleListStyles.emptyButton}
             onPress={handleAddCattle}
           >
-            <Text style={styles.emptyButtonText}>Añadir ganado</Text>
+            <Text style={cattleListStyles.emptyButtonText}>Añadir ganado</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -175,160 +235,14 @@ const CattleListScreen = () => {
           data={cattle}
           keyExtractor={(item) => item._id}
           renderItem={renderCattleItem}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={cattleListStyles.list}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#27ae60']} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
           }
         />
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
-  },
-  addButton: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  list: {
-    padding: 10,
-  },
-  cattleItem: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 10,
-    padding: 15,
-    ...getShadowStyle({ height: 1, radius: 2 }),
-  },
-  cattleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  cattleId: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  cattleBody: {
-    marginBottom: 10,
-  },
-  cattleType: {
-    fontSize: 15,
-    marginBottom: 2,
-    color: '#34495e',
-  },
-  cattleGender: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 2,
-  },
-  cattleWeight: {
-    fontSize: 14,
-    color: '#7f8c8d',
-  },
-  cattleFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  healthBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  healthText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  locationText: {
-    fontSize: 12,
-    color: '#7f8c8d',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    marginBottom: 20,
-  },
-  emptyButton: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  emptyButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#e74c3c',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#3498db',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-});
 
 export default CattleListScreen;

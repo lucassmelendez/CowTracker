@@ -7,7 +7,6 @@ import { useFarm } from '../../src/components/FarmContext';
 import { useAuth } from '../../src/components/AuthContext';
 import { useRouter } from 'expo-router';
 
-// Custom header component with farm selector and profile menu
 function CustomHeader({ title }: { title: string }) {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
@@ -153,10 +152,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#ffffff',
     marginLeft: 5,
+    flex: 1,
   },
   headerRightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 2,
+    justifyContent: 'flex-end',
   },
   profileButton: {
     marginLeft: 10,

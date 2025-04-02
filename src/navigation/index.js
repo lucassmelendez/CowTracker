@@ -4,7 +4,6 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 
-// Screens
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -15,7 +14,6 @@ import AddCattleScreen from '../screens/AddCattleScreen';
 import SalesScreen from '../screens/SalesScreen';
 import FarmsScreen from '../screens/FarmsScreen';
 
-// Context
 import { useAuth } from '../components/AuthContext';
 
 const Stack = createStackNavigator();
@@ -109,10 +107,8 @@ const Navigation = () => {
   const { isLoading, userToken, currentUser } = useAuth();
   const router = useRouter();
 
-  // Verificar autenticación
   useEffect(() => {
     if (!isLoading && !currentUser) {
-      // Redirigir a login si no hay usuario autenticado
       router.replace('/login');
     }
   }, [currentUser, isLoading]);

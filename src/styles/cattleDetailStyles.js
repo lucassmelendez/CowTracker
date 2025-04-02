@@ -1,0 +1,217 @@
+import { StyleSheet } from 'react-native';
+import { getShadowStyle } from '../utils/styles';
+import { colors } from './commonStyles';
+
+export const cattleDetailStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    backgroundColor: colors.primary,
+    padding: 20,
+    paddingTop: 30,
+    paddingBottom: 30,
+    alignItems: 'center',
+  },
+  identifier: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 5,
+  },
+  name: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.white,
+    marginBottom: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 200,
+  },
+  loadingText: {
+    color: colors.white,
+    marginTop: 10,
+    fontSize: 16,
+  },
+  backButton: {
+    backgroundColor: colors.secondary,
+    padding: 12,
+    margin: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  tag: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginHorizontal: 5,
+  },
+  healthTag: {
+    backgroundColor: colors.success,
+  },
+  tagText: {
+    color: colors.white,
+    fontWeight: '500',
+  },
+  infoCard: {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 15,
+    margin: 10,
+    ...getShadowStyle(),
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingBottom: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  infoLabel: {
+    fontSize: 15,
+    color: colors.textLight,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: '500',
+    flex: 1,
+    textAlign: 'right',
+  },
+  medicalRecord: {
+    paddingBottom: 12,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  medicalDate: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 5,
+  },
+  medicalTreatment: {
+    fontSize: 14,
+    color: colors.text,
+    marginBottom: 3,
+  },
+  medicalVet: {
+    fontSize: 13,
+    color: colors.textLight,
+    fontStyle: 'italic',
+  },
+  medicalNotes: {
+    fontSize: 13,
+    color: colors.text,
+    marginTop: 5,
+    fontStyle: 'italic',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    padding: 10,
+  },
+  notes: {
+    fontSize: 15,
+    color: colors.text,
+    lineHeight: 22,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    margin: 10,
+    marginBottom: 30,
+  },
+  editButton: {
+    backgroundColor: colors.secondary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 5,
+  },
+  deleteButton: {
+    backgroundColor: colors.error,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 5,
+    flex: 1,
+    marginLeft: 5,
+  },
+  buttonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    marginLeft: 5,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    ...getShadowStyle(),
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalText: {
+    fontSize: 15,
+    color: colors.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    padding: 12,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.background,
+    marginRight: 5,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    color: colors.text,
+    fontWeight: 'bold',
+  }
+}); 

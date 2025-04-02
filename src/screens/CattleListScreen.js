@@ -42,15 +42,44 @@ const CattleListScreen = () => {
       
       // Si seleccionó la opción "Todas las granjas"
       if (!selectedFarm || selectedFarm?._id === 'all-farms') {
-        // Cargamos todo el ganado con información de granja
-        const response = await api.cattle.getAllWithFarmInfo();
-        cattleData = response;
+        console.log('Cargando ganado de todas las granjas...');
+        
+        // Primero obtenemos todas las granjas
+        const farmsData = await api.farms.getAll();
+        console.log(`Se encontraron ${farmsData.length} granjas`);
+        
+        // Para cada granja, cargamos su ganado
+        const allCattlePromises = farmsData.map(farm => 
+          api.farms.getCattle(farm._id)
+            .then(cattle => {
+              // Añadimos el nombre de la granja a cada animal
+              return cattle.map(animal => ({
+                ...animal,
+                farmName: farm.name
+              }));
+            })
+            .catch(err => {
+              console.error(`Error al cargar ganado de granja ${farm.name}:`, err);
+              return [];
+            })
+        );
+        
+        // Esperamos que todas las promesas se resuelvan
+        const allCattleResults = await Promise.all(allCattlePromises);
+        
+        // Combinamos todos los resultados
+        cattleData = allCattleResults.flat();
         console.log(`Cargadas ${cattleData.length} cabezas de ganado (todas las granjas)`);
       }
       // Si seleccionó una granja específica
       else if (selectedFarm?._id) {
         // Cargamos ganado de esa granja específica
         cattleData = await api.farms.getCattle(selectedFarm._id);
+        // Añadimos el nombre de la granja a cada animal
+        cattleData = cattleData.map(animal => ({
+          ...animal,
+          farmName: selectedFarm.name
+        }));
         console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name})`);
       }
       

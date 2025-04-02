@@ -1,25 +1,28 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Tu IP real en la red local
-const LOCAL_IP = '192.168.1.84'; // Obtenida de ipconfig
+import { PROD_API_URL, isProd, LOCAL_IP } from './env';
 
 let API_URL;
 
-// Configuración dependiendo de la plataforma
-if (Platform.OS === 'web') {
-  API_URL = 'http://localhost:5000/api';
-} else if (Platform.OS === 'ios') {
-  // Para dispositivos iOS físicos o emulador, usamos la IP local
-  API_URL = `http://${LOCAL_IP}:5000/api`;
-} else if (Platform.OS === 'android') {
-  // Para emulador de Android usamos 10.0.2.2 (apunta al localhost del host)
-  // Para dispositivos físicos Android, usamos la IP local
-  const isEmulator = false; // Cambia a true si estás usando el emulador
-  API_URL = isEmulator ? 'http://10.0.2.2:5000/api' : `http://${LOCAL_IP}:5000/api`;
+// Si estamos en modo producción, siempre usamos la URL de Vercel
+if (isProd) {
+  API_URL = PROD_API_URL;
 } else {
-  API_URL = `http://${LOCAL_IP}:5000/api`;
+  // Configuración dependiendo de la plataforma para desarrollo
+  if (Platform.OS === 'web') {
+    API_URL = 'http://localhost:5000/api';
+  } else if (Platform.OS === 'ios') {
+    // Para dispositivos iOS físicos o emulador, usamos la IP local
+    API_URL = `http://${LOCAL_IP}:5000/api`;
+  } else if (Platform.OS === 'android') {
+    // Para emulador de Android usamos 10.0.2.2 (apunta al localhost del host)
+    // Para dispositivos físicos Android, usamos la IP local
+    const isEmulator = false; // Cambia a true si estás usando el emulador
+    API_URL = isEmulator ? 'http://10.0.2.2:5000/api' : `http://${LOCAL_IP}:5000/api`;
+  } else {
+    API_URL = `http://${LOCAL_IP}:5000/api`;
+  }
 }
 
 // Para debugging

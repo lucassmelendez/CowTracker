@@ -1,171 +1,195 @@
 const asyncHandler = require('express-async-handler');
-const Cattle = require('../models/cattleModel');
+const { db } = require('../config/firebase');
+
+const cattleCollection = db.collection('cattle');
+const medicalRecordsCollection = db.collection('medicalRecords');
 
 const getCattle = asyncHandler(async (req, res) => {
-  const cattle = await Cattle.find({ owner: req.user._id })
-    .populate('location.farm', 'name')
-    .sort('-createdAt');
+  try {
+    const cattleQuery = await cattleCollection
+      .where('owner', '==', req.user.uid)
+      .orderBy('createdAt', 'desc')
+      .get();
+    
+    const cattle = cattleQuery.docs.map(doc => ({
+      _id: doc.id,
+      ...doc.data()
+    }));
 
-  res.json(cattle);
+    res.json(cattle);
+  } catch (error) {
+    res.status(500);
+    throw new Error('Error al obtener ganado: ' + error.message);
+  }
 });
 
 const getCattleById = asyncHandler(async (req, res) => {
-  const cattle = await Cattle.findById(req.params.id)
-    .populate('location.farm', 'name location')
-    .populate('owner', 'name email');
+  try {
+    const cattleDoc = await cattleCollection.doc(req.params.id).get();
 
-  if (cattle) {
+    if (!cattleDoc.exists) {
+      res.status(404);
+      throw new Error('Ganado no encontrado');
+    }
+
+    const cattle = {
+      _id: cattleDoc.id,
+      ...cattleDoc.data()
+    };
+
+    // Verificar propiedad
+    if (cattle.owner !== req.user.uid) {
+      res.status(401);
+      throw new Error('No autorizado, no es propietario de este ganado');
+    }
+
     res.json(cattle);
-  } else {
-    res.status(404);
-    throw new Error('Ganado no encontrado');
+  } catch (error) {
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(500);
+    }
+    throw error;
   }
 });
 
 const createCattle = asyncHandler(async (req, res) => {
-  const {
-    identificationNumber,
-    type,
-    breed,
-    birthDate,
-    gender,
-    weight,
-    purchaseDate,
-    purchasePrice,
-    status,
-    healthStatus,
-    notes,
-    location,
-  } = req.body;
+  try {
+    const cattleData = {
+      ...req.body,
+      owner: req.user.uid,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      weightHistory: [{
+        date: new Date().toISOString(),
+        weight: req.body.weight,
+        notes: 'Peso inicial'
+      }]
+    };
 
-  const cattle = await Cattle.create({
-    owner: req.user._id,
-    identificationNumber,
-    type,
-    breed,
-    birthDate,
-    gender,
-    weight,
-    purchaseDate,
-    purchasePrice,
-    status,
-    healthStatus,
-    notes,
-    location,
-    weightHistory: [
-      {
-        date: new Date(),
-        weight,
-        notes: 'Peso inicial',
-      },
-    ],
-  });
-
-  if (cattle) {
-    res.status(201).json(cattle);
-  } else {
+    const docRef = await cattleCollection.add(cattleData);
+    
+    res.status(201).json({
+      _id: docRef.id,
+      ...cattleData
+    });
+  } catch (error) {
     res.status(400);
-    throw new Error('Datos de ganado inválidos');
+    throw new Error('Error al crear ganado: ' + error.message);
   }
 });
 
 const updateCattle = asyncHandler(async (req, res) => {
-  const cattle = await Cattle.findById(req.params.id);
+  try {
+    const cattleRef = cattleCollection.doc(req.params.id);
+    const cattleDoc = await cattleRef.get();
 
-  if (cattle) {
-    if (cattle.owner.toString() !== req.user._id.toString()) {
+    if (!cattleDoc.exists) {
+      res.status(404);
+      throw new Error('Ganado no encontrado');
+    }
+
+    const cattle = cattleDoc.data();
+
+    // Verificar propiedad
+    if (cattle.owner !== req.user.uid) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
     }
 
-    const {
-      identificationNumber,
-      type,
-      breed,
-      birthDate,
-      gender,
-      weight,
-      purchaseDate,
-      purchasePrice,
-      status,
-      healthStatus,
-      notes,
-      location,
-    } = req.body;
+    // Actualizar historial de peso si cambió
+    const updateData = {
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
 
-    // Actualizar el peso en el historial si cambió
-    if (weight && weight !== cattle.weight) {
-      cattle.weightHistory.push({
-        date: new Date(),
-        weight,
-        notes: 'Actualización de peso',
-      });
+    if (req.body.weight && req.body.weight !== cattle.weight) {
+      updateData.weightHistory = [...(cattle.weightHistory || []), {
+        date: new Date().toISOString(),
+        weight: req.body.weight,
+        notes: 'Actualización de peso'
+      }];
     }
 
-    cattle.identificationNumber = identificationNumber || cattle.identificationNumber;
-    cattle.type = type || cattle.type;
-    cattle.breed = breed || cattle.breed;
-    cattle.birthDate = birthDate || cattle.birthDate;
-    cattle.gender = gender || cattle.gender;
-    cattle.weight = weight || cattle.weight;
-    cattle.purchaseDate = purchaseDate || cattle.purchaseDate;
-    cattle.purchasePrice = purchasePrice || cattle.purchasePrice;
-    cattle.status = status || cattle.status;
-    cattle.healthStatus = healthStatus || cattle.healthStatus;
-    cattle.notes = notes || cattle.notes;
-    cattle.location = location || cattle.location;
+    await cattleRef.update(updateData);
 
-    const updatedCattle = await cattle.save();
-    res.json(updatedCattle);
-  } else {
-    res.status(404);
-    throw new Error('Ganado no encontrado');
+    res.json({
+      _id: req.params.id,
+      ...cattle,
+      ...updateData
+    });
+  } catch (error) {
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(500);
+    }
+    throw error;
   }
 });
 
 const deleteCattle = asyncHandler(async (req, res) => {
-  const cattle = await Cattle.findById(req.params.id);
+  try {
+    const cattleRef = cattleCollection.doc(req.params.id);
+    const cattleDoc = await cattleRef.get();
 
-  if (cattle) {
-    if (cattle.owner.toString() !== req.user._id.toString()) {
+    if (!cattleDoc.exists) {
+      res.status(404);
+      throw new Error('Ganado no encontrado');
+    }
+
+    const cattle = cattleDoc.data();
+
+    // Verificar propiedad
+    if (cattle.owner !== req.user.uid) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
     }
 
-    await cattle.remove();
+    await cattleRef.delete();
+
     res.json({ message: 'Ganado eliminado' });
-  } else {
-    res.status(404);
-    throw new Error('Ganado no encontrado');
+  } catch (error) {
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(500);
+    }
+    throw error;
   }
 });
 
 const addMedicalRecord = asyncHandler(async (req, res) => {
-  const { date, treatment, diagnosis, medication, veterinarian, notes } = req.body;
+  try {
+    const cattleRef = cattleCollection.doc(req.params.id);
+    const cattleDoc = await cattleRef.get();
 
-  const cattle = await Cattle.findById(req.params.id);
+    if (!cattleDoc.exists) {
+      res.status(404);
+      throw new Error('Ganado no encontrado');
+    }
 
-  if (cattle) {
-    if (cattle.owner.toString() !== req.user._id.toString()) {
+    const cattle = cattleDoc.data();
+
+    // Verificar propiedad
+    if (cattle.owner !== req.user.uid) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
     }
 
-    const medicalRecord = {
-      date: date || new Date(),
-      treatment,
-      diagnosis,
-      medication,
-      veterinarian,
-      notes,
+    const medicalData = {
+      ...req.body,
+      cattleId: req.params.id,
+      createdAt: new Date().toISOString(),
+      date: req.body.date || new Date().toISOString()
     };
 
-    cattle.medicalHistory.push(medicalRecord);
-    await cattle.save();
-    res.status(201).json(cattle);
-  } else {
-    res.status(404);
-    throw new Error('Ganado no encontrado');
+    const medicalRef = await medicalRecordsCollection.add(medicalData);
+
+    res.status(201).json({
+      _id: medicalRef.id,
+      ...medicalData
+    });
+  } catch (error) {
+    if (!res.statusCode || res.statusCode === 200) {
+      res.status(500);
+    }
+    throw error;
   }
 });
 
@@ -175,5 +199,5 @@ module.exports = {
   createCattle,
   updateCattle,
   deleteCattle,
-  addMedicalRecord,
+  addMedicalRecord
 }; 

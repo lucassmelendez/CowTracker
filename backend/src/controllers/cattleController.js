@@ -1,195 +1,155 @@
 const asyncHandler = require('express-async-handler');
-const { db } = require('../config/firebase');
-
-const cattleCollection = db.collection('cattle');
-const medicalRecordsCollection = db.collection('medicalRecords');
+const Cattle = require('../models/cattleModel');
 
 const getCattle = asyncHandler(async (req, res) => {
-  try {
-    const cattleQuery = await cattleCollection
-      .where('owner', '==', req.user.uid)
-      .orderBy('createdAt', 'desc')
-      .get();
-    
-    const cattle = cattleQuery.docs.map(doc => ({
-      _id: doc.id,
-      ...doc.data()
-    }));
-
-    res.json(cattle);
-  } catch (error) {
-    res.status(500);
-    throw new Error('Error al obtener ganado: ' + error.message);
-  }
+  const cattle = await Cattle.getAllCattle(req.user.uid);
+  res.json(cattle);
 });
 
 const getCattleById = asyncHandler(async (req, res) => {
-  try {
-    const cattleDoc = await cattleCollection.doc(req.params.id).get();
+  const cattle = await Cattle.getCattleById(req.params.id);
 
-    if (!cattleDoc.exists) {
-      res.status(404);
-      throw new Error('Ganado no encontrado');
-    }
-
-    const cattle = {
-      _id: cattleDoc.id,
-      ...cattleDoc.data()
-    };
-
-    // Verificar propiedad
+  if (cattle) {
+    // Verificar que el usuario sea propietario
     if (cattle.owner !== req.user.uid) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
     }
-
     res.json(cattle);
-  } catch (error) {
-    if (!res.statusCode || res.statusCode === 200) {
-      res.status(500);
-    }
-    throw error;
+  } else {
+    res.status(404);
+    throw new Error('Ganado no encontrado');
   }
 });
 
 const createCattle = asyncHandler(async (req, res) => {
-  try {
-    const cattleData = {
-      ...req.body,
-      owner: req.user.uid,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      weightHistory: [{
-        date: new Date().toISOString(),
-        weight: req.body.weight,
-        notes: 'Peso inicial'
-      }]
-    };
+  const {
+    identificationNumber,
+    type,
+    breed,
+    birthDate,
+    gender,
+    weight,
+    purchaseDate,
+    purchasePrice,
+    status,
+    healthStatus,
+    notes,
+    location,
+  } = req.body;
 
-    const docRef = await cattleCollection.add(cattleData);
-    
-    res.status(201).json({
-      _id: docRef.id,
-      ...cattleData
-    });
-  } catch (error) {
+  const cattle = await Cattle.createCattle({
+    owner: req.user.uid,
+    identificationNumber,
+    type,
+    breed,
+    birthDate,
+    gender,
+    weight,
+    purchaseDate,
+    purchasePrice,
+    status,
+    healthStatus,
+    notes,
+    location,
+  });
+
+  if (cattle) {
+    res.status(201).json(cattle);
+  } else {
     res.status(400);
-    throw new Error('Error al crear ganado: ' + error.message);
+    throw new Error('Datos de ganado inválidos');
   }
 });
 
 const updateCattle = asyncHandler(async (req, res) => {
-  try {
-    const cattleRef = cattleCollection.doc(req.params.id);
-    const cattleDoc = await cattleRef.get();
+  const cattle = await Cattle.getCattleById(req.params.id);
 
-    if (!cattleDoc.exists) {
-      res.status(404);
-      throw new Error('Ganado no encontrado');
-    }
-
-    const cattle = cattleDoc.data();
-
-    // Verificar propiedad
+  if (cattle) {
     if (cattle.owner !== req.user.uid) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
     }
 
-    // Actualizar historial de peso si cambió
-    const updateData = {
-      ...req.body,
-      updatedAt: new Date().toISOString()
-    };
+    const {
+      identificationNumber,
+      type,
+      breed,
+      birthDate,
+      gender,
+      weight,
+      purchaseDate,
+      purchasePrice,
+      status,
+      healthStatus,
+      notes,
+      location,
+    } = req.body;
 
-    if (req.body.weight && req.body.weight !== cattle.weight) {
-      updateData.weightHistory = [...(cattle.weightHistory || []), {
-        date: new Date().toISOString(),
-        weight: req.body.weight,
-        notes: 'Actualización de peso'
-      }];
-    }
-
-    await cattleRef.update(updateData);
-
-    res.json({
-      _id: req.params.id,
-      ...cattle,
-      ...updateData
+    const updatedCattle = await Cattle.updateCattle(req.params.id, {
+      identificationNumber: identificationNumber || cattle.identificationNumber,
+      type: type || cattle.type,
+      breed: breed || cattle.breed,
+      birthDate: birthDate || cattle.birthDate,
+      gender: gender || cattle.gender,
+      weight: weight || cattle.weight,
+      purchaseDate: purchaseDate || cattle.purchaseDate,
+      purchasePrice: purchasePrice || cattle.purchasePrice,
+      status: status || cattle.status,
+      healthStatus: healthStatus || cattle.healthStatus,
+      notes: notes || cattle.notes,
+      location: location || cattle.location,
     });
-  } catch (error) {
-    if (!res.statusCode || res.statusCode === 200) {
-      res.status(500);
-    }
-    throw error;
+
+    res.json(updatedCattle);
+  } else {
+    res.status(404);
+    throw new Error('Ganado no encontrado');
   }
 });
 
 const deleteCattle = asyncHandler(async (req, res) => {
-  try {
-    const cattleRef = cattleCollection.doc(req.params.id);
-    const cattleDoc = await cattleRef.get();
+  const cattle = await Cattle.getCattleById(req.params.id);
 
-    if (!cattleDoc.exists) {
-      res.status(404);
-      throw new Error('Ganado no encontrado');
-    }
-
-    const cattle = cattleDoc.data();
-
-    // Verificar propiedad
+  if (cattle) {
     if (cattle.owner !== req.user.uid) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
     }
 
-    await cattleRef.delete();
-
+    await Cattle.deleteCattle(req.params.id);
     res.json({ message: 'Ganado eliminado' });
-  } catch (error) {
-    if (!res.statusCode || res.statusCode === 200) {
-      res.status(500);
-    }
-    throw error;
+  } else {
+    res.status(404);
+    throw new Error('Ganado no encontrado');
   }
 });
 
 const addMedicalRecord = asyncHandler(async (req, res) => {
-  try {
-    const cattleRef = cattleCollection.doc(req.params.id);
-    const cattleDoc = await cattleRef.get();
+  const { date, treatment, diagnosis, medication, veterinarian, notes } = req.body;
 
-    if (!cattleDoc.exists) {
-      res.status(404);
-      throw new Error('Ganado no encontrado');
-    }
+  const cattle = await Cattle.getCattleById(req.params.id);
 
-    const cattle = cattleDoc.data();
-
-    // Verificar propiedad
+  if (cattle) {
     if (cattle.owner !== req.user.uid) {
       res.status(401);
       throw new Error('No autorizado, no es propietario de este ganado');
     }
 
-    const medicalData = {
-      ...req.body,
-      cattleId: req.params.id,
-      createdAt: new Date().toISOString(),
-      date: req.body.date || new Date().toISOString()
+    const medicalRecord = {
+      date: date || new Date().toISOString(),
+      treatment,
+      diagnosis,
+      medication,
+      veterinarian,
+      notes,
     };
 
-    const medicalRef = await medicalRecordsCollection.add(medicalData);
-
-    res.status(201).json({
-      _id: medicalRef.id,
-      ...medicalData
-    });
-  } catch (error) {
-    if (!res.statusCode || res.statusCode === 200) {
-      res.status(500);
-    }
-    throw error;
+    const updatedCattle = await Cattle.addMedicalRecord(req.params.id, medicalRecord);
+    res.status(201).json(updatedCattle);
+  } else {
+    res.status(404);
+    throw new Error('Ganado no encontrado');
   }
 });
 
@@ -199,5 +159,5 @@ module.exports = {
   createCattle,
   updateCattle,
   deleteCattle,
-  addMedicalRecord
+  addMedicalRecord,
 }; 

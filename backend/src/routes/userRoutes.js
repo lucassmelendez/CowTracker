@@ -6,12 +6,14 @@ const {
   getUserProfile,
   updateUserProfile,
   getUsers,
-  changeUserRole
+  changeUserRole,
+  refreshToken
 } = require('../controllers/userController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
+router.post('/refresh-token', protect, refreshToken);
 
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);

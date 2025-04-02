@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
-import { getAllFarms } from '../services/firestore';
+import api from '../services/api';
 import { useRouter } from 'expo-router';
 import { colors } from '../styles/commonStyles';
 import { getShadowStyle } from '../utils/styles';
@@ -53,7 +53,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       setLoading(true);
       setError(null);
       
-      const farmsData = await getAllFarms(userInfo.uid);
+      const farmsData = await api.farms.getAll();
       
       const farmsWithOptions = [
         ALL_FARMS_OPTION,

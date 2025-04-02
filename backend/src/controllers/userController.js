@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const firebaseUserModel = require('../models/firebaseUserModel');
-const { auth } = require('../config/firebase');
+const authService = require('../services/authService');
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -10,15 +10,26 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('Por favor ingrese todos los campos requeridos');
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    res.status(400);
+    throw new Error('Por favor ingrese un correo electrónico válido');
+  }
+
+  if (password.length < 6) {
+    res.status(400);
+    throw new Error('La contraseña debe tener al menos 6 caracteres');
+  }
+
   try {
     const userData = {
       name,
-      email,
+      email: email.toLowerCase(),
       password,
       role: role || 'user'
     };
 
-    const user = await firebaseUserModel.createUser(userData);
+    const user = await authService.registerUser(userData);
 
     const userResponse = {
       uid: user.uid,
@@ -29,9 +40,17 @@ const registerUser = asyncHandler(async (req, res) => {
 
     res.status(201).json(userResponse);
   } catch (error) {
+    console.error('Error al registrar usuario:', error);
+    
     if (error.code === 'auth/email-already-exists') {
       res.status(400);
       throw new Error('El correo electrónico ya está registrado');
+    } else if (error.code === 'auth/invalid-email') {
+      res.status(400);
+      throw new Error('El formato del correo electrónico es inválido');
+    } else if (error.code === 'auth/weak-password') {
+      res.status(400);
+      throw new Error('La contraseña es demasiado débil');
     } else {
       res.status(500);
       throw new Error('Error al registrar usuario: ' + error.message);
@@ -48,24 +67,28 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   try {
-    const userRecord = await auth.getUserByEmail(email);
+    const authResult = await authService.loginWithEmailAndPassword(email, password);
     
-    const userData = await firebaseUserModel.getUserById(userRecord.uid);
-    
-    const customToken = await auth.createCustomToken(userRecord.uid, {
-      role: userData.role || 'user'
-    });
-    
-    res.json({
-      uid: userRecord.uid,
-      email: userRecord.email,
-      name: userData.name,
-      role: userData.role,
-      token: customToken
-    });
+    res.json(authResult);
   } catch (error) {
-    res.status(401);
-    throw new Error('Credenciales inválidas');
+    console.error('Error en inicio de sesión:', error);
+    
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      res.status(401);
+      throw new Error('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
+    } else if (error.code === 'auth/invalid-email') {
+      res.status(400);
+      throw new Error('El formato del email es inválido.');
+    } else if (error.code === 'auth/user-disabled') {
+      res.status(403);
+      throw new Error('Esta cuenta ha sido deshabilitada.');
+    } else if (error.code === 'auth/too-many-requests') {
+      res.status(429);
+      throw new Error('Demasiados intentos fallidos. Inténtalo más tarde.');
+    } else {
+      res.status(500);
+      throw new Error('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
+    }
   }
 });
 
@@ -153,11 +176,33 @@ const changeUserRole = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc    Refrescar token de autenticación
+ * @route   POST /api/users/refresh-token
+ * @access  Private
+ */
+const refreshToken = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    
+    const newToken = await authService.refreshToken(userId);
+    
+    res.json({
+      token: newToken
+    });
+  } catch (error) {
+    console.error('Error al refrescar token:', error);
+    res.status(500);
+    throw new Error('Error al refrescar token de autenticación');
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
   updateUserProfile,
   getUsers,
-  changeUserRole
+  changeUserRole,
+  refreshToken
 };

@@ -14,15 +14,15 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getShadowStyle } from '../utils/styles';
-import { getAllFarms, createCattle, getCattleById, updateCattle } from '../services/firestore';
 import { useAuth } from '../components/AuthContext';
+import api from '../services/api';
 
 const AddCattleScreen = ({ route }) => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = route?.params?.cattleId || params.id;
   const isEditMode = !!cattleId;
-  const { userInfo } = useAuth();
+  const { user } = useAuth();
 
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
@@ -54,8 +54,9 @@ const AddCattleScreen = ({ route }) => {
     const loadFarms = async () => {
       try {
         setLoadingFarms(true);
-        if (userInfo && userInfo.uid) {
-          const userFarms = await getAllFarms(userInfo.uid);
+        if (user && user.uid) {
+          // Usar la API para obtener las granjas
+          const userFarms = await api.farms.getAll();
           setFarms(userFarms);
         }
       } catch (error) {
@@ -66,10 +67,10 @@ const AddCattleScreen = ({ route }) => {
       }
     };
     
-    if (userInfo) {
+    if (user) {
       loadFarms();
     }
-  }, [userInfo]);
+  }, [user]);
   
   // Cargar datos del ganado si estamos en modo edición
   useEffect(() => {
@@ -78,7 +79,8 @@ const AddCattleScreen = ({ route }) => {
       
       try {
         setLoadingCattle(true);
-        const cattleData = await getCattleById(cattleId);
+        // Usar la API para obtener los detalles del ganado
+        const cattleData = await api.cattle.getById(cattleId);
         
         if (cattleData) {
           // Establecer todos los valores del formulario desde los datos del ganado
@@ -152,13 +154,8 @@ const AddCattleScreen = ({ route }) => {
       return;
     }
 
-    if (!selectedFarmId) {
-      Alert.alert('Error', 'Por favor, selecciona una granja');
-      return;
-    }
-
     try {
-      if (!userInfo || !userInfo.uid) {
+      if (!user || !user.uid) {
         Alert.alert('Error', 'No se pudo obtener la información del usuario');
         return;
       }
@@ -180,16 +177,16 @@ const AddCattleScreen = ({ route }) => {
         purchaseDate: purchaseDate,
         status: status || 'activo',
         healthStatus: healthStatus || 'saludable',
-        userId: userInfo.uid,
+        owner: user.uid,
         farmId: selectedFarmId
       };
       
       if (isEditMode) {
-        // Actualizar ganado existente
-        await updateCattle(cattleId, cattleData);
+        // Actualizar ganado existente usando la API
+        await api.cattle.update(cattleId, cattleData);
       } else {
-        // Crear nuevo ganado
-        await createCattle(cattleData);
+        // Crear nuevo ganado usando la API
+        await api.cattle.create(cattleData);
       }
       
       Alert.alert(

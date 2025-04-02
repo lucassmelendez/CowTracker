@@ -1,28 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, firestore } from '../config/firebase';
 import { useRouter } from 'expo-router';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut,
-  updateProfile,
-  updateEmail,
-  updatePassword,
-  onAuthStateChanged
-} from 'firebase/auth';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  getDoc,
-  getDocs,
-  query,
-  where,
-  serverTimestamp 
-} from 'firebase/firestore';
 import api from '../services/api';
 
 const AuthContext = createContext();
@@ -38,61 +17,42 @@ export const AuthProvider = ({ children }) => {
   const router = useRouter();
 
   useEffect(() => {
-    let isInitialLoad = true;
-    
     const loadSavedUser = async () => {
       try {
+        setLoading(true);
         const savedUserToken = await AsyncStorage.getItem('@user_token');
         const savedUserInfo = await AsyncStorage.getItem('@user_info');
         
         if (savedUserToken && savedUserInfo) {
-          setUserInfo(JSON.parse(savedUserInfo));
+          const userInfoObj = JSON.parse(savedUserInfo);
+          setUserInfo(userInfoObj);
+          setCurrentUser(userInfoObj);
           api.setAuthToken(savedUserToken);
+          
+          // Verificar si el token es válido consultando el perfil del usuario
+          try {
+            const profile = await api.users.getProfile();
+            setUserInfo(profile);
+            setCurrentUser(profile);
+          } catch (profileError) {
+            console.error('Error al validar token guardado:', profileError);
+            
+            // Si hay error, limpiar datos guardados
+            await AsyncStorage.removeItem('@user_token');
+            await AsyncStorage.removeItem('@user_info');
+            setCurrentUser(null);
+            setUserInfo(null);
+            api.clearAuthToken();
+          }
         }
       } catch (error) {
         console.error('Error al cargar usuario guardado:', error);
+      } finally {
+        setLoading(false);
       }
     };
     
     loadSavedUser();
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const additionalInfo = await getUserInfo(user.uid);
-        setCurrentUser(user);
-        setUserInfo(additionalInfo);
-        
-        try {
-          const token = await user.getIdToken();
-          await AsyncStorage.setItem('@user_token', token);
-          await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
-          
-          api.setAuthToken(token);
-        } catch (error) {
-          console.error('Error al guardar datos de usuario:', error);
-        }
-      } else {
-        setCurrentUser(null);
-        setUserInfo(null);
-        
-        try {
-          await AsyncStorage.removeItem('@user_token');
-          await AsyncStorage.removeItem('@user_info');
-          
-          api.clearAuthToken();
-        } catch (error) {
-          console.error('Error al limpiar datos de usuario:', error);
-        }
-      }
-      
-      if (isInitialLoad) {
-        isInitialLoad = false;
-      }
-      
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
   }, []);
 
   const register = async (name, email, password, role = 'user') => {
@@ -100,47 +60,31 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const normalizedEmail = email.toLowerCase();
+      const userData = {
+        name,
+        email,
+        password,
+        role
+      };
       
-      const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+      // Realizar registro a través del backend
+      const response = await api.users.register(userData);
       
-      await updateProfile(userCredential.user, {
-        displayName: name
-      });
-
-      await setDoc(doc(firestore, 'users', userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        name: name,
-        email: normalizedEmail,
-        role: role,
-        createdAt: serverTimestamp(),
-      });
-
-      setCurrentUser(userCredential.user);
-      setUserInfo({
-        uid: userCredential.user.uid,
-        name: name,
-        email: email,
-        role: role,
-        createdAt: serverTimestamp(),
-      });
-
+      // Iniciar sesión automáticamente después del registro
+      await login(email, password);
+      
       router.push('/welcome');
-
-      try {
-        await api.post('/users/register', {
-          name,
-          email,
-          password,
-          role
-        });
-      } catch (backendError) {
-        console.error('Error al registrar en el backend:', backendError);
-      }
-
-      return userCredential.user;
+      
+      return response;
     } catch (error) {
-      setError(error.message);
+      console.error('Error al registrar usuario:', error);
+      
+      if (error.message) {
+        setError(error.message);
+      } else {
+        setError('Error al registrar. Por favor, inténtalo de nuevo.');
+      }
+      
       throw error;
     } finally {
       setLoading(false);
@@ -151,30 +95,27 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-
-      const normalizedEmail = email.toLowerCase();
       
-      const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+      // Iniciar sesión a través del backend
+      const response = await api.users.login({ email, password });
       
-      const additionalInfo = await getUserInfo(userCredential.user.uid);
-      setUserInfo(additionalInfo);
-      setCurrentUser(userCredential.user);
-
-      await AsyncStorage.setItem('@user_token', await userCredential.user.getIdToken());
-      await AsyncStorage.setItem('@user_info', JSON.stringify(additionalInfo));
-
-      return userCredential.user;
+      // Guardar información del usuario
+      setUserInfo(response);
+      setCurrentUser(response);
+      
+      // Guardar token e información en AsyncStorage
+      await AsyncStorage.setItem('@user_token', response.token);
+      await AsyncStorage.setItem('@user_info', JSON.stringify(response));
+      
+      // Configurar token para las peticiones
+      api.setAuthToken(response.token);
+      
+      return response;
     } catch (error) {
       console.error('Error de inicio de sesión:', error);
       
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        setError('Credenciales incorrectas. Por favor, verifica tu email y contraseña.');
-      } else if (error.code === 'auth/invalid-email') {
-        setError('El formato del email es inválido.');
-      } else if (error.code === 'auth/user-disabled') {
-        setError('Esta cuenta ha sido deshabilitada.');
-      } else if (error.code === 'auth/too-many-requests') {
-        setError('Demasiados intentos fallidos. Inténtalo más tarde.');
+      if (error.message) {
+        setError(error.message);
       } else {
         setError('Error al iniciar sesión. Por favor, inténtalo de nuevo.');
       }
@@ -188,30 +129,27 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setLoading(true);
-      await signOut(auth);
+      
+      // No es necesario llamar a un endpoint de logout, pero podríamos hacerlo
+      // si quisiéramos invalidar tokens en el servidor
+      await api.users.logout();
+      
+      // Limpiar almacenamiento local
       await AsyncStorage.removeItem('@user_token');
       await AsyncStorage.removeItem('@user_info');
+      
+      // Limpiar estado
       setCurrentUser(null);
       setUserInfo(null);
+      
+      // Limpiar token en el API
+      api.clearAuthToken();
     } catch (error) {
-      setError(error.message);
+      console.error('Error al cerrar sesión:', error);
+      setError(error.message || 'Error al cerrar sesión');
       throw error;
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getUserInfo = async (uid) => {
-    try {
-      const userDoc = await getDoc(doc(firestore, 'users', uid));
-
-      if (userDoc.exists()) {
-        return userDoc.data();
-      }
-      return null;
-    } catch (error) {
-      console.error('Error al obtener información del usuario:', error);
-      return null;
     }
   };
 
@@ -227,43 +165,21 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-
-      const { name, email, password } = data;
-      const user = auth.currentUser;
-
-      if (!user) {
-        throw new Error('Usuario no autenticado');
-      }
-
-      if (name) {
-        await updateProfile(user, {
-          displayName: name
-        });
-      }
-
-      if (email && email !== user.email) {
-        await updateEmail(user, email);
-      }
-
-      if (password) {
-        await updatePassword(user, password);
-      }
-
-      const updateData = {};
-      if (name) updateData.name = name;
-      if (email) updateData.email = email;
       
-      await updateDoc(doc(firestore, 'users', user.uid), {
-        ...updateData,
-        updatedAt: serverTimestamp()
-      });
-
-      const updatedUserInfo = await getUserInfo(user.uid);
-      setUserInfo(updatedUserInfo);
-
-      return updatedUserInfo;
+      // Actualizar perfil a través del backend
+      const updatedUser = await api.users.updateProfile(data);
+      
+      // Actualizar estado
+      setUserInfo(updatedUser);
+      setCurrentUser(updatedUser);
+      
+      // Actualizar información guardada
+      await AsyncStorage.setItem('@user_info', JSON.stringify(updatedUser));
+      
+      return updatedUser;
     } catch (error) {
-      setError(error.message);
+      console.error('Error al actualizar perfil:', error);
+      setError(error.message || 'Error al actualizar perfil');
       throw error;
     } finally {
       setLoading(false);
@@ -285,7 +201,11 @@ export const AuthProvider = ({ children }) => {
     isVeterinario: () => hasRole('veterinario'),
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContext;

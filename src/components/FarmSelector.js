@@ -16,12 +16,6 @@ import { useRouter } from 'expo-router';
 import { colors } from '../styles/commonStyles';
 import { getShadowStyle } from '../utils/styles';
 
-const NO_FARM_OPTION = {
-  _id: 'no-farm',
-  name: 'Sin granja',
-  isSpecialOption: true
-};
-
 const ALL_FARMS_OPTION = {
   _id: 'all-farms',
   name: 'Todas las granjas',
@@ -57,7 +51,6 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       
       const farmsWithOptions = [
         ALL_FARMS_OPTION,
-        NO_FARM_OPTION,
         ...farmsData || []
       ];
       
@@ -97,10 +90,10 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       >
         <View style={styles.farmIconContainer}>
           {item.isSpecialOption ? (
-            item._id === 'no-farm' ? (
-              <Ionicons name="ban" size={24} color={colors.textLight} />
-            ) : (
+            item._id === 'all-farms' ? (
               <Ionicons name="apps" size={24} color={colors.primary} />
+            ) : (
+              <Ionicons name="business" size={24} color={colors.secondary} />
             )
           ) : (
             <Ionicons name="business" size={24} color={colors.secondary} />
@@ -115,9 +108,6 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
           </Text>
           {item.location && !item.isSpecialOption && (
             <Text style={styles.farmLocation}>{item.location}</Text>
-          )}
-          {item.isSpecialOption && item._id === 'no-farm' && (
-            <Text style={styles.farmDescription}>Mostrar ganado sin asignación</Text>
           )}
           {item.isSpecialOption && item._id === 'all-farms' && (
             <Text style={styles.farmDescription}>Mostrar todo el ganado</Text>
@@ -168,7 +158,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       >
         <Ionicons 
           name={selectedFarm?.isSpecialOption ? 
-            (selectedFarm._id === 'no-farm' ? 'ban' : 'apps') : 
+            (selectedFarm._id === 'all-farms' ? 'apps' : 'business') : 
             'business'
           } 
           size={18} 

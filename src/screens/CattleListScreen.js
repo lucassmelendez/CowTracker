@@ -40,29 +40,18 @@ const CattleListScreen = () => {
       
       let cattleData = [];
       
-      // Si seleccionó la opción "Sin granja"
-      if (selectedFarm?._id === 'no-farm') {
-        // En este caso, cargamos ganado sin granja asignada
-        // Usamos la API para obtener el ganado sin granja
-        const response = await api.cattle.getAll();
-        cattleData = response.filter(animal => !animal.farmId);
-      }
       // Si seleccionó la opción "Todas las granjas"
-      else if (selectedFarm?._id === 'all-farms') {
-        // Cargamos todo el ganado del usuario
-        const response = await api.cattle.getAll();
+      if (!selectedFarm || selectedFarm?._id === 'all-farms') {
+        // Cargamos todo el ganado con información de granja
+        const response = await api.cattle.getAllWithFarmInfo();
         cattleData = response;
+        console.log(`Cargadas ${cattleData.length} cabezas de ganado (todas las granjas)`);
       }
       // Si seleccionó una granja específica
       else if (selectedFarm?._id) {
         // Cargamos ganado de esa granja específica
         cattleData = await api.farms.getCattle(selectedFarm._id);
-      }
-      // Si no hay selección (caso inicial)
-      else {
-        // Cargamos todo el ganado del usuario
-        const response = await api.cattle.getAll();
-        cattleData = response;
+        console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name})`);
       }
       
       setCattle(cattleData);
@@ -86,7 +75,8 @@ const CattleListScreen = () => {
   };
 
   const navigateToAdd = () => {
-    router.push('/cattle/add');
+    console.log('Navegando a añadir ganado...');
+    router.push('/add-cattle');
   };
 
   const renderCattleItem = ({ item }) => {
@@ -177,11 +167,7 @@ const CattleListScreen = () => {
 
   const getSubtitle = () => {
     if (selectedFarm && selectedFarm._id !== 'all-farms') {
-      if (selectedFarm._id === 'no-farm') {
-        return 'Ganado sin granja asignada';
-      } else {
-        return `Granja: ${selectedFarm.name}`;
-      }
+      return `Granja: ${selectedFarm.name}`;
     }
     return null;
   };
@@ -223,9 +209,7 @@ const CattleListScreen = () => {
         <View style={cattleListStyles.emptyContainer}>
           <Text style={cattleListStyles.emptyText}>
             {selectedFarm && selectedFarm._id !== 'all-farms' 
-              ? (selectedFarm._id === 'no-farm' 
-                  ? 'No hay ganado sin granja asignada' 
-                  : `No hay ganado en la granja "${selectedFarm.name}"`)
+              ? `No hay ganado en la granja "${selectedFarm.name}"`
               : 'No tienes ganado registrado'
             }
           </Text>

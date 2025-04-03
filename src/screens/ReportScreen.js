@@ -2,10 +2,10 @@ import React from 'react';
 import { View, Text, FlatList, TouchableOpacity, Platform } from 'react-native';
 import { reportStyles } from '../styles/reportStyles';
 
-const farms = [
-  { id: '1', name: 'Granja El Sol' },
-  { id: '2', name: 'Granja La Luna' },
-  { id: '3', name: 'Granja Los Pinos' },
+const reports = [
+  { id: '1', name: 'Informe de Ganado' },
+  { id: '2', name: 'Informe de Ventas' },
+  { id: '3', name: 'Informe de Ganancias' },
 ];
 
 const ReportScreen = () => {
@@ -25,7 +25,7 @@ const ReportScreen = () => {
           <body>
             <h1 style="text-align: center;">Lista de Granjas</h1>
             <ul>
-              ${farms.map((farm) => `<li>${farm.name}</li>`).join('')}
+              ${reports.map((farm) => `<li>${farm.name}</li>`).join('')}
             </ul>
           </body>
         </html>
@@ -47,9 +47,9 @@ const ReportScreen = () => {
 
   return (
     <View style={reportStyles.container}>
-      <Text style={reportStyles.title}>Lista de Granjas</Text>
+      <Text style={reportStyles.title}>Tipos de Informes</Text>
       <FlatList
-        data={farms}
+        data={reports}
         keyExtractor={(item) => item.id}
         renderItem={renderFarm}
       />

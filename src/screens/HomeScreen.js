@@ -38,7 +38,7 @@ const HomeScreen = () => {
       id: 'qr',
       title: 'Escanear QR',
       icon: '📷',
-      route: '/(tabs)/qr-scanner',
+      route: '/qr-scanner',
       description: 'Escanear códigos QR',
     },
     {

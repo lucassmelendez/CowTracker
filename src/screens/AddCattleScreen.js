@@ -22,7 +22,7 @@ const AddCattleScreen = ({ route }) => {
   const params = useLocalSearchParams();
   const cattleId = route?.params?.cattleId || params.id;
   const isEditMode = !!cattleId;
-  const { user } = useAuth();
+  const { userInfo } = useAuth();
 
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
@@ -54,7 +54,7 @@ const AddCattleScreen = ({ route }) => {
     const loadFarms = async () => {
       try {
         setLoadingFarms(true);
-        if (user && user.uid) {
+        if (userInfo && userInfo.uid) {
           // Usar la API para obtener las granjas
           const userFarms = await api.farms.getAll();
           setFarms(userFarms);
@@ -67,10 +67,10 @@ const AddCattleScreen = ({ route }) => {
       }
     };
     
-    if (user) {
+    if (userInfo) {
       loadFarms();
     }
-  }, [user]);
+  }, [userInfo]);
   
   // Cargar datos del ganado si estamos en modo edición
   useEffect(() => {
@@ -155,7 +155,7 @@ const AddCattleScreen = ({ route }) => {
     }
 
     try {
-      if (!user || !user.uid) {
+      if (!userInfo || !userInfo.uid) {
         Alert.alert('Error', 'No se pudo obtener la información del usuario');
         return;
       }
@@ -177,7 +177,7 @@ const AddCattleScreen = ({ route }) => {
         purchaseDate: purchaseDate,
         status: status || 'activo',
         healthStatus: healthStatus || 'saludable',
-        owner: user.uid,
+        owner: userInfo.uid,
         farmId: selectedFarmId
       };
       

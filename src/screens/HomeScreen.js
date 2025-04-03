@@ -41,6 +41,20 @@ const HomeScreen = () => {
       route: '/qr-scanner',
       description: 'Escanear códigos QR',
     },
+    {
+      id: 'sales',
+      title: 'Ventas',
+      icon: '💰',
+      route: '/sales',
+      description: 'Gestionar ventas',
+    },
+    {
+      id: 'production',
+      title: 'Produccion',
+      icon: '🥩',
+      route: '/production',
+      description: 'Gestionar produccion',
+    },
   ];
 
   const navigateTo = (route) => {

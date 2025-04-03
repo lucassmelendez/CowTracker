@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import FarmSelector from '../../src/components/FarmSelector';
@@ -103,7 +103,7 @@ function CustomHeader({ title }: { title: string }) {
 
 export default function TabLayout() {
   return (
-    <Tabs 
+    <Stack 
       screenOptions={{
         headerShown: true,
         headerStyle: {
@@ -116,26 +116,21 @@ export default function TabLayout() {
           fontWeight: 'bold',
           color: '#ffffff'
         },
-        tabBarActiveTintColor: '#27ae60'
       }}
     >
-      <Tabs.Screen
+      <Stack.Screen
         name="index"
         options={{
-          title: 'Inicio',
           headerTitle: () => <CustomHeader title="CowTracker" />,
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
         }}
       />
-      <Tabs.Screen
+      <Stack.Screen
         name="explore"
         options={{
-          title: 'Mi Ganado',
           headerTitle: () => <CustomHeader title="Mi Ganado" />,
-          tabBarIcon: ({ color, size }) => <Ionicons name="list" color={color} size={size} />,
         }}
       />
-    </Tabs>
+    </Stack>
   );
 }
 

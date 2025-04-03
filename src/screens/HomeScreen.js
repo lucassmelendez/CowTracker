@@ -24,7 +24,7 @@ const HomeScreen = () => {
       id: 'informe',
       title: 'Informe',
       icon: '📖',
-      route: '/report',  //cambiar esta logica cuando se creee el infome
+      route: '/(tabs)/report',
       description: 'Generar infomes de ganado',
     },
     {
@@ -38,21 +38,21 @@ const HomeScreen = () => {
       id: 'qr',
       title: 'Escanear QR',
       icon: '📷',
-      route: '/qr-scanner',
+      route: '/(tabs)/qr-scanner',
       description: 'Escanear códigos QR',
     },
     {
       id: 'sales',
       title: 'Ventas',
       icon: '💰',
-      route: '/sales',
+      route: '/(tabs)/sales',
       description: 'Gestionar ventas',
     },
     {
       id: 'production',
       title: 'Produccion',
       icon: '🥩',
-      route: '/production',
+      route: '/(tabs)/production',
       description: 'Gestionar produccion',
     },
   ];

@@ -97,19 +97,49 @@ const AddCattleScreen = ({ route }) => {
           
           // Establecer fecha de nacimiento
           if (cattleData.birthDate) {
-            if (typeof cattleData.birthDate === 'object' && cattleData.birthDate.seconds) {
-              setDateOfBirth(new Date(cattleData.birthDate.seconds * 1000));
-            } else {
-              setDateOfBirth(new Date(cattleData.birthDate));
+            try {
+              let birthDate;
+              if (typeof cattleData.birthDate === 'object' && cattleData.birthDate.seconds) {
+                // Es un timestamp de Firestore
+                birthDate = new Date(cattleData.birthDate.seconds * 1000);
+              } else {
+                // Es otro formato de fecha
+                birthDate = new Date(cattleData.birthDate);
+              }
+              
+              if (!isNaN(birthDate.getTime())) {
+                setDateOfBirth(birthDate);
+              } else {
+                console.warn('Fecha de nacimiento inválida:', cattleData.birthDate);
+                setDateOfBirth(new Date());
+              }
+            } catch (err) {
+              console.error('Error al procesar fecha de nacimiento:', err);
+              setDateOfBirth(new Date());
             }
           }
           
           // Establecer fecha de compra
           if (cattleData.purchaseDate) {
-            if (typeof cattleData.purchaseDate === 'object' && cattleData.purchaseDate.seconds) {
-              setPurchaseDate(new Date(cattleData.purchaseDate.seconds * 1000));
-            } else {
-              setPurchaseDate(new Date(cattleData.purchaseDate));
+            try {
+              let purchaseDate;
+              if (typeof cattleData.purchaseDate === 'object' && cattleData.purchaseDate.seconds) {
+                // Es un timestamp de Firestore
+                purchaseDate = new Date(cattleData.purchaseDate.seconds * 1000);
+              } else {
+                // Es otro formato de fecha
+                purchaseDate = new Date(cattleData.purchaseDate);
+              }
+              
+              if (!isNaN(purchaseDate.getTime())) {
+                setPurchaseDate(purchaseDate);
+              } else {
+                console.warn('Fecha de compra inválida:', cattleData.purchaseDate);
+                setPurchaseDate(new Date());
+              }
+            } catch (err) {
+              console.error('Error al procesar fecha de compra:', err);
+              setPurchaseDate(new Date());
             }
           }
           
@@ -201,7 +231,15 @@ const AddCattleScreen = ({ route }) => {
   };
 
   const formatDate = (date) => {
-    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+    try {
+      if (!date || isNaN(date.getTime())) {
+        return 'Fecha no disponible';
+      }
+      return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+    } catch (err) {
+      console.error('Error al formatear fecha:', err);
+      return 'Error en formato';
+    }
   };
 
   const onChangeDateOfBirth = (event, selectedDate) => {

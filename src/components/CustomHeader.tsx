@@ -25,7 +25,7 @@ function CustomHeader({ title }: { title: string }) {
 
   const handleNavigateToProfile = () => {
     setProfileMenuVisible(false);
-    router.push('/(tabs)/profile');
+    router.push('/profile');
   };
 
   return (

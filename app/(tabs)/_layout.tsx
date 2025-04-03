@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View, StyleSheet, TouchableOpacity, Modal, Platform } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import FarmSelector from '../../src/components/FarmSelector';
 import { useFarm } from '../../src/components/FarmContext';
 import { useAuth } from '../../src/components/AuthContext';
@@ -24,7 +24,7 @@ function CustomHeader({ title }: { title: string }) {
 
   const handleNavigateToProfile = () => {
     setProfileMenuVisible(false);
-    router.push('/(tabs)/profile');
+    router.push('/profile');
   };
 
   return (
@@ -108,6 +108,9 @@ export default function TabLayout() {
         headerShown: true,
         headerStyle: {
           backgroundColor: '#27ae60',
+          elevation: 1,
+          shadowOpacity: 0,
+          borderBottomWidth: 0,
         },
         headerTitleStyle: {
           fontWeight: 'bold',
@@ -127,7 +130,7 @@ export default function TabLayout() {
           headerTitle: () => <CustomHeader title="Mi Ganado" />,
         }}
       />
-      <Stack.Screen
+       <Stack.Screen
         name="report"
         options={{
           headerTitle: () => <CustomHeader title="Informes" />,

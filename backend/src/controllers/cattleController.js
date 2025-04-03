@@ -77,17 +77,57 @@ const getCattleById = asyncHandler(async (req, res) => {
 
 const createCattle = asyncHandler(async (req, res) => {
   try {
+    // Procesar fechas en caso de que vengan como objetos Date
+    const processedData = { ...req.body };
+    
+    // Procesar birthDate si existe
+    if (processedData.birthDate) {
+      if (processedData.birthDate instanceof Date) {
+        processedData.birthDate = processedData.birthDate.toISOString();
+      } else if (typeof processedData.birthDate === 'string') {
+        // Ya es una cadena, verificar si es ISO
+        try {
+          const tempDate = new Date(processedData.birthDate);
+          if (!isNaN(tempDate.getTime())) {
+            processedData.birthDate = tempDate.toISOString();
+          }
+        } catch (err) {
+          console.error('Error al procesar birthDate:', err);
+        }
+      }
+    }
+    
+    // Procesar purchaseDate si existe
+    if (processedData.purchaseDate) {
+      if (processedData.purchaseDate instanceof Date) {
+        processedData.purchaseDate = processedData.purchaseDate.toISOString();
+      } else if (typeof processedData.purchaseDate === 'string') {
+        // Ya es una cadena, verificar si es ISO
+        try {
+          const tempDate = new Date(processedData.purchaseDate);
+          if (!isNaN(tempDate.getTime())) {
+            processedData.purchaseDate = tempDate.toISOString();
+          }
+        } catch (err) {
+          console.error('Error al procesar purchaseDate:', err);
+        }
+      }
+    }
+    
     const cattleData = {
-      ...req.body,
+      ...processedData,
       owner: req.user.uid,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       weightHistory: [{
         date: new Date().toISOString(),
-        weight: req.body.weight,
+        weight: processedData.weight,
         notes: 'Peso inicial'
       }]
     };
+
+    // Imprimir para diagnóstico
+    console.log('Datos a crear:', JSON.stringify(cattleData, null, 2));
 
     const docRef = await cattleCollection.add(cattleData);
     
@@ -96,6 +136,7 @@ const createCattle = asyncHandler(async (req, res) => {
       ...cattleData
     });
   } catch (error) {
+    console.error('Error al crear ganado:', error);
     res.status(400);
     throw new Error('Error al crear ganado: ' + error.message);
   }
@@ -119,9 +160,46 @@ const updateCattle = asyncHandler(async (req, res) => {
       throw new Error('No autorizado, no es propietario de este ganado');
     }
 
+    // Procesar fechas en caso de que vengan como objetos Date
+    const processedData = { ...req.body };
+    
+    // Procesar birthDate si existe
+    if (processedData.birthDate) {
+      if (processedData.birthDate instanceof Date) {
+        processedData.birthDate = processedData.birthDate.toISOString();
+      } else if (typeof processedData.birthDate === 'string') {
+        // Ya es una cadena, verificar si es ISO
+        try {
+          const tempDate = new Date(processedData.birthDate);
+          if (!isNaN(tempDate.getTime())) {
+            processedData.birthDate = tempDate.toISOString();
+          }
+        } catch (err) {
+          console.error('Error al procesar birthDate:', err);
+        }
+      }
+    }
+    
+    // Procesar purchaseDate si existe
+    if (processedData.purchaseDate) {
+      if (processedData.purchaseDate instanceof Date) {
+        processedData.purchaseDate = processedData.purchaseDate.toISOString();
+      } else if (typeof processedData.purchaseDate === 'string') {
+        // Ya es una cadena, verificar si es ISO
+        try {
+          const tempDate = new Date(processedData.purchaseDate);
+          if (!isNaN(tempDate.getTime())) {
+            processedData.purchaseDate = tempDate.toISOString();
+          }
+        } catch (err) {
+          console.error('Error al procesar purchaseDate:', err);
+        }
+      }
+    }
+    
     // Actualizar historial de peso si cambió
     const updateData = {
-      ...req.body,
+      ...processedData,
       updatedAt: new Date().toISOString()
     };
 
@@ -133,6 +211,9 @@ const updateCattle = asyncHandler(async (req, res) => {
       }];
     }
 
+    // Imprimir para diagnóstico
+    console.log('Datos a actualizar:', JSON.stringify(updateData, null, 2));
+
     await cattleRef.update(updateData);
 
     res.json({
@@ -141,6 +222,7 @@ const updateCattle = asyncHandler(async (req, res) => {
       ...updateData
     });
   } catch (error) {
+    console.error('Error al actualizar ganado:', error);
     if (!res.statusCode || res.statusCode === 200) {
       res.status(500);
     }

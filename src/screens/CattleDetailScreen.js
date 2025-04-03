@@ -110,7 +110,15 @@ const CattleDetailScreen = () => {
   // Manejadores de eventos
   const handleEdit = () => {
     if (cattleId) {
-      router.push(`/add-cattle?id=${cattleId}`);
+      console.log('Navegando a editar ganado con ID:', cattleId);
+      
+      // Usar la ruta de pantalla completa con el id como parámetro
+      router.push({
+        pathname: '/add-cattle',
+        params: { id: cattleId }
+      });
+    } else {
+      console.error('Error: No hay ID de ganado para editar');
     }
   };
 

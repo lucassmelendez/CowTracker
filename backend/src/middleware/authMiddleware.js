@@ -2,6 +2,18 @@ const asyncHandler = require('express-async-handler');
 const authService = require('../services/authService');
 const firebaseUserModel = require('../models/firebaseUserModel');
 
+// Middleware de depuración para registrar datos de solicitud
+const debugRequest = asyncHandler(async (req, res, next) => {
+  console.log('========== DEPURACIÓN DE SOLICITUD ==========');
+  console.log('URL:', req.originalUrl);
+  console.log('Método:', req.method);
+  console.log('Cuerpo:', JSON.stringify(req.body, null, 2));
+  console.log('Parámetros:', req.params);
+  console.log('Query:', req.query);
+  console.log('============================================');
+  next();
+});
+
 const protect = asyncHandler(async (req, res, next) => {
   let token;
   
@@ -49,4 +61,4 @@ const admin = checkRole(['admin']);
 const trabajador = checkRole(['trabajador', 'admin']);
 const veterinario = checkRole(['veterinario', 'admin']);
 
-module.exports = { protect, admin, trabajador, veterinario, checkRole };
+module.exports = { protect, admin, trabajador, veterinario, checkRole, debugRequest };

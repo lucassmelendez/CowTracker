@@ -1,19 +1,12 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../src/components/AuthContext';
+import { View } from 'react-native';
 import FarmsScreen from '../src/screens/FarmsScreen';
+import CustomHeader from '../src/components/CustomHeader';
 
 export default function FarmsPage() {
   return (
-    <AuthProvider>
+    <View style={{ flex: 1 }}>
       <FarmsScreen />
-    </AuthProvider>
+    </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-}); 
+} 

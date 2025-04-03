@@ -12,15 +12,25 @@ export const farmsStyles = StyleSheet.create({
     padding: 20,
     paddingTop: 40,
   },
-  headerTitle: {
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: colors.white,
   },
-  headerSubtitle: {
+  subtitle: {
     fontSize: 16,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textLight,
+    marginTop: 10,
   },
   emptyContainer: {
     flex: 1,
@@ -34,69 +44,57 @@ export const farmsStyles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
-  emptySubText: {
+  emptySubtext: {
     fontSize: 16,
     color: colors.textLight,
     textAlign: 'center',
     marginTop: 5,
   },
-  farmCard: {
+  listContainer: {
+    padding: 10,
+    paddingBottom: 80,
+  },
+  farmItem: {
     backgroundColor: colors.white,
     borderRadius: 10,
-    marginHorizontal: 15,
-    marginBottom: 15,
+    marginHorizontal: 10,
+    marginVertical: 6,
+    padding: 15,
     ...getShadowStyle({ elevation: 3, height: 2, opacity: 0.15, radius: 4 }),
   },
-  farmHeader: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   farmName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: colors.text,
   },
-  farmLocation: {
-    fontSize: 14,
-    color: colors.textLight,
-    marginTop: 3,
-  },
-  farmStats: {
+  actionsContainer: {
     flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  statItem: {
-    flex: 1,
     alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textLight,
-    marginTop: 3,
-  },
-  farmActions: {
-    flexDirection: 'row',
-    padding: 10,
   },
   actionButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
+    marginLeft: 10,
+    padding: 5,
   },
-  actionText: {
-    fontSize: 12,
-    color: colors.secondary,
+  infoContainer: {
     marginTop: 5,
   },
-  fab: {
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  infoText: {
+    fontSize: 14,
+    color: colors.textLight,
+    marginLeft: 8,
+  },
+  addButton: {
     position: 'absolute',
     right: 20,
     bottom: 20,
@@ -127,6 +125,12 @@ export const farmsStyles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
+  modalText: {
+    fontSize: 16,
+    color: colors.text,
+    textAlign: 'center',
+    marginVertical: 15,
+  },
   label: {
     fontSize: 16,
     fontWeight: '600',
@@ -141,201 +145,163 @@ export const farmsStyles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
   },
-  buttonContainer: {
+  modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
   },
-  button: {
+  saveButton: {
     flex: 1,
+    backgroundColor: colors.primary,
     padding: 12,
     borderRadius: 5,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
     marginLeft: 5,
   },
   cancelButton: {
+    flex: 1,
     backgroundColor: colors.background,
+    padding: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginRight: 5,
     borderWidth: 1,
     borderColor: colors.border,
-    marginRight: 5,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   saveButtonText: {
     color: colors.white,
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   cancelButtonText: {
     color: colors.text,
+    fontSize: 16,
   },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: colors.error,
+    padding: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginLeft: 5,
+  },
+  confirmButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalButton: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 10,
+    width: '100%',
+  },
+  modalButtonText: {
+    color: colors.white,
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  // Estilos para la sección de personal
   staffContainer: {
     flex: 1,
     backgroundColor: colors.background,
   },
   staffHeader: {
-    backgroundColor: colors.primary,
-    padding: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.primary,
+    padding: 15,
+  },
+  backButton: {
+    marginRight: 10,
   },
   staffTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: colors.white,
-    marginTop: 10,
-  },
-  staffSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 5,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  tab: {
     flex: 1,
-    padding: 15,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
   },
-  activeTab: {
-    borderBottomColor: colors.primary,
+  staffScrollView: {
+    padding: 10,
   },
-  tabText: {
-    fontSize: 14,
-    color: colors.textLight,
-  },
-  activeTabText: {
-    fontWeight: 'bold',
-    color: colors.primary,
+  staffSection: {
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 15,
+    ...getShadowStyle({ elevation: 2, height: 1, opacity: 0.1, radius: 3 }),
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.text,
-    margin: 15,
+    marginBottom: 10,
+    marginLeft: 5,
   },
-  personCard: {
-    backgroundColor: colors.white,
+  staffCard: {
     flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
     alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: colors.inputBg,
+    marginBottom: 8,
   },
-  personInfo: {
+  staffInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-  personName: {
-    fontSize: 16,
-    fontWeight: '500',
+  staffName: {
+    fontSize: 15,
     color: colors.text,
+    marginLeft: 10,
   },
-  personEmail: {
+  removeButton: {
+    padding: 5,
+  },
+  addStaffButton: {
+    padding: 5,
+  },
+  addStaffSection: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  addStaffTitle: {
+    fontSize: 15,
+    color: colors.text,
+    marginBottom: 10,
+    marginLeft: 5,
+  },
+  emptyStaffText: {
     fontSize: 14,
     color: colors.textLight,
-  },
-  personAction: {
-    paddingHorizontal: 10,
-  },
-  messageModalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  messageModalContent: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: 20,
-    width: '80%',
-    ...getShadowStyle({ elevation: 4, height: 2, opacity: 0.2, radius: 5 }),
-  },
-  messageText: {
-    fontSize: 16,
-    color: colors.text,
     textAlign: 'center',
-    marginVertical: 20,
+    marginVertical: 10,
+    fontStyle: 'italic',
   },
-  messageButton: {
-    backgroundColor: colors.primary,
-    padding: 12,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  messageButtonText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  deleteModalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  deleteModalContent: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    padding: 20,
-    width: '80%',
-    ...getShadowStyle({ elevation: 4, height: 2, opacity: 0.2, radius: 5 }),
-  },
-  deleteText: {
-    fontSize: 16,
-    color: colors.text,
-    textAlign: 'center',
-    marginVertical: 20,
-  },
-  deleteButtonContainer: {
+  viewCattleButton: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  deleteConfirmButton: {
-    backgroundColor: colors.error,
-    padding: 12,
-    borderRadius: 5,
     alignItems: 'center',
-    flex: 1,
-    marginRight: 5,
-  },
-  deleteCancelButton: {
-    backgroundColor: colors.background,
-    padding:.12,
-    borderRadius: 5,
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 5,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  addButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    backgroundColor: colors.primary,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     justifyContent: 'center',
-    alignItems: 'center',
-    ...getShadowStyle({ elevation: 5, height: 3, opacity: 0.25, radius: 6 }),
+    backgroundColor: colors.background,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
-  farmItem: {
-    backgroundColor: colors.white,
-    borderRadius: 10,
-    marginHorizontal: 10,
-    marginVertical: 6,
-    padding: 15,
-    ...getShadowStyle({ elevation: 3, height: 2, opacity: 0.15, radius: 4 }),
+  viewCattleButtonText: {
+    color: colors.primary,
+    fontSize: 15,
+    marginRight: 8,
   },
 }); 

@@ -41,6 +41,8 @@ const AddCattleScreen = ({ route }) => {
   // Estados para fecha
   const [dateOfBirth, setDateOfBirth] = useState(new Date());
   const [purchaseDate, setPurchaseDate] = useState(new Date());
+  const [dateOfBirthText, setDateOfBirthText] = useState('');
+  const [purchaseDateText, setPurchaseDateText] = useState('');
   const [showDateOfBirthPicker, setShowDateOfBirthPicker] = useState(false);
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
   
@@ -71,6 +73,12 @@ const AddCattleScreen = ({ route }) => {
       loadFarms();
     }
   }, [userInfo]);
+  
+  // Efecto para inicializar los campos de texto de fecha
+  useEffect(() => {
+    setDateOfBirthText(formatDate(dateOfBirth));
+    setPurchaseDateText(formatDate(purchaseDate));
+  }, [dateOfBirth, purchaseDate]);
   
   // Cargar datos del ganado si estamos en modo edición
   useEffect(() => {
@@ -190,6 +198,24 @@ const AddCattleScreen = ({ route }) => {
         return;
       }
       
+      // Validar y analizar fechas de texto si es necesario
+      let birthDateToSave = dateOfBirth;
+      let purchaseDateToSave = purchaseDate;
+      
+      if (dateOfBirthText) {
+        const parsedBirthDate = parseDate(dateOfBirthText);
+        if (parsedBirthDate && !isNaN(parsedBirthDate.getTime())) {
+          birthDateToSave = parsedBirthDate;
+        }
+      }
+      
+      if (purchaseDateText) {
+        const parsedPurchaseDate = parseDate(purchaseDateText);
+        if (parsedPurchaseDate && !isNaN(parsedPurchaseDate.getTime())) {
+          purchaseDateToSave = parsedPurchaseDate;
+        }
+      }
+      
       const cattleData = {
         identificationNumber: identifier,
         name,
@@ -203,8 +229,8 @@ const AddCattleScreen = ({ route }) => {
         },
         notes,
         purchasePrice: parseFloat(purchasePrice) || 0,
-        birthDate: dateOfBirth,
-        purchaseDate: purchaseDate,
+        birthDate: birthDateToSave,
+        purchaseDate: purchaseDateToSave,
         status: status || 'activo',
         healthStatus: healthStatus || 'saludable',
         owner: userInfo.uid,
@@ -230,15 +256,40 @@ const AddCattleScreen = ({ route }) => {
     }
   };
 
+  // Formatear fecha para mostrar en la UI
   const formatDate = (date) => {
     try {
       if (!date || isNaN(date.getTime())) {
-        return 'Fecha no disponible';
+        return '';
       }
       return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
     } catch (err) {
       console.error('Error al formatear fecha:', err);
-      return 'Error en formato';
+      return '';
+    }
+  };
+  
+  // Analizar texto de fecha (formato DD/MM/AAAA)
+  const parseDate = (dateText) => {
+    if (!dateText) return null;
+    
+    try {
+      // Verificar si el formato es DD/MM/AAAA
+      const parts = dateText.split('/');
+      if (parts.length !== 3) return null;
+      
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // Los meses en JS son 0-11
+      const year = parseInt(parts[2], 10);
+      
+      // Validar valores
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+      if (day < 1 || day > 31 || month < 0 || month > 11 || year < 1900 || year > 2100) return null;
+      
+      return new Date(year, month, day);
+    } catch (err) {
+      console.error('Error al analizar fecha:', err);
+      return null;
     }
   };
 
@@ -246,12 +297,14 @@ const AddCattleScreen = ({ route }) => {
     const currentDate = selectedDate || dateOfBirth;
     setShowDateOfBirthPicker(Platform.OS === 'ios');
     setDateOfBirth(currentDate);
+    setDateOfBirthText(formatDate(currentDate));
   };
 
   const onChangePurchaseDate = (event, selectedDate) => {
     const currentDate = selectedDate || purchaseDate;
     setShowPurchaseDatePicker(Platform.OS === 'ios');
     setPurchaseDate(currentDate);
+    setPurchaseDateText(formatDate(currentDate));
   };
 
   if (loadingCattle) {
@@ -315,14 +368,22 @@ const AddCattleScreen = ({ route }) => {
         />
 
         <Text style={styles.label}>Fecha de nacimiento</Text>
-        <TouchableOpacity 
-          style={styles.datePickerButton} 
-          onPress={() => setShowDateOfBirthPicker(true)}
-        >
-          <Text style={styles.dateText}>{formatDate(dateOfBirth)}</Text>
-          <Ionicons name="calendar-outline" size={20} color="#555" />
-        </TouchableOpacity>
-
+        <View style={styles.dateInputContainer}>
+          <TextInput
+            style={styles.dateInput}
+            value={dateOfBirthText}
+            onChangeText={setDateOfBirthText}
+            placeholder="DD/MM/AAAA"
+            keyboardType="numbers-and-punctuation"
+          />
+          <TouchableOpacity 
+            style={styles.calendarButton}
+            onPress={() => setShowDateOfBirthPicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={24} color="#27ae60" />
+          </TouchableOpacity>
+        </View>
+        
         {showDateOfBirthPicker && (
           <DateTimePicker
             value={dateOfBirth}
@@ -384,13 +445,21 @@ const AddCattleScreen = ({ route }) => {
         <Text style={styles.sectionTitle}>Información económica</Text>
 
         <Text style={styles.label}>Fecha de compra</Text>
-        <TouchableOpacity 
-          style={styles.datePickerButton} 
-          onPress={() => setShowPurchaseDatePicker(true)}
-        >
-          <Text style={styles.dateText}>{formatDate(purchaseDate)}</Text>
-          <Ionicons name="calendar-outline" size={20} color="#555" />
-        </TouchableOpacity>
+        <View style={styles.dateInputContainer}>
+          <TextInput
+            style={styles.dateInput}
+            value={purchaseDateText}
+            onChangeText={setPurchaseDateText}
+            placeholder="DD/MM/AAAA"
+            keyboardType="numbers-and-punctuation"
+          />
+          <TouchableOpacity 
+            style={styles.calendarButton}
+            onPress={() => setShowPurchaseDatePicker(true)}
+          >
+            <Ionicons name="calendar-outline" size={24} color="#27ae60" />
+          </TouchableOpacity>
+        </View>
 
         {showPurchaseDatePicker && (
           <DateTimePicker
@@ -523,19 +592,23 @@ const styles = StyleSheet.create({
   textArea: {
     height: 100,
   },
-  datePickerButton: {
+  dateInputContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    padding: 12,
     marginBottom: 15,
   },
-  dateText: {
+  dateInput: {
+    flex: 1,
     fontSize: 16,
     color: '#333',
+    padding: 12,
+  },
+  calendarButton: {
+    padding: 8,
+    marginRight: 8,
   },
   optionsContainer: {
     flexDirection: 'row',

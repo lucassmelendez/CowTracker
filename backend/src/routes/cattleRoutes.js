@@ -10,10 +10,7 @@ const {
   getMedicalRecords,
   getCattleWithFarmInfo
 } = require('../controllers/cattleController');
-const { protect, debugRequest } = require('../middleware/authMiddleware');
-
-// Agregar middleware de depuración a todas las rutas
-router.use(debugRequest);
+const { protect } = require('../middleware/authMiddleware');
 
 router.route('/')
   .get(protect, getCattle)

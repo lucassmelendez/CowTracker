@@ -20,18 +20,8 @@ import api from '../services/api';
 const AddCattleScreen = ({ route }) => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
-  // Obtener el ID del ganado de múltiples fuentes posibles para mayor robustez
-  const routeParams = route?.params || {};
-  const cattleId = routeParams.cattleId || routeParams.id || params.id || params.cattleId;
-  
+  const cattleId = route?.params?.cattleId || params.id;
   const isEditMode = !!cattleId;
-  
-  console.log('AddCattleScreen - Modo:', isEditMode ? 'Edición' : 'Creación');
-  console.log('AddCattleScreen - ID del ganado:', cattleId);
-  console.log('AddCattleScreen - Params:', JSON.stringify(params, null, 2));
-  console.log('AddCattleScreen - Route params:', JSON.stringify(routeParams, null, 2));
-  
   const { userInfo } = useAuth();
 
   // Estados del formulario
@@ -97,11 +87,8 @@ const AddCattleScreen = ({ route }) => {
       
       try {
         setLoadingCattle(true);
-        console.log('Cargando datos del ganado con ID:', cattleId);
-        
         // Usar la API para obtener los detalles del ganado
         const cattleData = await api.cattle.getById(cattleId);
-        console.log('Datos recibidos del servidor:', JSON.stringify(cattleData, null, 2));
         
         if (cattleData) {
           // Establecer todos los valores del formulario desde los datos del ganado
@@ -123,28 +110,20 @@ const AddCattleScreen = ({ route }) => {
               if (typeof cattleData.birthDate === 'object' && cattleData.birthDate.seconds) {
                 // Es un timestamp de Firestore
                 birthDate = new Date(cattleData.birthDate.seconds * 1000);
-              } else if (typeof cattleData.birthDate === 'string') {
-                // Es una cadena ISO
-                birthDate = new Date(cattleData.birthDate);
               } else {
-                // Otro formato
+                // Es otro formato de fecha
                 birthDate = new Date(cattleData.birthDate);
               }
               
-              console.log('Fecha de nacimiento procesada:', birthDate);
-              
               if (!isNaN(birthDate.getTime())) {
                 setDateOfBirth(birthDate);
-                setDateOfBirthText(formatDate(birthDate));
               } else {
                 console.warn('Fecha de nacimiento inválida:', cattleData.birthDate);
                 setDateOfBirth(new Date());
-                setDateOfBirthText(formatDate(new Date()));
               }
             } catch (err) {
               console.error('Error al procesar fecha de nacimiento:', err);
               setDateOfBirth(new Date());
-              setDateOfBirthText(formatDate(new Date()));
             }
           }
           
@@ -155,28 +134,20 @@ const AddCattleScreen = ({ route }) => {
               if (typeof cattleData.purchaseDate === 'object' && cattleData.purchaseDate.seconds) {
                 // Es un timestamp de Firestore
                 purchaseDate = new Date(cattleData.purchaseDate.seconds * 1000);
-              } else if (typeof cattleData.purchaseDate === 'string') {
-                // Es una cadena ISO
-                purchaseDate = new Date(cattleData.purchaseDate);
               } else {
-                // Otro formato
+                // Es otro formato de fecha
                 purchaseDate = new Date(cattleData.purchaseDate);
               }
               
-              console.log('Fecha de compra procesada:', purchaseDate);
-              
               if (!isNaN(purchaseDate.getTime())) {
                 setPurchaseDate(purchaseDate);
-                setPurchaseDateText(formatDate(purchaseDate));
               } else {
                 console.warn('Fecha de compra inválida:', cattleData.purchaseDate);
                 setPurchaseDate(new Date());
-                setPurchaseDateText(formatDate(new Date()));
               }
             } catch (err) {
               console.error('Error al procesar fecha de compra:', err);
               setPurchaseDate(new Date());
-              setPurchaseDateText(formatDate(new Date()));
             }
           }
           
@@ -245,10 +216,6 @@ const AddCattleScreen = ({ route }) => {
         }
       }
       
-      // Convertir las fechas a formato ISO para mejor interoperabilidad
-      const birthDateISO = birthDateToSave ? birthDateToSave.toISOString() : null;
-      const purchaseDateISO = purchaseDateToSave ? purchaseDateToSave.toISOString() : null;
-      
       const cattleData = {
         identificationNumber: identifier,
         name,
@@ -262,15 +229,13 @@ const AddCattleScreen = ({ route }) => {
         },
         notes,
         purchasePrice: parseFloat(purchasePrice) || 0,
-        birthDate: birthDateISO,
-        purchaseDate: purchaseDateISO,
+        birthDate: birthDateToSave,
+        purchaseDate: purchaseDateToSave,
         status: status || 'activo',
         healthStatus: healthStatus || 'saludable',
         owner: userInfo.uid,
         farmId: selectedFarmId
       };
-
-      console.log('Enviando datos:', JSON.stringify(cattleData, null, 2));
       
       if (isEditMode) {
         // Actualizar ganado existente usando la API

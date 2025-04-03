@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import CattleDetailScreen from '../src/screens/CattleDetailScreen';
+import CattleDetailScreen from '../../src/screens/CattleDetailScreen';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function CattleDetailPage() {

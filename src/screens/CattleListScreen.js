@@ -159,7 +159,7 @@ const CattleListScreen = () => {
       <TouchableOpacity 
         style={cattleListStyles.cattleItem}
         onPress={() => router.push({
-          pathname: '/cattle-detail',
+          pathname: '/(tabs)/cattle-details',
           params: { id: item._id }
         })}
       >

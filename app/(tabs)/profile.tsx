@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../src/components/AuthContext';
-import ProfileScreen from '../src/screens/ProfileScreen';
+import { AuthProvider } from '../../src/components/AuthContext';
+import ProfileScreen from '../../src/screens/ProfileScreen';
 
 export default function ProfilePage() {
   return (

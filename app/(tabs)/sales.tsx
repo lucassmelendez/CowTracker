@@ -1,12 +1,12 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { AuthProvider } from '../src/components/AuthContext';
-import FarmsScreen from '../src/screens/FarmsScreen';
+import { AuthProvider } from '../../src/components/AuthContext';
+import SalesScreen from '../../src/screens/SalesScreen';
 
-export default function FarmsPage() {
+export default function SalesPage() {
   return (
     <AuthProvider>
-      <FarmsScreen />
+      <SalesScreen />
     </AuthProvider>
   );
 }

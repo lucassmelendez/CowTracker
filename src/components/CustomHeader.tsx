@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
-import FarmSelector from '../../src/components/FarmSelector';
-import { useFarm } from '../../src/components/FarmContext';
-import { useAuth } from '../../src/components/AuthContext';
+import FarmSelector from './FarmSelector';
+import { useFarm } from './FarmContext';
+import { useAuth } from './AuthContext';
 import { useRouter } from 'expo-router';
+import { colors } from '../styles/commonStyles';
+import { getShadowStyle } from '../utils/styles';
 
 function CustomHeader({ title }: { title: string }) {
   const { selectedFarm, selectFarm } = useFarm();
@@ -24,7 +25,7 @@ function CustomHeader({ title }: { title: string }) {
 
   const handleNavigateToProfile = () => {
     setProfileMenuVisible(false);
-    router.push('/profile');
+    console.log('Navegando a perfil');
   };
 
   return (
@@ -32,16 +33,18 @@ function CustomHeader({ title }: { title: string }) {
       <Text style={styles.headerTitle}>{title}</Text>
       
       <View style={styles.headerRightContainer}>
-        <FarmSelector 
-          selectedFarm={selectedFarm} 
-          onSelectFarm={selectFarm} 
-        />
+        <View style={styles.farmSelectorWrapper}>
+          <FarmSelector 
+            selectedFarm={selectedFarm} 
+            onSelectFarm={selectFarm} 
+          />
+        </View>
         
         <TouchableOpacity 
           style={styles.profileButton}
           onPress={() => setProfileMenuVisible(true)}
         >
-          <Ionicons name="person-circle" size={24} color="#ffffff" />
+          <Ionicons name="person-circle" size={28} color="#ffffff" />
         </TouchableOpacity>
 
         <Modal
@@ -76,7 +79,7 @@ function CustomHeader({ title }: { title: string }) {
               <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={() => {
-                  router.push('/farms');
+                  console.log('Navegando a granjas');
                   setProfileMenuVisible(false);
                 }}
               >
@@ -101,51 +104,6 @@ function CustomHeader({ title }: { title: string }) {
   );
 }
 
-export default function TabLayout() {
-  return (
-    <Stack 
-      screenOptions={{
-        headerShown: true,
-        headerStyle: {
-          backgroundColor: '#27ae60',
-          elevation: 1,
-          shadowOpacity: 0,
-          borderBottomWidth: 0,
-        },
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          color: '#ffffff'
-        },
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          headerTitle: () => <CustomHeader title="CowTracker" />,
-        }}
-      />
-      <Stack.Screen
-        name="explore"
-        options={{
-          headerTitle: () => <CustomHeader title="Mi Ganado" />,
-        }}
-      />
-       <Stack.Screen
-        name="report"
-        options={{
-          headerTitle: () => <CustomHeader title="Informes" />,
-        }}
-      />
-      <Stack.Screen
-        name="sales"
-        options={{
-          headerTitle: () => <CustomHeader title="Ventas" />,
-        }}
-      />
-    </Stack>
-  );
-}
-
 const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
@@ -153,12 +111,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     paddingRight: 5,
+    paddingVertical: 10,
   },
   headerTitle: {
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 20,
     color: '#ffffff',
-    marginLeft: 5,
+    marginLeft: 10,
     flex: 1,
   },
   headerRightContainer: {
@@ -167,9 +126,23 @@ const styles = StyleSheet.create({
     flex: 2,
     justifyContent: 'flex-end',
   },
+  farmSelectorWrapper: {
+    marginRight: 8,
+    padding: 2,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    elevation: 3,
+  },
   profileButton: {
     marginLeft: 10,
     padding: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
   },
   modalOverlay: {
     flex: 1,
@@ -229,3 +202,5 @@ const styles = StyleSheet.create({
     color: '#e74c3c',
   },
 });
+
+export default CustomHeader; 

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from '../src/components/AuthContext';
 import { FarmProvider } from '../src/components/FarmContext';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, ActivityIndicator } from 'react-native';
+import CustomHeader from '../src/components/CustomHeader';
 
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();
@@ -30,18 +31,65 @@ function RootLayoutNav() {
       <Stack 
         screenOptions={{
           headerShown: false, 
+          headerStyle: {
+            backgroundColor: '#27ae60',
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+            height: 70,
+          },
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            color: '#ffffff'
+          },
         }}
       >
         {currentUser ? (
           <>
             <Stack.Screen name="index" redirect={true} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="cattle-detail" options={{ title: 'Detalles del Ganado', headerShown: true }} />
-            <Stack.Screen name="add-cattle" options={{ title: 'Gestionar Ganado', headerShown: true }} />
-            <Stack.Screen name="profile" options={{ title: 'Mi Perfil', headerShown: true }} />
-            <Stack.Screen name="farms" options={{ title: 'Mis Granjas', headerShown: true }} />
-            <Stack.Screen name="sales" options={{ title: 'Ventas', headerShown: true }} />
-            <Stack.Screen name="report" options={{ title: 'Informe', headerShown: true }} />
+            <Stack.Screen 
+              name="cattle-detail" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Detalles del Ganado" /> 
+              }} 
+            />
+            <Stack.Screen 
+              name="add-cattle" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Gestionar Ganado" /> 
+              }} 
+            />
+            <Stack.Screen 
+              name="profile" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Mi Perfil" /> 
+              }} 
+            />
+            <Stack.Screen 
+              name="farms" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Mis Granjas" /> 
+              }} 
+            />
+            <Stack.Screen 
+              name="sales" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Ventas" /> 
+              }} 
+            />
+            <Stack.Screen 
+              name="report" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Informe" /> 
+              }} 
+            />
           </>
         ) : (
           <>

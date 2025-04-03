@@ -25,7 +25,7 @@ function CustomHeader({ title }: { title: string }) {
 
   const handleNavigateToProfile = () => {
     setProfileMenuVisible(false);
-    router.push('/profile');
+    console.log('Navegando a perfil');
   };
 
   return (
@@ -79,7 +79,7 @@ function CustomHeader({ title }: { title: string }) {
               <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={() => {
-                  router.push('/farms');
+                  console.log('Navegando a granjas');
                   setProfileMenuVisible(false);
                 }}
               >

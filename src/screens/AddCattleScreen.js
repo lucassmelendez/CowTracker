@@ -74,13 +74,11 @@ const AddCattleScreen = ({ route }) => {
     }
   }, [userInfo]);
   
-  // Efecto para inicializar los campos de texto de fecha
   useEffect(() => {
     setDateOfBirthText(formatDate(dateOfBirth));
     setPurchaseDateText(formatDate(purchaseDate));
   }, [dateOfBirth, purchaseDate]);
   
-  // Cargar datos del ganado si estamos en modo edición
   useEffect(() => {
     const loadCattleData = async () => {
       if (!isEditMode || !cattleId) return;
@@ -269,20 +267,17 @@ const AddCattleScreen = ({ route }) => {
     }
   };
   
-  // Analizar texto de fecha (formato DD/MM/AAAA)
   const parseDate = (dateText) => {
     if (!dateText) return null;
     
     try {
-      // Verificar si el formato es DD/MM/AAAA
       const parts = dateText.split('/');
       if (parts.length !== 3) return null;
       
       const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1; // Los meses en JS son 0-11
+      const month = parseInt(parts[1], 10) - 1;
       const year = parseInt(parts[2], 10);
       
-      // Validar valores
       if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
       if (day < 1 || day > 31 || month < 0 || month > 11 || year < 1900 || year > 2100) return null;
       

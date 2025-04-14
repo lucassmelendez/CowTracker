@@ -65,7 +65,7 @@ const WelcomeScreen = () => {
         <Ionicons name="leaf-outline" size={60} color="#27ae60" />
         <Text style={welcomeStyles.welcomeTitle}>¡Bienvenido, {userInfo?.name}!</Text>
         <Text style={welcomeStyles.welcomeText}>
-          Para comenzar a usar CowTracker, crea tu primera granja
+          Para comenzar a usar AgroControl, crea tu primera granja
         </Text>
       </View>
 

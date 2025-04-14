@@ -42,18 +42,25 @@ const HomeScreen = () => {
       description: 'Escanear códigos QR',
     },
     {
-      id: 'sales',
-      title: 'Ventas',
-      icon: '💰',
-      route: '/(tabs)/sales',
-      description: 'Gestionar ventas',
-    },
-    {
       id: 'production',
       title: 'Produccion',
       icon: '🥩',
       route: '/(tabs)/production',
       description: 'Gestionar produccion',
+    },
+    {
+      id: 'report',
+      title: 'Reporte',
+      icon: '📝',
+      route: '/(tabs)/report',
+      description: 'Generar reporte',
+    },
+    {
+      id: 'help',
+      title: 'Ayuda',
+      icon: '🆘',
+      route: '/(tabs)/help',
+      description: 'Ayuda y soporte',
     },
   ];
 
@@ -78,30 +85,6 @@ const HomeScreen = () => {
               <Text style={homeStyles.menuDescription}>{item.description}</Text>
             </TouchableOpacity>
           ))}
-        </View>
-
-        <View style={homeStyles.statsContainer}>
-          <Text style={homeStyles.statsTitle}>Resumen</Text>
-          <View style={homeStyles.statsRow}>
-            <View style={homeStyles.statItem}>
-              <Text style={homeStyles.statValue}>0</Text>
-              <Text style={homeStyles.statLabel}>Cabezas de ganado</Text>
-            </View>
-            <View style={homeStyles.statItem}>
-              <Text style={homeStyles.statValue}>0</Text>
-              <Text style={homeStyles.statLabel}>Granjas</Text>
-            </View>
-          </View>
-          <View style={homeStyles.statsRow}>
-            <View style={homeStyles.statItem}>
-              <Text style={homeStyles.statValue}>$0</Text>
-              <Text style={homeStyles.statLabel}>Ventas totales</Text>
-            </View>
-            <View style={homeStyles.statItem}>
-              <Text style={homeStyles.statValue}>0</Text>
-              <Text style={homeStyles.statLabel}>Ventas pendientes</Text>
-            </View>
-          </View>
         </View>
       </ScrollView>
     </View>

@@ -15,7 +15,7 @@ const ProductionScreen = () => {
       <View style={productionStyles.content}>
         <TouchableOpacity 
           style={productionStyles.button}
-          onPress={() => router.push('/screens/cattle-sale')}
+          onPress={() => router.push('/(tabs)/cattle-sale')}
         >
           <Text style={productionStyles.buttonIcon}>🐄</Text>
           <Text style={productionStyles.buttonText}>Registrar Venta de Ganado</Text>
@@ -24,7 +24,7 @@ const ProductionScreen = () => {
 
         <TouchableOpacity 
           style={productionStyles.button}
-          onPress={() => router.push('/screens/milk-sale')}
+          onPress={() => router.push('/(tabs)/milk-sale')}
         >
           <Text style={productionStyles.buttonIcon}>🥛</Text>
           <Text style={productionStyles.buttonText}>Registrar Venta de Leche</Text>

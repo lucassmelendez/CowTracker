@@ -13,6 +13,14 @@ const HomeScreen = () => {
   }, []);
 
   const menuItems = [
+    
+    {
+      id: 'admin',
+      title: 'Administrador',
+      icon: '👨‍💼',
+      route: '/(tabs)/explore',
+      description: 'Gestionar trabajadores y veterinarios',
+    },
     {
       id: 'cattle',
       title: 'Mi Ganado',

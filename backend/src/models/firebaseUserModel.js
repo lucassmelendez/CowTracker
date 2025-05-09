@@ -13,29 +13,44 @@ const createUser = async (userData) => {
     // Normalizar el email a minúsculas
     const normalizedEmail = userData.email.toLowerCase();
     
+    // Determinar el nombre para displayName en Firebase Auth
+    let displayName = userData.name;
+    let primerNombre = userData.primer_nombre;
+    let segundoNombre = userData.segundo_nombre;
+    let primerApellido = userData.primer_apellido;
+    let segundoApellido = userData.segundo_apellido;
+    
+    // Si existen los campos de nombre individuales pero no el nombre completo
+    if (!displayName && (primerNombre || primerApellido)) {
+      displayName = [primerNombre, segundoNombre, primerApellido, segundoApellido]
+        .filter(Boolean)
+        .join(' ');
+    } 
+    // Si existe solo el nombre completo, extraer los componentes
+    else if (displayName && (!primerNombre && !primerApellido)) {
+      const nombreCompleto = displayName.split(' ');
+      primerNombre = nombreCompleto[0] || '';
+      segundoNombre = nombreCompleto.length > 2 ? nombreCompleto[1] : '';
+      primerApellido = nombreCompleto.length > 1 ? 
+        (nombreCompleto.length > 2 ? nombreCompleto[2] : nombreCompleto[1]) : '';
+      segundoApellido = nombreCompleto.length > 3 ? nombreCompleto[3] : '';
+    }
+    
     // Crear usuario en Firebase Authentication
     const userRecord = await auth.createUser({
       email: normalizedEmail,
       password: userData.password,
-      displayName: userData.name,
+      displayName: displayName,
       disabled: false
     });
-
-    // Extraer datos de nombre completo para formato USUARIO
-    const nombreCompleto = userData.name.split(' ');
-    const primerNombre = nombreCompleto[0] || '';
-    const segundoNombre = nombreCompleto.length > 2 ? nombreCompleto[1] : '';
-    const primerApellido = nombreCompleto.length > 1 ? 
-      (nombreCompleto.length > 2 ? nombreCompleto[2] : nombreCompleto[1]) : '';
-    const segundoApellido = nombreCompleto.length > 3 ? nombreCompleto[3] : '';
 
     // Preparar datos para Firestore
     const userDataForFirestore = {
       uid: userRecord.uid,
       email: normalizedEmail,
-      name: userData.name,
       role: userData.role || 'user',
-      // Datos adicionales del formato USUARIO
+      // Datos del nombre completo e individual
+      name: displayName,
       id_usuario: userRecord.uid,
       primer_nombre: primerNombre,
       segundo_nombre: segundoNombre,
@@ -90,11 +105,6 @@ const updateUser = async (uid, userData) => {
     const authUpdateData = {};
     if (userData.email) authUpdateData.email = userData.email;
     if (userData.password) authUpdateData.password = userData.password;
-    if (userData.name) authUpdateData.displayName = userData.name;
-    
-    if (Object.keys(authUpdateData).length > 0) {
-      await auth.updateUser(uid, authUpdateData);
-    }
     
     const firestoreUpdateData = {
       ...userData,
@@ -102,14 +112,37 @@ const updateUser = async (uid, userData) => {
     };
     delete firestoreUpdateData.password;
     
-    // Si hay cambio de nombre, actualizar los campos de nombre divididos
-    if (userData.name) {
-      const nombreCompleto = userData.name.split(' ');
+    // Gestionar campos de nombre
+    let displayName = userData.name;
+    
+    // Si tenemos campos individuales pero no name, reconstruir name
+    if (!displayName && (userData.primer_nombre || userData.primer_apellido)) {
+      displayName = [
+        userData.primer_nombre, 
+        userData.segundo_nombre, 
+        userData.primer_apellido, 
+        userData.segundo_apellido
+      ].filter(Boolean).join(' ');
+      
+      firestoreUpdateData.name = displayName;
+    } 
+    // Si tenemos name pero no campos individuales, extraer campos individuales
+    else if (displayName && (!userData.primer_nombre && !userData.primer_apellido)) {
+      const nombreCompleto = displayName.split(' ');
       firestoreUpdateData.primer_nombre = nombreCompleto[0] || '';
       firestoreUpdateData.segundo_nombre = nombreCompleto.length > 2 ? nombreCompleto[1] : '';
       firestoreUpdateData.primer_apellido = nombreCompleto.length > 1 ? 
         (nombreCompleto.length > 2 ? nombreCompleto[2] : nombreCompleto[1]) : '';
       firestoreUpdateData.segundo_apellido = nombreCompleto.length > 3 ? nombreCompleto[3] : '';
+    }
+    
+    // Actualizar displayName en Auth si hay cambios en el nombre
+    if (displayName) {
+      authUpdateData.displayName = displayName;
+    }
+    
+    if (Object.keys(authUpdateData).length > 0) {
+      await auth.updateUser(uid, authUpdateData);
     }
     
     await usersCollection.doc(uid).update(firestoreUpdateData);

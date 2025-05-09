@@ -3,11 +3,53 @@ const firebaseUserModel = require('../models/firebaseUserModel');
 const authService = require('../services/authService');
 
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  // Depurar los datos recibidos completos
+  console.log('Cuerpo completo de la solicitud:', req.body);
 
-  if (!name || !email || !password) {
+  const { 
+    name, email, password, role,
+    primer_nombre, segundo_nombre, primer_apellido, segundo_apellido 
+  } = req.body;
+
+  // Depurar los datos recibidos
+  console.log('Datos de registro recibidos:', {
+    name, 
+    email, 
+    password: password ? '[REDACTADO]' : undefined,
+    role,
+    primer_nombre, 
+    segundo_nombre, 
+    primer_apellido, 
+    segundo_apellido
+  });
+
+  // Verificación más detallada de campos requeridos
+  const validacionCampos = {
+    tieneNombre: !!name,
+    tienePrimerNombre: !!primer_nombre,
+    tienePrimerApellido: !!primer_apellido,
+    tieneEmail: !!email,
+    tienePassword: !!password
+  };
+  
+  console.log('Validación de campos:', validacionCampos);
+  
+  // Comprobar si tenemos al menos un nombre y un apellido o un nombre completo
+  if ((!name && (!primer_nombre || !primer_apellido)) || !email || !password) {
+    console.log('Validación fallida:', validacionCampos);
+    
+    // Mensaje más específico según lo que falte
+    let mensajeError = 'Por favor ingrese los campos requeridos:';
+    if (!email) mensajeError += ' email,';
+    if (!password) mensajeError += ' contraseña,';
+    if (!name && !primer_nombre) mensajeError += ' nombre,';
+    if (!name && !primer_apellido) mensajeError += ' apellido,';
+    
+    // Eliminar la última coma
+    mensajeError = mensajeError.slice(0, -1);
+    
     res.status(400);
-    throw new Error('Por favor ingrese todos los campos requeridos');
+    throw new Error(mensajeError);
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -23,18 +65,48 @@ const registerUser = asyncHandler(async (req, res) => {
 
   try {
     const userData = {
-      name,
       email: email.toLowerCase(),
       password,
       role: role || 'user',
-      // Los campos adicionales se generarán automáticamente a partir del nombre
     };
 
+    // Datos de nombre que vamos a utilizar
+    if (primer_nombre || primer_apellido) {
+      userData.primer_nombre = primer_nombre;
+      userData.segundo_nombre = segundo_nombre || '';
+      userData.primer_apellido = primer_apellido;
+      userData.segundo_apellido = segundo_apellido || '';
+      console.log('Usando campos de nombre separados');
+    } else if (name) {
+      userData.name = name;
+      console.log('Usando nombre completo');
+    }
+
+    console.log('Datos a enviar a authService.registerUser:', userData);
+    
+    // Verificación final
+    if (((!userData.primer_nombre || !userData.primer_apellido) && !userData.name) || !userData.email || !userData.password) {
+      console.error('Faltan datos críticos para el registro:', {
+        tienePrimerNombre: !!userData.primer_nombre,
+        tienePrimerApellido: !!userData.primer_apellido,
+        tieneName: !!userData.name,
+        tieneEmail: !!userData.email,
+        tienePassword: !!userData.password
+      });
+      res.status(400);
+      throw new Error('Por favor ingrese todos los campos requeridos');
+    }
+    
     const user = await authService.registerUser(userData);
+    
+    console.log('Usuario creado con éxito:', {
+      uid: user.uid,
+      email: user.email,
+      role: user.role
+    });
 
     const userResponse = {
       uid: user.uid,
-      name: user.name,
       email: user.email,
       role: user.role,
       primer_nombre: user.primer_nombre || '',
@@ -127,19 +199,29 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
 const updateUserProfile = asyncHandler(async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { 
+      name, email, password, phone,
+      primer_nombre, segundo_nombre, primer_apellido, segundo_apellido 
+    } = req.body;
     
     const updateData = {};
-    if (name) updateData.name = name;
     if (email) updateData.email = email;
     if (password) updateData.password = password;
     if (phone !== undefined) updateData.phone = phone;
+    
+    if (primer_nombre || primer_apellido) {
+      updateData.primer_nombre = primer_nombre;
+      updateData.segundo_nombre = segundo_nombre || '';
+      updateData.primer_apellido = primer_apellido;
+      updateData.segundo_apellido = segundo_apellido || '';
+    } else if (name) {
+      updateData.name = name;
+    }
     
     const updatedUser = await firebaseUserModel.updateUser(req.user.uid, updateData);
     
     res.json({
       uid: updatedUser.uid,
-      name: updatedUser.name,
       email: updatedUser.email,
       role: updatedUser.role,
       phone: updatedUser.phone || '',

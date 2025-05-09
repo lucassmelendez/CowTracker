@@ -1,68 +1,133 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { qrScannerStyles } from '../styles/qrScannerStyles';
 
 const QRScanner = () => {
+  const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const requestCameraPermission = async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === 'granted');
+    };
+
+    requestCameraPermission();
+  }, []);
+
+  const handleBarCodeScanned = ({ type, data }) => {
+    setScanned(true);
+
+    Alert.alert(
+      'Código QR Escaneado',
+      `Datos escaneados:\n${data}`,
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+          onPress: () => setScanned(false),
+        },
+        {
+          text: 'Ver Detalles',
+          onPress: () => {
+            router.push(`/cattle-detail?id=${data}`);
+          },
+        },
+      ]
+    );
+  };
 
   const handleGoBack = () => {
     router.back();
   };
 
-  const simulateQRScan = () => {
-    setScanned(true);
-    
-    const mockData = JSON.stringify({ id: "12345", name: "Vaca de prueba" });
-    
-    Alert.alert(
-      'Código QR Simulado',
-      `Se ha simulado un escaneo de código QR con información de ganado.\n\n¿Desea ver los detalles?`,
-      [
-        { text: 'Cancelar', style: 'cancel', onPress: () => setScanned(false) },
-        { 
-          text: 'Ver Detalles', 
-          onPress: () => {
-            router.push(`/cattle-detail?id=12345`);
-          }
-        }
-      ]
+  if (hasPermission === null) {
+    return (
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>Solicitando permisos de cámara...</Text>
+      </View>
     );
-  };
+  }
+
+  if (hasPermission === false) {
+    return (
+      <View style={styles.permissionContainer}>
+        <Text style={styles.permissionText}>
+          No se otorgaron permisos para usar la cámara.
+        </Text>
+        <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <Text style={styles.backButtonText}>Volver</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <View style={qrScannerStyles.container}>
-      <View style={qrScannerStyles.cameraSimulator}>
-        <View style={qrScannerStyles.cameraOverlay}>
-          <View style={qrScannerStyles.scannerFrame} />
-          <Text style={qrScannerStyles.simulatorText}>Vista previa de cámara</Text>
-        </View>
-      </View>
-      
-      <TouchableOpacity style={qrScannerStyles.backButton} onPress={handleGoBack}>
+    <View style={styles.container}>
+      <Camera
+        style={StyleSheet.absoluteFillObject}
+        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+        barCodeScannerSettings={{
+          barCodeTypes: [Camera.Constants.BarCodeType.qr],
+        }}
+      />
+      {scanned && (
+        <TouchableOpacity
+          style={styles.scanAgainButton}
+          onPress={() => setScanned(false)}
+        >
+          <Text style={styles.scanAgainButtonText}>Escanear de nuevo</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
         <Ionicons name="arrow-back" size={24} color="white" />
       </TouchableOpacity>
-      
-      <View style={qrScannerStyles.messageContainer}>
-        <Ionicons name="information-circle-outline" size={40} color="#3498db" />
-        <Text style={qrScannerStyles.title}>Modo de Simulación</Text>
-        <Text style={qrScannerStyles.message}>
-          El escáner QR está funcionando en modo de simulación debido a problemas técnicos con el módulo de cámara.
-        </Text>
-        
-        <TouchableOpacity style={qrScannerStyles.scanButton} onPress={simulateQRScan}>
-          <Ionicons name="qr-code-outline" size={24} color="white" style={qrScannerStyles.buttonIcon} />
-          <Text style={qrScannerStyles.buttonText}>Simular escaneo QR</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={[qrScannerStyles.button, {backgroundColor: '#7f8c8d', marginTop: 10}]} onPress={handleGoBack}>
-          <Text style={qrScannerStyles.buttonText}>Volver</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionText: {
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 10,
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  scanAgainButton: {
+    position: 'absolute',
+    bottom: 50,
+    alignSelf: 'center',
+    backgroundColor: '#3498db',
+    padding: 15,
+    borderRadius: 5,
+  },
+  scanAgainButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+});
 
 export default QRScanner;

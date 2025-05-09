@@ -26,7 +26,8 @@ const registerUser = asyncHandler(async (req, res) => {
       name,
       email: email.toLowerCase(),
       password,
-      role: role || 'user'
+      role: role || 'user',
+      // Los campos adicionales se generarán automáticamente a partir del nombre
     };
 
     const user = await authService.registerUser(userData);
@@ -35,7 +36,12 @@ const registerUser = asyncHandler(async (req, res) => {
       uid: user.uid,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      primer_nombre: user.primer_nombre || '',
+      segundo_nombre: user.segundo_nombre || '',
+      primer_apellido: user.primer_apellido || '',
+      segundo_apellido: user.segundo_apellido || '',
+      id_usuario: user.uid
     };
 
     res.status(201).json(userResponse);
@@ -102,7 +108,12 @@ const getUserProfile = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        phone: user.phone || ''
+        phone: user.phone || '',
+        primer_nombre: user.primer_nombre || '',
+        segundo_nombre: user.segundo_nombre || '',
+        primer_apellido: user.primer_apellido || '',
+        segundo_apellido: user.segundo_apellido || '',
+        id_usuario: user.uid
       });
     } else {
       res.status(404);
@@ -131,7 +142,12 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       name: updatedUser.name,
       email: updatedUser.email,
       role: updatedUser.role,
-      phone: updatedUser.phone || ''
+      phone: updatedUser.phone || '',
+      primer_nombre: updatedUser.primer_nombre || '',
+      segundo_nombre: updatedUser.segundo_nombre || '',
+      primer_apellido: updatedUser.primer_apellido || '',
+      segundo_apellido: updatedUser.segundo_apellido || '',
+      id_usuario: updatedUser.uid
     });
   } catch (error) {
     res.status(500);

@@ -58,6 +58,11 @@ class AuthService {
         name: userData.name,
         email: userData.email,
         role: userData.role,
+        primer_nombre: userData.primer_nombre || '',
+        segundo_nombre: userData.segundo_nombre || '',
+        primer_apellido: userData.primer_apellido || '',
+        segundo_apellido: userData.segundo_apellido || '',
+        id_usuario: userData.uid,
         token: customToken
       };
     } catch (error) {

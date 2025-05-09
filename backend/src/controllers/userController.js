@@ -113,9 +113,12 @@ const registerUser = asyncHandler(async (req, res) => {
       segundo_nombre: user.segundo_nombre || '',
       primer_apellido: user.primer_apellido || '',
       segundo_apellido: user.segundo_apellido || '',
-      id_usuario: user.uid
+      id_usuario: user.uid,
+      name: user.name || `${user.primer_nombre} ${user.primer_apellido}`,
+      token: user.token
     };
 
+    console.log('Enviando respuesta de registro:', userResponse);
     res.status(201).json(userResponse);
   } catch (error) {
     console.error('Error al registrar usuario:', error);

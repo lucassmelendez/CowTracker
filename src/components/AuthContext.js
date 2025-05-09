@@ -85,7 +85,20 @@ export const AuthProvider = ({ children }) => {
       
       await login(userData.email, userData.password);
       
-      router.push('/welcome');
+      // Utilizar setTimeout para permitir que la navegación ocurra después de que el componente esté montado
+      setTimeout(() => {
+        try {
+          router.push('/welcome');
+        } catch (navError) {
+          console.log('Error de navegación manejado, el usuario ya está autenticado');
+          // Intentar navegar a la pantalla principal como alternativa
+          try {
+            router.push('/');
+          } catch (homeNavError) {
+            console.log('Error al navegar a la pantalla principal, el usuario está autenticado pero debe navegar manualmente');
+          }
+        }
+      }, 500);
       
       return response;
     } catch (error) {

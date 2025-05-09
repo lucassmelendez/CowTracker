@@ -347,6 +347,15 @@ const CattleDetailScreen = () => {
           </TouchableOpacity>
           
           <TouchableOpacity 
+            style={cattleDetailStyles.editButton}
+            onPress={() => router.push('CattleQR', { id: cattleId })}
+          >
+            <Ionicons name="qr-code-outline" size={18} color="#fff" />
+            <Text style={cattleDetailStyles.buttonText}>QR</Text>
+          </TouchableOpacity>
+
+          
+          <TouchableOpacity 
             style={cattleDetailStyles.deleteButton}
             onPress={confirmDelete}
           >

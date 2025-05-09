@@ -13,6 +13,7 @@ import CattleDetailScreen from '../screens/CattleDetailScreen';
 import AddCattleScreen from '../screens/AddCattleScreen';
 import SalesScreen from '../screens/SalesScreen';
 import FarmsScreen from '../screens/FarmsScreen';
+import CattleQRScreen from '../screens/CattleQRScreen';
 
 import { useAuth } from '../components/AuthContext';
 
@@ -96,6 +97,11 @@ const AppStack = () => {
             name="Farms" 
             component={FarmsScreen} 
             options={{ title: 'Mis Granjas' }}
+          />
+          <Stack.Screen 
+            name="CattleQR" 
+            component={CattleQRScreen} 
+            options={{ title: 'Código QR del Ganado' }}
           />
         </>
       )}

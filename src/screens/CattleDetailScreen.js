@@ -7,10 +7,11 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
-  Platform
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import QRCode from 'react-native-qrcode-svg';
 import { cattleDetailStyles } from '../styles/cattleDetailStyles';
 import { useAuth } from '../components/AuthContext';
 import api from '../services/api';
@@ -29,6 +30,8 @@ const CattleDetailScreen = () => {
   const [error, setError] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [debug, setDebug] = useState(null);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
+  const [loadingQr, setLoadingQr] = useState(false);
 
   // Cargar datos del ganado
   useEffect(() => {
@@ -134,6 +137,14 @@ const CattleDetailScreen = () => {
       console.error('Error al eliminar:', err);
       Alert.alert('Error', 'No se pudo eliminar el ganado');
     }
+  };
+
+  const openQrModal = () => {
+    setQrModalVisible(true);
+  };
+
+  const closeQrModal = () => {
+    setQrModalVisible(false);
   };
 
   // Pantalla de carga
@@ -348,10 +359,10 @@ const CattleDetailScreen = () => {
           
           <TouchableOpacity 
             style={cattleDetailStyles.editButton}
-            onPress={() => router.push('CattleQR', { id: cattleId })}
+            onPress={openQrModal}
           >
             <Ionicons name="qr-code-outline" size={18} color="#fff" />
-            <Text style={cattleDetailStyles.buttonText}>QR</Text>
+            <Text style={cattleDetailStyles.buttonText}>Generar QR</Text>
           </TouchableOpacity>
 
           
@@ -404,8 +415,64 @@ const CattleDetailScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Modal para mostrar el código QR */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={qrModalVisible}
+        onRequestClose={closeQrModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Código QR</Text>
+            {loadingQr ? (
+              <ActivityIndicator size="large" color="#3498db" />
+            ) : (
+              <QRCode
+                value={cattleId}
+                size={200}
+              />
+            )}
+            <TouchableOpacity style={styles.closeButton} onPress={closeQrModal}>
+              <Text style={styles.closeButtonText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  closeButton: {
+    backgroundColor: '#3498db',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+});
 
 export default CattleDetailScreen;

@@ -9,4 +9,5 @@ npm install
 4.Iniciar proyecto 
 npx expo start
 
-una vez iniciado se puede abrir en el navegador presionando w
+una vez iniciado se puede abrir en el navegador 
+presionando w en la misma consola

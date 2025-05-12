@@ -30,10 +30,10 @@ const HomeScreen = () => {
     },
     {
       id: 'informe',
-      title: 'Informe',
-      icon: '📖',
+      title: 'Informes',
+      icon: '📊',
       route: '/(tabs)/report',
-      description: 'Generar infomes de ganado',
+      description: 'Generar informes de ganado',
     },
     {
       id: 'vet',
@@ -57,11 +57,11 @@ const HomeScreen = () => {
       description: 'Gestionar produccion',
     },
     {
-      id: 'report',
-      title: 'Reporte',
-      icon: '📝',
-      route: '/(tabs)/report',
-      description: 'Generar reporte',
+      id: 'issue',
+      title: 'Reportar Problema',
+      icon: '🔔',
+      route: '/(tabs)/issue-report',
+      description: 'Reportar problemas o sugerencias',
     },
     {
       id: 'help',

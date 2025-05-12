@@ -6,48 +6,127 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
+  RefreshControl
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { useAuth } from '../components/AuthContext';
-import { colors } from '../styles/colors';
+import { useFarm } from '../components/FarmContext';
+import { useFocusEffect } from '@react-navigation/native';
+import { colors } from '../styles/commonStyles';
 
 const VeterinaryDataScreen = () => {
   const [cattle, setCattle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
+  const { selectedFarm } = useFarm();
 
-  useEffect(() => {
-    const fetchCattle = async () => {
-      try {
-        setLoading(true);
-        const data = await api.cattle.getAllWithFarmInfo();
-        setCattle(data);
-      } catch (err) {
-        console.error('Error al cargar ganado:', err);
-        setError('No se pudo cargar la lista de ganado');
-        Alert.alert('Error', 'No se pudo cargar la lista de ganado');
-      } finally {
-        setLoading(false);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadCattle();
+      return () => {}; // Cleanup function
+    }, [selectedFarm])
+  );
+
+  const loadCattle = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let cattleData = [];
+      
+      // Si seleccionó la opción "Todas las granjas"
+      if (!selectedFarm || selectedFarm?._id === 'all-farms') {
+        console.log('Cargando ganado de todas las granjas...');
+        
+        // Primero obtenemos todas las granjas
+        const farmsData = await api.farms.getAll();
+        console.log(`Se encontraron ${farmsData.length} granjas`);
+        
+        // Para cada granja, cargamos su ganado
+        const allCattlePromises = farmsData.map(farm => 
+          api.farms.getCattle(farm._id)
+            .then(cattle => {
+              // Añadimos el nombre de la granja a cada animal
+              return cattle.map(animal => ({
+                ...animal,
+                farmName: farm.name
+              }));
+            })
+            .catch(err => {
+              console.error(`Error al cargar ganado de granja ${farm.name}:`, err);
+              return [];
+            })
+        );
+        
+        // Esperamos que todas las promesas se resuelvan
+        const allCattleResults = await Promise.all(allCattlePromises);
+        
+        // Combinamos todos los resultados
+        cattleData = allCattleResults.flat();
+        console.log(`Cargadas ${cattleData.length} cabezas de ganado (todas las granjas)`);
       }
-    };
+      // Si seleccionó una granja específica
+      else if (selectedFarm?._id) {
+        // Cargamos ganado de esa granja específica
+        cattleData = await api.farms.getCattle(selectedFarm._id);
+        // Añadimos el nombre de la granja a cada animal
+        cattleData = cattleData.map(animal => ({
+          ...animal,
+          farmName: selectedFarm.name
+        }));
+        console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name})`);
+      }
+      
+      setCattle(cattleData);
+      setDataLoaded(true);
+    } catch (err) {
+      console.error('Error cargando ganado:', err);
+      setError('Error al cargar el ganado');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-    fetchCattle();
-  }, []);
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadCattle();
+  };
 
   const navigateToAddVeterinaryRecord = (cattleId) => {
     router.push(`/add-veterinary-record?id=${cattleId}`);
   };
 
   const navigateToCattleDetail = (cattleId) => {
-    router.push(`/cattle-details?id=${cattleId}`);
+    router.push({
+      pathname: '/(tabs)/cattle-details',
+      params: { id: cattleId }
+    });
   };
 
   const renderCattleItem = ({ item }) => {
+    // Función para obtener el nombre de la granja
+    const getFarmName = () => {
+      if (!item.farmId) return 'Sin granja asignada';
+      
+      // Si tenemos el nombre de la granja en los datos del ganado, lo mostramos
+      if (item.farmName) return item.farmName;
+      
+      // Si estamos en modo "granja específica", podemos usar el nombre de la granja seleccionada
+      if (selectedFarm && !selectedFarm.isSpecialOption && selectedFarm._id === item.farmId) {
+        return selectedFarm.name;
+      }
+      
+      return `Granja: ${item.farmId}`;
+    };
+
     return (
       <TouchableOpacity
         style={styles.cattleCard}
@@ -77,6 +156,10 @@ const VeterinaryDataScreen = () => {
             <Text style={styles.infoLabel}>Estado de salud:</Text>
             <Text style={styles.infoValue}>{item.healthStatus || 'No especificado'}</Text>
           </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Granja:</Text>
+            <Text style={styles.infoValue}>{getFarmName()}</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -90,7 +173,14 @@ const VeterinaryDataScreen = () => {
     );
   };
 
-  if (loading) {
+  const getSubtitle = () => {
+    if (selectedFarm && selectedFarm._id !== 'all-farms') {
+      return `Granja: ${selectedFarm.name}`;
+    }
+    return "Seleccione un ganado para ver o agregar registros veterinarios";
+  };
+
+  if (loading && !refreshing && !dataLoaded) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -104,7 +194,7 @@ const VeterinaryDataScreen = () => {
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle" size={50} color={colors.error} />
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => router.reload()}>
+        <TouchableOpacity style={styles.retryButton} onPress={loadCattle}>
           <Text style={styles.retryButtonText}>Intentar de nuevo</Text>
         </TouchableOpacity>
       </View>
@@ -115,7 +205,12 @@ const VeterinaryDataScreen = () => {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="information-circle" size={50} color={colors.textLight} />
-        <Text style={styles.emptyText}>No hay ganado registrado</Text>
+        <Text style={styles.emptyText}>
+          {selectedFarm && selectedFarm._id !== 'all-farms' 
+            ? `No hay ganado en la granja "${selectedFarm.name}"`
+            : 'No tienes ganado registrado'
+          }
+        </Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={() => router.push('/add-cattle')}
@@ -128,10 +223,12 @@ const VeterinaryDataScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Registros Veterinarios</Text>
-      <Text style={styles.subtitle}>
-        Seleccione un ganado para ver o agregar registros veterinarios
-      </Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Registros Veterinarios</Text>
+        <Text style={styles.subtitle}>
+          {getSubtitle()}
+        </Text>
+      </View>
       
       <FlatList
         data={cattle}
@@ -139,6 +236,13 @@ const VeterinaryDataScreen = () => {
         keyExtractor={(item) => item._id.toString()}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            colors={[colors.primary]} 
+          />
+        }
       />
     </View>
   );
@@ -150,6 +254,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     padding: 10,
   },
+  header: {
+    marginBottom: 15,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -160,7 +267,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: colors.textLight,
-    marginBottom: 15,
+    marginBottom: 5,
   },
   listContainer: {
     paddingBottom: 20,
@@ -242,7 +349,7 @@ const styles = StyleSheet.create({
   cattleIdentifier: {
     fontSize: 14,
     color: colors.textLight,
-    backgroundColor: colors.lightBackground,
+    backgroundColor: colors.background,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,

@@ -23,6 +23,32 @@ const createGanado = async (datos) => {
       nuevoId = snapshot.docs[0].data().id_ganado + 1;
     }
     
+    // Verificar que existan las referencias
+    const identificadorQRDoc = await identificadorQRCollection.doc(datos.identificador_qr_id).get();
+    if (!identificadorQRDoc.exists) {
+      throw new Error(`El identificador QR con ID ${datos.identificador_qr_id} no existe`);
+    }
+    
+    const informacionVeterinariaDoc = await informacionVeterinariaCollection.doc(datos.informacion_veterinaria_id).get();
+    if (!informacionVeterinariaDoc.exists) {
+      throw new Error(`La información veterinaria con ID ${datos.informacion_veterinaria_id} no existe`);
+    }
+    
+    const produccionDoc = await produccionCollection.doc(datos.produccion_id).get();
+    if (!produccionDoc.exists) {
+      throw new Error(`La producción con ID ${datos.produccion_id} no existe`);
+    }
+    
+    const estadoSaludDoc = await estadoSaludCollection.doc(datos.estado_salud_id).get();
+    if (!estadoSaludDoc.exists) {
+      throw new Error(`El estado de salud con ID ${datos.estado_salud_id} no existe`);
+    }
+    
+    const generoDoc = await generoCollection.doc(datos.genero_id).get();
+    if (!generoDoc.exists) {
+      throw new Error(`El género con ID ${datos.genero_id} no existe`);
+    }
+    
     const fincaDoc = await fincaCollection.doc(datos.finca_id).get();
     if (!fincaDoc.exists) {
       throw new Error(`La finca con ID ${datos.finca_id} no existe`);
@@ -34,24 +60,43 @@ const createGanado = async (datos) => {
       numero_identificacion: datos.numero_identificacion,
       precio_compra: datos.precio_compra,
       nota: datos.nota || null,
-      // IDs de referencias
+      // Referencias a otros documentos
+      identificador_qr_ref: db.doc(`identificadores_qr/${datos.identificador_qr_id}`),
       identificador_qr_id: datos.identificador_qr_id,
+      identificador_qr_data: {
+        id_identificador_qr: identificadorQRDoc.data().id_identificador_qr,
+        descripcion: identificadorQRDoc.data().descripcion
+      },
+      informacion_veterinaria_ref: db.doc(`informacion_veterinaria/${datos.informacion_veterinaria_id}`),
       informacion_veterinaria_id: datos.informacion_veterinaria_id,
+      produccion_ref: db.doc(`producciones/${datos.produccion_id}`),
       produccion_id: datos.produccion_id,
+      produccion_data: {
+        id_produccion: produccionDoc.data().id_produccion,
+        descripcion: produccionDoc.data().descripcion
+      },
+      estado_salud_ref: db.doc(`estados_salud/${datos.estado_salud_id}`),
       estado_salud_id: datos.estado_salud_id,
+      estado_salud_data: {
+        id_estado_salud: estadoSaludDoc.data().id_estado_salud,
+        descripcion: estadoSaludDoc.data().descripcion
+      },
+      genero_ref: db.doc(`generos/${datos.genero_id}`),
       genero_id: datos.genero_id,
+      genero_data: {
+        id_genero: generoDoc.data().id_genero,
+        descripcion: generoDoc.data().descripcion
+      },
+      finca_ref: db.doc(`fincas/${datos.finca_id}`),
       finca_id: datos.finca_id,
       finca_data: {
         id_finca: fincaDoc.data().id_finca,
         nombre: fincaDoc.data().nombre
       },
-      // Arrays para historiales y eventos
-      historial_peso: [],
-      historial_salud: [],
-      historial_produccion: [],
-      eventos_ganaderos: [],
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      // Historial de peso, inicialmente vacío
+      weightHistory: []
     };
     
     const docRef = await ganadoCollection.add(ganadoData);
@@ -129,20 +174,91 @@ const updateGanado = async (id, datos) => {
       throw new Error(`El ganado con ID ${id} no existe`);
     }
     
+    const ganadoActual = ganadoDoc.data();
     const updateData = {
       ...datos,
       updatedAt: new Date().toISOString()
     };
+    
+    // Si se actualizan referencias, actualizamos los datos relacionados
+    if (datos.identificador_qr_id) {
+      const identificadorQRDoc = await identificadorQRCollection.doc(datos.identificador_qr_id).get();
+      if (!identificadorQRDoc.exists) {
+        throw new Error(`El identificador QR con ID ${datos.identificador_qr_id} no existe`);
+      }
+      updateData.identificador_qr_ref = db.doc(`identificadores_qr/${datos.identificador_qr_id}`);
+      updateData.identificador_qr_data = {
+        id_identificador_qr: identificadorQRDoc.data().id_identificador_qr,
+        descripcion: identificadorQRDoc.data().descripcion
+      };
+    }
+    
+    if (datos.informacion_veterinaria_id) {
+      const informacionVeterinariaDoc = await informacionVeterinariaCollection.doc(datos.informacion_veterinaria_id).get();
+      if (!informacionVeterinariaDoc.exists) {
+        throw new Error(`La información veterinaria con ID ${datos.informacion_veterinaria_id} no existe`);
+      }
+      updateData.informacion_veterinaria_ref = db.doc(`informacion_veterinaria/${datos.informacion_veterinaria_id}`);
+    }
+    
+    if (datos.produccion_id) {
+      const produccionDoc = await produccionCollection.doc(datos.produccion_id).get();
+      if (!produccionDoc.exists) {
+        throw new Error(`La producción con ID ${datos.produccion_id} no existe`);
+      }
+      updateData.produccion_ref = db.doc(`producciones/${datos.produccion_id}`);
+      updateData.produccion_data = {
+        id_produccion: produccionDoc.data().id_produccion,
+        descripcion: produccionDoc.data().descripcion
+      };
+    }
+    
+    if (datos.estado_salud_id) {
+      const estadoSaludDoc = await estadoSaludCollection.doc(datos.estado_salud_id).get();
+      if (!estadoSaludDoc.exists) {
+        throw new Error(`El estado de salud con ID ${datos.estado_salud_id} no existe`);
+      }
+      updateData.estado_salud_ref = db.doc(`estados_salud/${datos.estado_salud_id}`);
+      updateData.estado_salud_data = {
+        id_estado_salud: estadoSaludDoc.data().id_estado_salud,
+        descripcion: estadoSaludDoc.data().descripcion
+      };
+    }
+    
+    if (datos.genero_id) {
+      const generoDoc = await generoCollection.doc(datos.genero_id).get();
+      if (!generoDoc.exists) {
+        throw new Error(`El género con ID ${datos.genero_id} no existe`);
+      }
+      updateData.genero_ref = db.doc(`generos/${datos.genero_id}`);
+      updateData.genero_data = {
+        id_genero: generoDoc.data().id_genero,
+        descripcion: generoDoc.data().descripcion
+      };
+    }
     
     if (datos.finca_id) {
       const fincaDoc = await fincaCollection.doc(datos.finca_id).get();
       if (!fincaDoc.exists) {
         throw new Error(`La finca con ID ${datos.finca_id} no existe`);
       }
+      updateData.finca_ref = db.doc(`fincas/${datos.finca_id}`);
       updateData.finca_data = {
         id_finca: fincaDoc.data().id_finca,
         nombre: fincaDoc.data().nombre
       };
+    }
+    
+    // Actualizar historial de peso si el peso cambió
+    if (datos.peso && datos.peso !== ganadoActual.peso) {
+      updateData.weightHistory = [
+        ...(ganadoActual.weightHistory || []),
+        {
+          date: new Date().toISOString(),
+          weight: datos.peso,
+          notes: 'Actualización de peso'
+        }
+      ];
     }
     
     await ganadoCollection.doc(id).update(updateData);
@@ -208,99 +324,6 @@ const getGanadosByFinca = async (fincaId) => {
   }
 };
 
-/**
- * Agrega un registro de peso al historial
- * @param {string} id - ID del ganado
- * @param {Object} pesoData - Datos del peso
- * @returns {Promise<Object>} - Ganado actualizado
- */
-const addPeso = async (id, pesoData) => {
-  try {
-    const ganadoRef = ganadoCollection.doc(id);
-    await ganadoRef.update({
-      historial_peso: db.FieldValue.arrayUnion({
-        ...pesoData,
-        fecha: new Date().toISOString()
-      }),
-      updatedAt: new Date().toISOString()
-    });
-    
-    return await getGanadoById(id);
-  } catch (error) {
-    console.error('Error al agregar peso:', error);
-    throw error;
-  }
-};
-
-/**
- * Agrega un registro de salud al historial
- * @param {string} id - ID del ganado
- * @param {Object} saludData - Datos de salud
- * @returns {Promise<Object>} - Ganado actualizado
- */
-const addSalud = async (id, saludData) => {
-  try {
-    const ganadoRef = ganadoCollection.doc(id);
-    await ganadoRef.update({
-      historial_salud: db.FieldValue.arrayUnion({
-        ...saludData,
-        fecha: new Date().toISOString()
-      }),
-      updatedAt: new Date().toISOString()
-    });
-    
-    return await getGanadoById(id);
-  } catch (error) {
-    console.error('Error al agregar registro de salud:', error);
-    throw error;
-  }
-};
-
-/**
- * Agrega un registro de producción al historial
- * @param {string} id - ID del ganado
- * @param {Object} produccionData - Datos de producción
- * @returns {Promise<Object>} - Ganado actualizado
- */
-const addProduccion = async (id, produccionData) => {
-  try {
-    const ganadoRef = ganadoCollection.doc(id);
-    await ganadoRef.update({
-      historial_produccion: db.FieldValue.arrayUnion({
-        ...produccionData,
-        fecha: new Date().toISOString()
-      }),
-      updatedAt: new Date().toISOString()
-    });
-    
-    return await getGanadoById(id);
-  } catch (error) {
-    console.error('Error al agregar registro de producción:', error);
-    throw error;
-  }
-};
-
-/**
- * Agrega un evento ganadero al ganado
- * @param {string} id - ID del ganado
- * @param {string} eventoId - ID del evento ganadero
- * @returns {Promise<Object>} - Ganado actualizado
- */
-const addEventoGanadero = async (id, eventoId) => {
-  try {
-    const ganadoRef = ganadoCollection.doc(id);
-    await ganadoRef.update({
-      eventos_ganaderos: db.FieldValue.arrayUnion(eventoId),
-      updatedAt: new Date().toISOString()
-    });
-    
-    return await getGanadoById(id);
-  } catch (error) {
-    console.error('Error al agregar evento ganadero:', error);
-    throw error;
-  }
-};
-
 module.exports = {
   createGanado,
   getGanadoById,
@@ -308,9 +331,5 @@ module.exports = {
   updateGanado,
   deleteGanado,
   getAllGanados,
-  getGanadosByFinca,
-  addPeso,
-  addSalud,
-  addProduccion,
-  addEventoGanadero
+  getGanadosByFinca
 }; 

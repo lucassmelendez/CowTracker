@@ -1,7 +1,9 @@
 const { db } = require('../config/firebase');
 
 const fincaCollection = db.collection('fincas');
-const usersCollection = db.collection('users');
+const tipoInformeCollection = db.collection('tipos_informe');
+const eventoGanaderoCollection = db.collection('eventos_ganaderos');
+const usuarioCollection = db.collection('usuarios');
 
 /**
  * Crea una nueva finca
@@ -18,7 +20,18 @@ const createFinca = async (datos) => {
       nuevoId = snapshot.docs[0].data().id_finca + 1;
     }
     
-    const usuarioDoc = await usersCollection.doc(datos.usuario_id).get();
+    // Verificar que existan las referencias
+    const tipoInformeDoc = await tipoInformeCollection.doc(datos.tipo_informe_id).get();
+    if (!tipoInformeDoc.exists) {
+      throw new Error(`El tipo de informe con ID ${datos.tipo_informe_id} no existe`);
+    }
+    
+    const eventoGanaderoDoc = await eventoGanaderoCollection.doc(datos.evento_ganadero_id).get();
+    if (!eventoGanaderoDoc.exists) {
+      throw new Error(`El evento ganadero con ID ${datos.evento_ganadero_id} no existe`);
+    }
+    
+    const usuarioDoc = await usuarioCollection.doc(datos.usuario_id).get();
     if (!usuarioDoc.exists) {
       throw new Error(`El usuario con ID ${datos.usuario_id} no existe`);
     }
@@ -27,9 +40,20 @@ const createFinca = async (datos) => {
       id_finca: nuevoId,
       nombre: datos.nombre,
       tamaño: datos.tamaño,
-      // Arrays para almacenar múltiples referencias
-      tipos_informe: [], // Array de IDs de tipos de informe
-      eventos_ganaderos: [], // Array de IDs de eventos ganaderos
+      // Referencias a otros documentos
+      tipo_informe_ref: db.doc(`tipos_informe/${datos.tipo_informe_id}`),
+      tipo_informe_id: datos.tipo_informe_id,
+      tipo_informe_data: {
+        id_tipo_informe: tipoInformeDoc.data().id_tipo_informe,
+        descripcion: tipoInformeDoc.data().descripcion
+      },
+      evento_ganadero_ref: db.doc(`eventos_ganaderos/${datos.evento_ganadero_id}`),
+      evento_ganadero_id: datos.evento_ganadero_id,
+      evento_ganadero_data: {
+        id_evento_ganadero: eventoGanaderoDoc.data().id_evento_ganadero,
+        descripcion: eventoGanaderoDoc.data().descripcion
+      },
+      usuario_ref: db.doc(`usuarios/${datos.usuario_id}`),
       usuario_id: datos.usuario_id,
       usuario_data: {
         id_usuario: usuarioDoc.data().id_usuario,
@@ -114,11 +138,37 @@ const updateFinca = async (id, datos) => {
       updatedAt: new Date().toISOString()
     };
     
+    // Si se actualizan referencias, actualizamos los datos relacionados
+    if (datos.tipo_informe_id) {
+      const tipoInformeDoc = await tipoInformeCollection.doc(datos.tipo_informe_id).get();
+      if (!tipoInformeDoc.exists) {
+        throw new Error(`El tipo de informe con ID ${datos.tipo_informe_id} no existe`);
+      }
+      updateData.tipo_informe_ref = db.doc(`tipos_informe/${datos.tipo_informe_id}`);
+      updateData.tipo_informe_data = {
+        id_tipo_informe: tipoInformeDoc.data().id_tipo_informe,
+        descripcion: tipoInformeDoc.data().descripcion
+      };
+    }
+    
+    if (datos.evento_ganadero_id) {
+      const eventoGanaderoDoc = await eventoGanaderoCollection.doc(datos.evento_ganadero_id).get();
+      if (!eventoGanaderoDoc.exists) {
+        throw new Error(`El evento ganadero con ID ${datos.evento_ganadero_id} no existe`);
+      }
+      updateData.evento_ganadero_ref = db.doc(`eventos_ganaderos/${datos.evento_ganadero_id}`);
+      updateData.evento_ganadero_data = {
+        id_evento_ganadero: eventoGanaderoDoc.data().id_evento_ganadero,
+        descripcion: eventoGanaderoDoc.data().descripcion
+      };
+    }
+    
     if (datos.usuario_id) {
-      const usuarioDoc = await usersCollection.doc(datos.usuario_id).get();
+      const usuarioDoc = await usuarioCollection.doc(datos.usuario_id).get();
       if (!usuarioDoc.exists) {
         throw new Error(`El usuario con ID ${datos.usuario_id} no existe`);
       }
+      updateData.usuario_ref = db.doc(`usuarios/${datos.usuario_id}`);
       updateData.usuario_data = {
         id_usuario: usuarioDoc.data().id_usuario,
         nombre: usuarioDoc.data().primer_nombre + ' ' + usuarioDoc.data().primer_apellido
@@ -188,48 +238,6 @@ const getFincasByUsuario = async (usuarioId) => {
   }
 };
 
-/**
- * Agrega un tipo de informe a una finca
- * @param {string} fincaId - ID de la finca
- * @param {string} tipoInformeId - ID del tipo de informe
- * @returns {Promise<Object>} - Finca actualizada
- */
-const addTipoInforme = async (fincaId, tipoInformeId) => {
-  try {
-    const fincaRef = fincaCollection.doc(fincaId);
-    await fincaRef.update({
-      tipos_informe: db.FieldValue.arrayUnion(tipoInformeId),
-      updatedAt: new Date().toISOString()
-    });
-    
-    return await getFincaById(fincaId);
-  } catch (error) {
-    console.error('Error al agregar tipo de informe:', error);
-    throw error;
-  }
-};
-
-/**
- * Agrega un evento ganadero a una finca
- * @param {string} fincaId - ID de la finca
- * @param {string} eventoGanaderoId - ID del evento ganadero
- * @returns {Promise<Object>} - Finca actualizada
- */
-const addEventoGanadero = async (fincaId, eventoGanaderoId) => {
-  try {
-    const fincaRef = fincaCollection.doc(fincaId);
-    await fincaRef.update({
-      eventos_ganaderos: db.FieldValue.arrayUnion(eventoGanaderoId),
-      updatedAt: new Date().toISOString()
-    });
-    
-    return await getFincaById(fincaId);
-  } catch (error) {
-    console.error('Error al agregar evento ganadero:', error);
-    throw error;
-  }
-};
-
 module.exports = {
   createFinca,
   getFincaById,
@@ -237,7 +245,5 @@ module.exports = {
   updateFinca,
   deleteFinca,
   getAllFincas,
-  getFincasByUsuario,
-  addTipoInforme,
-  addEventoGanadero
+  getFincasByUsuario
 }; 

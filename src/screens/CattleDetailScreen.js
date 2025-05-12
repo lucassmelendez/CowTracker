@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
+import { captureRef } from 'react-native-view-shot';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { cattleDetailStyles } from '../styles/cattleDetailStyles';
 import { useAuth } from '../components/AuthContext';
 import api from '../services/api';
@@ -32,6 +35,7 @@ const CattleDetailScreen = () => {
   const [debug, setDebug] = useState(null);
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [loadingQr, setLoadingQr] = useState(false);
+  const [qrCodeRef, setQrCodeRef] = useState(null);
 
   // Cargar datos del ganado
   useEffect(() => {
@@ -145,6 +149,31 @@ const CattleDetailScreen = () => {
 
   const closeQrModal = () => {
     setQrModalVisible(false);
+  };
+
+  const handleDownloadQRCode = async () => {
+    if (!qrCodeRef) {
+      Alert.alert('Error', 'No se pudo generar el código QR');
+      return;
+    }
+
+    try {
+      // Capturar la vista del QR como imagen
+      const uri = await captureRef(qrCodeRef, {
+        format: 'png',
+        quality: 1,
+      });
+
+      // Compartir o guardar la imagen
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert('Guardado', 'El código QR se guardó en el almacenamiento local.');
+      }
+    } catch (error) {
+      console.error('Error al descargar el código QR:', error);
+      Alert.alert('Error', 'No se pudo descargar el código QR');
+    }
   };
 
   // Pantalla de carga
@@ -425,15 +454,26 @@ const CattleDetailScreen = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Código QR</Text>
+            <Text style={styles.modalTitle}>Bovino: {cattle.name}</Text>
             {loadingQr ? (
               <ActivityIndicator size="large" color="#3498db" />
             ) : (
-              <QRCode
-                value={cattleId}
-                size={200}
-              />
+              <View
+                ref={(ref) => setQrCodeRef(ref)}
+                style={styles.qrContainer}
+              >
+                <QRCode
+                  value={cattleId} /* Importante cambiar esto a la pagina principal de bovino, cuando este ya este en produccion  ejemplo /cattle-details?id=DT81dt97qN9ZYMC4H6Qm*/
+                  size={200}
+                />
+              </View>
             )}
+            <TouchableOpacity
+              style={styles.downloadButton}
+              onPress={handleDownloadQRCode}
+            >
+              <Text style={styles.downloadButtonText}>Descargar QR</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.closeButton} onPress={closeQrModal}>
               <Text style={styles.closeButtonText}>Cerrar</Text>
             </TouchableOpacity>
@@ -463,11 +503,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
   },
+  qrContainer: {
+    marginBottom: 20,
+  },
+  downloadButton: {
+    backgroundColor: '#2ecc71',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  downloadButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
   closeButton: {
     backgroundColor: '#3498db',
     padding: 10,
     borderRadius: 5,
-    marginTop: 20,
+    marginTop: 10,
   },
   closeButtonText: {
     color: '#fff',

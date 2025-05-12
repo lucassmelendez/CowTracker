@@ -18,7 +18,7 @@ const HomeScreen = () => {
       id: 'admin',
       title: 'Administrador',
       icon: '👨‍💼',
-      route: '/(tabs)/explore',
+      route: '/(tabs)/admin',
       description: 'Gestionar trabajadores y veterinarios',
     },
     {

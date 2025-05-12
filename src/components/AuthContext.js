@@ -88,7 +88,7 @@ export const AuthProvider = ({ children }) => {
       // Utilizar setTimeout para permitir que la navegación ocurra después de que el componente esté montado
       setTimeout(() => {
         try {
-          router.push('/welcome');
+          router.push('/(tabs)');
         } catch (navError) {
           console.log('Error de navegación manejado, el usuario ya está autenticado');
           // Intentar navegar a la pantalla principal como alternativa

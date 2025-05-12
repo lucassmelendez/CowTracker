@@ -130,7 +130,13 @@ export default function TabLayout() {
           headerTitle: () => <CustomHeader title="Mi Ganado" />,
         }}
       />
-       <Stack.Screen
+      <Stack.Screen
+        name="veterinary-data"
+        options={{
+          headerTitle: () => <CustomHeader title="Datos Veterinarios" />,
+        }}
+      />
+      <Stack.Screen
         name="report"
         options={{
           headerTitle: () => <CustomHeader title="Informes" />,

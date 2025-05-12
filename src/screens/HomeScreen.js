@@ -39,7 +39,7 @@ const HomeScreen = () => {
       id: 'vet',
       title: 'Datos veterinarios',
       icon: '💊',
-      route: '/(tabs)/explore',
+      route: '/(tabs)/veterinary-data',
       description: 'Datos veterinarios y medicamentos',
     },
     {

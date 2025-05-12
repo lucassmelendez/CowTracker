@@ -16,7 +16,10 @@ import { registerStyles } from '../styles/registerStyles';
 
 const RegisterScreen = () => {
   const router = useRouter();
-  const [name, setName] = useState('');
+  const [primerNombre, setPrimerNombre] = useState('');
+  const [segundoNombre, setSegundoNombre] = useState('');
+  const [primerApellido, setPrimerApellido] = useState('');
+  const [segundoApellido, setSegundoApellido] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,8 +40,8 @@ const RegisterScreen = () => {
   };
 
   const handleRegister = () => {
-    if (!name || !email || !password || !confirmPassword) {
-      setLocalError('Por favor complete todos los campos');
+    if (!primerNombre || !primerApellido || !email || !password || !confirmPassword) {
+      setLocalError('Por favor complete los campos obligatorios (primer nombre, primer apellido, email y contraseña)');
       return;
     }
 
@@ -53,7 +56,27 @@ const RegisterScreen = () => {
     }
 
     setLocalError('');
-    register(name, email, password, role);
+    
+    // Enviar directamente los datos sin crear un objeto intermedio
+    console.log('RegisterScreen - Enviando datos directamente:', {
+      primer_nombre: primerNombre,
+      segundo_nombre: segundoNombre,
+      primer_apellido: primerApellido,
+      segundo_apellido: segundoApellido,
+      email,
+      role
+    });
+    
+    // Pasar los datos directamente para evitar conversiones innecesarias
+    register({
+      primer_nombre: primerNombre,
+      segundo_nombre: segundoNombre || "",
+      primer_apellido: primerApellido,
+      segundo_apellido: segundoApellido || "",
+      email,
+      password,
+      role
+    });
   };
 
   const navigateToLogin = () => {
@@ -73,15 +96,39 @@ const RegisterScreen = () => {
         </View>
 
         <View style={registerStyles.formContainer}>
-          <Text style={registerStyles.label}>Nombre</Text>
+          <Text style={registerStyles.label}>Primer Nombre *</Text>
           <TextInput
             style={registerStyles.input}
-            placeholder="Ingrese su nombre completo"
-            value={name}
-            onChangeText={setName}
+            placeholder="Ingrese su primer nombre"
+            value={primerNombre}
+            onChangeText={setPrimerNombre}
           />
 
-          <Text style={registerStyles.label}>Email</Text>
+          <Text style={registerStyles.label}>Segundo Nombre</Text>
+          <TextInput
+            style={registerStyles.input}
+            placeholder="Ingrese su segundo nombre (opcional)"
+            value={segundoNombre}
+            onChangeText={setSegundoNombre}
+          />
+
+          <Text style={registerStyles.label}>Primer Apellido *</Text>
+          <TextInput
+            style={registerStyles.input}
+            placeholder="Ingrese su primer apellido"
+            value={primerApellido}
+            onChangeText={setPrimerApellido}
+          />
+
+          <Text style={registerStyles.label}>Segundo Apellido</Text>
+          <TextInput
+            style={registerStyles.input}
+            placeholder="Ingrese su segundo apellido (opcional)"
+            value={segundoApellido}
+            onChangeText={setSegundoApellido}
+          />
+
+          <Text style={registerStyles.label}>Email *</Text>
           <TextInput
             style={registerStyles.input}
             placeholder="usuario@ejemplo.com"
@@ -91,7 +138,7 @@ const RegisterScreen = () => {
             autoCapitalize="none"
           />
 
-          <Text style={registerStyles.label}>Contraseña</Text>
+          <Text style={registerStyles.label}>Contraseña *</Text>
           <TextInput
             style={registerStyles.input}
             placeholder="Ingrese su contraseña"
@@ -100,7 +147,7 @@ const RegisterScreen = () => {
             secureTextEntry
           />
 
-          <Text style={registerStyles.label}>Confirmar Contraseña</Text>
+          <Text style={registerStyles.label}>Confirmar Contraseña *</Text>
           <TextInput
             style={registerStyles.input}
             placeholder="Confirme su contraseña"
@@ -109,7 +156,7 @@ const RegisterScreen = () => {
             secureTextEntry
           />
 
-          <Text style={registerStyles.label}>Tipo de Rol</Text>
+          <Text style={registerStyles.label}>Tipo de Rol *</Text>
           <TouchableOpacity 
             style={registerStyles.selectorButton} 
             onPress={() => setShowRoleModal(true)}

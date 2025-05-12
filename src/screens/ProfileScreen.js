@@ -13,10 +13,13 @@ const ProfileScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState({
-    name: '',
     email: '',
     phone: '',
-    role: ''
+    role: '',
+    primer_nombre: '',
+    segundo_nombre: '',
+    primer_apellido: '',
+    segundo_apellido: ''
   });
   const [formData, setFormData] = useState({...userData});
 
@@ -29,10 +32,13 @@ const ProfileScreen = () => {
         const profileData = await api.users.getProfile();
         
         const formattedData = {
-          name: profileData.name || '',
           email: profileData.email || '',
           phone: profileData.phone || '',
-          role: profileData.role === 'admin' ? 'Administrador' : 'Usuario'
+          role: profileData.role === 'admin' ? 'Administrador' : 'Usuario',
+          primer_nombre: profileData.primer_nombre || '',
+          segundo_nombre: profileData.segundo_nombre || '',
+          primer_apellido: profileData.primer_apellido || '',
+          segundo_apellido: profileData.segundo_apellido || ''
         };
         
         setUserData(formattedData);
@@ -42,10 +48,13 @@ const ProfileScreen = () => {
         // Si falla, usar datos del contexto
         if (userInfo) {
           const fallbackData = {
-            name: userInfo.name || currentUser?.displayName || '',
             email: userInfo.email || currentUser?.email || '',
             phone: userInfo.phone || '',
-            role: userInfo.role === 'admin' ? 'Administrador' : 'Usuario'
+            role: userInfo.role === 'admin' ? 'Administrador' : 'Usuario',
+            primer_nombre: userInfo.primer_nombre || '',
+            segundo_nombre: userInfo.segundo_nombre || '',
+            primer_apellido: userInfo.primer_apellido || '',
+            segundo_apellido: userInfo.segundo_apellido || ''
           };
           setUserData(fallbackData);
           setFormData(fallbackData);
@@ -70,10 +79,15 @@ const ProfileScreen = () => {
         return;
       }
 
+      // Ya no construimos el nombre completo
+      // Enviar los campos separados directamente
       const updateData = {
-        name: formData.name,
         email: formData.email,
         phone: formData.phone,
+        primer_nombre: formData.primer_nombre,
+        segundo_nombre: formData.segundo_nombre,
+        primer_apellido: formData.primer_apellido,
+        segundo_apellido: formData.segundo_apellido,
         ...(formData.password ? { password: formData.password } : {})
       };
 
@@ -81,12 +95,15 @@ const ProfileScreen = () => {
       // Usar la función correcta del contexto de autenticación
       await updateProfile(updateData);
       
-      // Actualizar los datos locales
+      // Actualizar los datos locales con los mismos valores
       setUserData({
         ...userData,
-        name: formData.name,
         email: formData.email,
-        phone: formData.phone
+        phone: formData.phone,
+        primer_nombre: formData.primer_nombre,
+        segundo_nombre: formData.segundo_nombre,
+        primer_apellido: formData.primer_apellido,
+        segundo_apellido: formData.segundo_apellido
       });
       
       Alert.alert('Éxito', 'Perfil actualizado correctamente');
@@ -124,13 +141,16 @@ const ProfileScreen = () => {
     );
   };
 
-  const getInitials = (name) => {
-    if (!name) return '?';
-    return name
-      .split(' ')
-      .map(part => part.charAt(0))
-      .join('')
-      .toUpperCase();
+  const getInitials = () => {
+    const primerNombre = userData.primer_nombre || '';
+    const primerApellido = userData.primer_apellido || '';
+    
+    if (!primerNombre && !primerApellido) return '?';
+    
+    const inicialNombre = primerNombre ? primerNombre.charAt(0) : '';
+    const inicialApellido = primerApellido ? primerApellido.charAt(0) : '';
+    
+    return (inicialNombre + inicialApellido).toUpperCase();
   };
 
   if (isLoading) {
@@ -153,22 +173,60 @@ const ProfileScreen = () => {
         <View style={profileStyles.card}>
           <View style={profileStyles.avatarContainer}>
             <View style={profileStyles.avatar}>
-              <Text style={profileStyles.avatarText}>{getInitials(userData.name)}</Text>
+              <Text style={profileStyles.avatarText}>{getInitials()}</Text>
             </View>
             <Text style={profileStyles.role}>{userData.role}</Text>
           </View>
           
           <View style={profileStyles.infoContainer}>
-            <Text style={profileStyles.label}>Nombre completo</Text>
             {isEditing ? (
-              <TextInput
-                style={profileStyles.input}
-                value={formData.name}
-                onChangeText={(text) => setFormData({...formData, name: text})}
-                placeholder="Nombre completo"
-              />
+              <>
+                <Text style={profileStyles.label}>Primer nombre</Text>
+                <TextInput
+                  style={profileStyles.input}
+                  value={formData.primer_nombre}
+                  onChangeText={(text) => setFormData({...formData, primer_nombre: text})}
+                  placeholder="Primer nombre"
+                />
+                
+                <Text style={profileStyles.label}>Segundo nombre</Text>
+                <TextInput
+                  style={profileStyles.input}
+                  value={formData.segundo_nombre}
+                  onChangeText={(text) => setFormData({...formData, segundo_nombre: text})}
+                  placeholder="Segundo nombre (opcional)"
+                />
+                
+                <Text style={profileStyles.label}>Primer apellido</Text>
+                <TextInput
+                  style={profileStyles.input}
+                  value={formData.primer_apellido}
+                  onChangeText={(text) => setFormData({...formData, primer_apellido: text})}
+                  placeholder="Primer apellido"
+                />
+                
+                <Text style={profileStyles.label}>Segundo apellido</Text>
+                <TextInput
+                  style={profileStyles.input}
+                  value={formData.segundo_apellido}
+                  onChangeText={(text) => setFormData({...formData, segundo_apellido: text})}
+                  placeholder="Segundo apellido (opcional)"
+                />
+              </>
             ) : (
-              <Text style={profileStyles.infoText}>{userData.name}</Text>
+              <>
+                <Text style={profileStyles.label}>Primer nombre</Text>
+                <Text style={profileStyles.infoText}>{userData.primer_nombre || 'No especificado'}</Text>
+                
+                <Text style={profileStyles.label}>Segundo nombre</Text>
+                <Text style={profileStyles.infoText}>{userData.segundo_nombre || 'No especificado'}</Text>
+                
+                <Text style={profileStyles.label}>Primer apellido</Text>
+                <Text style={profileStyles.infoText}>{userData.primer_apellido || 'No especificado'}</Text>
+                
+                <Text style={profileStyles.label}>Segundo apellido</Text>
+                <Text style={profileStyles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
+              </>
             )}
             
             <Text style={profileStyles.label}>Correo electrónico</Text>

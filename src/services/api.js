@@ -79,7 +79,50 @@ const clearAuthToken = () => {
 
 // API para usuarios
 const users = {
-  register: (userData) => instance.post('users/register', userData),
+  register: (userData) => {
+    console.log('API - Datos recibidos para registro:', {
+      email: userData.email,
+      primer_nombre: userData.primer_nombre,
+      primer_apellido: userData.primer_apellido,
+      role: userData.role,
+      tiene_password: !!userData.password
+    });
+    
+    // Verificación básica
+    if (!userData.email || !userData.password || !userData.primer_nombre || !userData.primer_apellido) {
+      console.error('Datos incompletos para registro:', { 
+        tieneEmail: !!userData.email, 
+        tienePassword: !!userData.password,
+        tienePrimerNombre: !!userData.primer_nombre,
+        tienePrimerApellido: !!userData.primer_apellido
+      });
+      return Promise.reject({ 
+        message: 'Faltan campos obligatorios para el registro' 
+      });
+    }
+    
+    // Asegurarse de que los campos opcionales estén presentes
+    const datosCompletos = {
+      ...userData,
+      segundo_nombre: userData.segundo_nombre || '',
+      segundo_apellido: userData.segundo_apellido || '',
+      role: userData.role || 'user'
+    };
+    
+    console.log('API - Enviando datos al backend:', {
+      primer_nombre: datosCompletos.primer_nombre,
+      primer_apellido: datosCompletos.primer_apellido,
+      email: datosCompletos.email,
+      role: datosCompletos.role
+    });
+    
+    // Enviar datos sin transformaciones adicionales
+    return instance.post('users/register', datosCompletos)
+      .catch(error => {
+        console.error('Error detallado en solicitud de registro:', error);
+        throw error;
+      });
+  },
   login: (credentials) => instance.post('users/login', credentials),
   getProfile: () => instance.get('users/profile'),
   updateProfile: (userData) => instance.put('users/profile', userData),

@@ -12,13 +12,40 @@ class AuthService {
    */
   async registerUser(userData) {
     try {
-      // Normalizar email
+      console.log('authService.registerUser - Datos recibidos:', {
+        email: userData.email,
+        primer_nombre: userData.primer_nombre,
+        primer_apellido: userData.primer_apellido,
+        role: userData.role
+      });
+      
+      // Normalizar email y datos de nombre
       const normalizedData = {
         ...userData,
         email: userData.email.toLowerCase()
       };
       
+      // Asegurar que se incluyan los nombres apropiados
+      if (!normalizedData.name && (normalizedData.primer_nombre || normalizedData.primer_apellido)) {
+        // Reconstruir el campo name para mantener compatibilidad
+        normalizedData.name = [
+          normalizedData.primer_nombre || '',
+          normalizedData.segundo_nombre || '',
+          normalizedData.primer_apellido || '',
+          normalizedData.segundo_apellido || ''
+        ].filter(Boolean).join(' ');
+        
+        console.log('Nombre reconstruido desde campos separados:', normalizedData.name);
+      }
+      
       // Crear usuario usando el modelo
+      console.log('Enviando datos finales al modelo:', {
+        email: normalizedData.email,
+        name: normalizedData.name,
+        primer_nombre: normalizedData.primer_nombre,
+        primer_apellido: normalizedData.primer_apellido
+      });
+      
       const user = await firebaseUserModel.createUser(normalizedData);
       
       return user;
@@ -50,14 +77,22 @@ class AuthService {
         role: userAuth.role || 'user'
       });
       
-      // Obtener datos adicionales del usuario
+      // Obtener datos adicionales del usuario desde Firestore
       const userData = await firebaseUserModel.getUserById(userAuth.uid);
       
+      // Asegurar que retornamos la información completa del usuario
+      // Mantenemos name para compatibilidad
       return {
         uid: userData.uid,
-        name: userData.name,
         email: userData.email,
         role: userData.role,
+        name: userData.name || '', // Mantener para compatibilidad
+        primer_nombre: userData.primer_nombre || '',
+        segundo_nombre: userData.segundo_nombre || '',
+        primer_apellido: userData.primer_apellido || '',
+        segundo_apellido: userData.segundo_apellido || '',
+        id_usuario: userData.uid,
+        phone: userData.phone || '',
         token: customToken
       };
     } catch (error) {

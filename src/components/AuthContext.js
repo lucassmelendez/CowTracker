@@ -55,25 +55,50 @@ export const AuthProvider = ({ children }) => {
     loadSavedUser();
   }, []);
 
-  const register = async (name, email, password, role = 'user') => {
+  const register = async (userData) => {
     try {
       setLoading(true);
       setError(null);
       
-      const userData = {
-        name,
-        email,
-        password,
-        role
-      };
+      // Verificar que userData contenga todos los campos obligatorios
+      if (!userData.primer_nombre || !userData.primer_apellido || !userData.email || !userData.password) {
+        console.error('Faltan campos obligatorios:', { 
+          primer_nombre: userData.primer_nombre, 
+          primer_apellido: userData.primer_apellido,
+          email: userData.email,
+          tiene_password: !!userData.password 
+        });
+        setError('Por favor complete los campos obligatorios.');
+        setLoading(false);
+        return;
+      }
       
-      // Realizar registro a través del backend
+      console.log('AuthContext - Enviando datos en el formato correcto:', {
+        primer_nombre: userData.primer_nombre,
+        primer_apellido: userData.primer_apellido,
+        email: userData.email,
+        role: userData.role
+      });
+      
       const response = await api.users.register(userData);
+      console.log('Respuesta de registro recibida:', response);
       
-      // Iniciar sesión automáticamente después del registro
-      await login(email, password);
+      await login(userData.email, userData.password);
       
-      router.push('/welcome');
+      // Utilizar setTimeout para permitir que la navegación ocurra después de que el componente esté montado
+      setTimeout(() => {
+        try {
+          router.push('/(tabs)');
+        } catch (navError) {
+          console.log('Error de navegación manejado, el usuario ya está autenticado');
+          // Intentar navegar a la pantalla principal como alternativa
+          try {
+            router.push('/');
+          } catch (homeNavError) {
+            console.log('Error al navegar a la pantalla principal, el usuario está autenticado pero debe navegar manualmente');
+          }
+        }
+      }, 500);
       
       return response;
     } catch (error) {
@@ -96,18 +121,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Iniciar sesión a través del backend
       const response = await api.users.login({ email, password });
       
-      // Guardar información del usuario
       setUserInfo(response);
       setCurrentUser(response);
       
-      // Guardar token e información en AsyncStorage
       await AsyncStorage.setItem('@user_token', response.token);
       await AsyncStorage.setItem('@user_info', JSON.stringify(response));
       
-      // Configurar token para las peticiones
       api.setAuthToken(response.token);
       
       return response;
@@ -130,19 +151,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      // No es necesario llamar a un endpoint de logout, pero podríamos hacerlo
-      // si quisiéramos invalidar tokens en el servidor
       await api.users.logout();
       
-      // Limpiar almacenamiento local
       await AsyncStorage.removeItem('@user_token');
       await AsyncStorage.removeItem('@user_info');
       
-      // Limpiar estado
       setCurrentUser(null);
       setUserInfo(null);
       
-      // Limpiar token en el API
       api.clearAuthToken();
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -166,14 +182,11 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Actualizar perfil a través del backend
       const updatedUser = await api.users.updateProfile(data);
       
-      // Actualizar estado
       setUserInfo(updatedUser);
       setCurrentUser(updatedUser);
       
-      // Actualizar información guardada
       await AsyncStorage.setItem('@user_info', JSON.stringify(updatedUser));
       
       return updatedUser;

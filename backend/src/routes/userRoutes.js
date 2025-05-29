@@ -9,7 +9,7 @@ const {
   changeUserRole,
   refreshToken
 } = require('../controllers/userController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { supabaseAuth: protect, requireAdmin: admin } = require('../middlewares/supabaseAuthMiddleware');
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);

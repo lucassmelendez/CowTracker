@@ -1,6 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const supabaseUserModel = require('../models/supabaseUserModel');
-const authService = require('../services/authService');
+const authService = require('../services/supabaseAuthService');
 
 const registerUser = asyncHandler(async (req, res) => {
   // Depurar los datos recibidos completos

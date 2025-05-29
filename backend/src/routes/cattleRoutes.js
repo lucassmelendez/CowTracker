@@ -10,7 +10,7 @@ const {
   getMedicalRecords,
   getCattleWithFarmInfo
 } = require('../controllers/cattleController');
-const { protect } = require('../middleware/authMiddleware');
+const { supabaseAuth: protect } = require('../middlewares/supabaseAuthMiddleware');
 
 router.route('/')
   .get(protect, getCattle)

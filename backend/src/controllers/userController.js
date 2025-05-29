@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const firebaseUserModel = require('../models/firebaseUserModel');
+const supabaseUserModel = require('../models/supabaseUserModel');
 const authService = require('../services/authService');
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -175,7 +175,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const getUserProfile = asyncHandler(async (req, res) => {
   try {
-    const user = await firebaseUserModel.getUserById(req.user.uid);
+    const user = await supabaseUserModel.getUserById(req.user.uid);
     
     if (user) {
       res.json({
@@ -221,7 +221,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       updateData.name = name;
     }
     
-    const updatedUser = await firebaseUserModel.updateUser(req.user.uid, updateData);
+    const updatedUser = await supabaseUserModel.updateUser(req.user.uid, updateData);
     
     res.json({
       uid: updatedUser.uid,
@@ -242,7 +242,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 
 const getUsers = asyncHandler(async (req, res) => {
   try {
-    const users = await firebaseUserModel.getAllUsers();
+    const users = await supabaseUserModel.getAllUsers();
     res.json(users);
   } catch (error) {
     res.status(500);
@@ -266,7 +266,7 @@ const changeUserRole = asyncHandler(async (req, res) => {
       throw new Error('Rol inválido');
     }
     
-    const updatedUser = await firebaseUserModel.changeUserRole(userId, role);
+    const updatedUser = await supabaseUserModel.changeUserRole(userId, role);
     
     res.json({
       uid: updatedUser.uid,

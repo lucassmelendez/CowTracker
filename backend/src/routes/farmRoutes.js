@@ -14,34 +14,34 @@ const {
   removeWorkerFromFarm,
   removeVeterinarianFromFarm
 } = require('../controllers/farmController');
-const { protect } = require('../middlewares/supabaseAuthMiddleware');
+const { supabaseAuth } = require('../middlewares/supabaseAuthMiddleware');
 
 // Rutas básicas de granjas
 router.route('/')
-  .get(protect, getFarms)
-  .post(protect, createFarm);
+  .get(supabaseAuth, getFarms)
+  .post(supabaseAuth, createFarm);
 
 router.route('/:id')
-  .get(protect, getFarmById)
-  .put(protect, updateFarm)
-  .delete(protect, deleteFarm);
+  .get(supabaseAuth, getFarmById)
+  .put(supabaseAuth, updateFarm)
+  .delete(supabaseAuth, deleteFarm);
 
 // Rutas para relaciones de granja
 router.route('/:id/cattle')
-  .get(protect, getFarmCattle);
+  .get(supabaseAuth, getFarmCattle);
 
 router.route('/:id/workers')
-  .get(protect, getFarmWorkers)
-  .post(protect, addWorkerToFarm);
+  .get(supabaseAuth, getFarmWorkers)
+  .post(supabaseAuth, addWorkerToFarm);
 
 router.route('/:id/workers/:workerId')
-  .delete(protect, removeWorkerFromFarm);
+  .delete(supabaseAuth, removeWorkerFromFarm);
 
 router.route('/:id/veterinarians')
-  .get(protect, getFarmVeterinarians)
-  .post(protect, addVeterinarianToFarm);
+  .get(supabaseAuth, getFarmVeterinarians)
+  .post(supabaseAuth, addVeterinarianToFarm);
 
 router.route('/:id/veterinarians/:vetId')
-  .delete(protect, removeVeterinarianFromFarm);
+  .delete(supabaseAuth, removeVeterinarianFromFarm);
 
 module.exports = router; 

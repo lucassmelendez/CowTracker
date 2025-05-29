@@ -5,8 +5,6 @@ import FarmSelector from './FarmSelector';
 import { useFarm } from './FarmContext';
 import { useAuth } from './AuthContext';
 import { useRouter } from 'expo-router';
-import { colors } from '../styles/commonStyles';
-import { getShadowStyle } from '../utils/styles';
 
 function CustomHeader({ title }: { title: string }) {
   const { selectedFarm, selectFarm } = useFarm();

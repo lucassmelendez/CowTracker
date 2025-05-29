@@ -1,4 +1,4 @@
-const { db } = require('../config/firebase');
+const { db } = require('../config/supabase');
 
 const informacionVeterinariaCollection = db.collection('informacion_veterinaria');
 

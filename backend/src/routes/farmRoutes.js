@@ -14,7 +14,7 @@ const {
   removeWorkerFromFarm,
   removeVeterinarianFromFarm
 } = require('../controllers/farmController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect } = require('../middlewares/supabaseAuthMiddleware');
 
 // Rutas básicas de granjas
 router.route('/')

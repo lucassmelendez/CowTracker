@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const { db } = require('../config/firebase');
+const { db } = require('../config/supabase');
 
 const cattleCollection = db.collection('cattle');
 const medicalRecordsCollection = db.collection('medicalRecords');

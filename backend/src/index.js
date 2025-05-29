@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config(); // Cargar variables de entorno
-const { errorHandler } = require('./middleware/errorMiddleware');
 const userRoutes = require('./routes/userRoutes');
 const cattleRoutes = require('./routes/cattleRoutes');
 const farmRoutes = require('./routes/farmRoutes');
@@ -13,7 +12,7 @@ const PORT = process.env.PORT || 5000;
 console.log('Iniciando servidor con configuración:');
 console.log(`- Puerto: ${PORT}`);
 console.log(`- Entorno: ${process.env.NODE_ENV || 'development'}`);
-console.log(`- Firebase URL: ${process.env.FIREBASE_DATABASE_URL || 'No configurado'}`);
+console.log(`- Supabase URL: ${process.env.EXPO_PUBLIC_SUPABASE_URL || 'No configurado'}`);
 
 // Configuración CORS para permitir conexiones desde el frontend
 app.use(cors({
@@ -43,8 +42,6 @@ app.get('/', (req, res) => {
 app.get('/api/test', (req, res) => {
   res.json({ status: 'ok', message: 'Conexión exitosa al backend' });
 });
-
-app.use(errorHandler);
 
 // Escuchar en todas las interfaces de red (0.0.0.0) en lugar de solo localhost
 app.listen(PORT, '0.0.0.0', () => {

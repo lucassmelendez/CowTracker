@@ -58,7 +58,7 @@ const createUser = async (userData) => {
     // Verificar si el usuario ya existe en la tabla usuario
     const { data: existingUser, error: checkError } = await supabase
       .from('usuario')
-      .select('id')
+      .select('id_usuario')
       .eq('id_autentificar', uid)
       .maybeSingle();
       
@@ -172,7 +172,7 @@ const getUserById = async (uid) => {
         *,
         rol:rol(*)
       `)
-      .eq('id', uid)
+      .eq('id_autentificar', uid)
       .single();
     
     if (error) {
@@ -239,7 +239,7 @@ const signInWithEmail = async (email, password) => {
       segundo_nombre: userData.segundo_nombre,
       primer_apellido: userData.primer_apellido,
       segundo_apellido: userData.segundo_apellido,
-      id_usuario: userData.id
+      id_usuario: userData.id_usuario
     };
   } catch (error) {
     console.error('Error en servicio de login:', error);
@@ -258,7 +258,7 @@ const updateUser = async (uid, userData) => {
     // Buscar el usuario por id_autentificar
     const { data: userFind, error: findError } = await supabase
       .from('usuario')
-      .select('id')
+      .select('id_usuario')
       .eq('id_autentificar', uid)
       .single();
     
@@ -266,7 +266,7 @@ const updateUser = async (uid, userData) => {
       throw findError;
     }
     
-    const userId = userFind.id;
+    const userId = userFind.id_usuario;
     
     const updateData = { ...userData };
     
@@ -318,7 +318,7 @@ const updateUser = async (uid, userData) => {
     const { data, error } = await supabase
       .from('usuario')
       .update(updateData)
-      .eq('id', userId)
+      .eq('id_usuario', userId)
       .select()
       .single();
     
@@ -347,7 +347,7 @@ const deleteUser = async (uid) => {
     // Buscar el usuario por id_autentificar
     const { data: userFind, error: findError } = await supabase
       .from('usuario')
-      .select('id')
+      .select('id_usuario')
       .eq('id_autentificar', uid)
       .single();
     
@@ -355,13 +355,13 @@ const deleteUser = async (uid) => {
       throw findError;
     }
     
-    const userId = userFind.id;
+    const userId = userFind.id_usuario;
     
     // Eliminar de la tabla usuario
     const { error: profileError } = await supabase
       .from('usuario')
       .delete()
-      .eq('id', userId);
+      .eq('id_usuario', userId);
     
     if (profileError) {
       throw profileError;
@@ -402,14 +402,14 @@ const getAllUsers = async () => {
     // Formatear para compatibilidad con la app
     return data.map(user => {
       let role = 'user';
-      if (user.rol && user.rol.id) {
-        if (user.rol.id === 1) role = 'admin';
-        else if (user.rol.id === 3) role = 'veterinario';
+      if (user.rol && user.rol.id_rol) {
+        if (user.rol.id_rol === 1) role = 'admin';
+        else if (user.rol.id_rol === 3) role = 'veterinario';
       }
       
       return {
         uid: user.id_autentificar,
-        id: user.id,
+        id_usuario: user.id_usuario,
         email: user.autentificar ? user.autentificar.correo : '',
         role,
         name: `${user.primer_nombre} ${user.primer_apellido}`,
@@ -441,7 +441,7 @@ const changeUserRole = async (uid, role) => {
     // Buscar el usuario por id_autentificar
     const { data: userFind, error: findError } = await supabase
       .from('usuario')
-      .select('id')
+      .select('id_usuario')
       .eq('id_autentificar', uid)
       .single();
     
@@ -449,13 +449,13 @@ const changeUserRole = async (uid, role) => {
       throw findError;
     }
     
-    const userId = userFind.id;
+    const userId = userFind.id_usuario;
     
     // Actualizar en la tabla usuario
     const { data, error } = await supabase
       .from('usuario')
       .update({ id_rol })
-      .eq('id', userId)
+      .eq('id_usuario', userId)
       .select(`
         *,
         rol:rol(*)

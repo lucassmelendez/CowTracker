@@ -59,16 +59,12 @@ const createUser = async (userData) => {
     const { data: profileData, error: profileError } = await supabase
       .from('usuario')
       .insert({
-        id: uid,
-        email: normalizedEmail,
-        id_rol: userData.role === 'admin' ? 1 : (userData.role === 'veterinario' ? 3 : 2), // Asignar id_rol según el rol
         primer_nombre: primerNombre,
         segundo_nombre: segundoNombre,
         primer_apellido: primerApellido,
         segundo_apellido: segundoApellido,
         id_autentificar: uid,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        id_rol: userData.role === 'admin' ? 1 : (userData.role === 'veterinario' ? 3 : 2) // Asignar id_rol según el rol
       })
       .select()
       .single();
@@ -200,10 +196,7 @@ const updateUser = async (uid, userData) => {
     
     const userId = userFind.id;
     
-    const updateData = {
-      ...userData,
-      updated_at: new Date().toISOString()
-    };
+    const updateData = { ...userData };
     
     // Si se actualiza la contraseña
     if (userData.password) {
@@ -230,6 +223,9 @@ const updateUser = async (uid, userData) => {
       if (emailError) {
         throw emailError;
       }
+      
+      // El email no se guarda en la tabla usuario, así que lo eliminamos
+      delete updateData.email;
     }
     
     // Si se actualiza el rol
@@ -242,23 +238,27 @@ const updateUser = async (uid, userData) => {
       delete updateData.role;
     }
     
+    // Eliminar campos que no pertenecen a la tabla usuario
+    delete updateData.created_at;
+    delete updateData.updated_at;
+    
     // Actualizar datos en la tabla usuario
     const { data, error } = await supabase
       .from('usuario')
       .update(updateData)
       .eq('id', userId)
-      .select(`
-        *,
-        rol:rol(*)
-      `)
+      .select()
       .single();
     
     if (error) {
-      console.error('Error al actualizar datos del usuario:', error);
       throw error;
     }
     
-    return data;
+    return {
+      uid,
+      ...data,
+      email: userData.email // Devolver el email actualizado si se proporcionó
+    };
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
     throw error;

@@ -97,29 +97,42 @@ const registerUser = asyncHandler(async (req, res) => {
       throw new Error('Por favor ingrese todos los campos requeridos');
     }
     
-    const user = await authService.registerUser(userData);
-    
-    console.log('Usuario creado con éxito:', {
-      uid: user.uid,
-      email: user.email,
-      role: user.role
-    });
+    try {
+      const user = await authService.registerUser(userData);
+      
+      console.log('Usuario creado con éxito:', {
+        uid: user.uid,
+        email: user.email,
+        role: user.role
+      });
 
-    const userResponse = {
-      uid: user.uid,
-      email: user.email,
-      role: user.role,
-      primer_nombre: user.primer_nombre || '',
-      segundo_nombre: user.segundo_nombre || '',
-      primer_apellido: user.primer_apellido || '',
-      segundo_apellido: user.segundo_apellido || '',
-      id_usuario: user.uid,
-      name: user.name || `${user.primer_nombre} ${user.primer_apellido}`,
-      token: user.token
-    };
+      const userResponse = {
+        uid: user.uid,
+        email: user.email,
+        role: user.role,
+        primer_nombre: user.primer_nombre || '',
+        segundo_nombre: user.segundo_nombre || '',
+        primer_apellido: user.primer_apellido || '',
+        segundo_apellido: user.segundo_apellido || '',
+        id_usuario: user.uid,
+        name: user.name || `${user.primer_nombre} ${user.primer_apellido}`,
+        token: user.token
+      };
 
-    console.log('Enviando respuesta de registro:', userResponse);
-    res.status(201).json(userResponse);
+      console.log('Enviando respuesta de registro:', userResponse);
+      res.status(201).json(userResponse);
+    } catch (error) {
+      console.error('Error en authService.registerUser:', error);
+      
+      // Detectar y manejar errores específicos de Supabase
+      if (error.code === 'PGRST204' || error.message?.includes('created_at')) {
+        console.error('Error de estructura de la base de datos. Es posible que falten columnas en la tabla.');
+        res.status(500);
+        throw new Error('Error en la configuración del servidor. Por favor contacte al administrador.');
+      }
+      
+      throw error; // Propagar otros errores
+    }
   } catch (error) {
     console.error('Error al registrar usuario:', error);
     
@@ -132,9 +145,13 @@ const registerUser = asyncHandler(async (req, res) => {
     } else if (error.code === 'auth/weak-password') {
       res.status(400);
       throw new Error('La contraseña es demasiado débil');
+    } else if (error.message) {
+      // Si ya tiene un mensaje de error específico, lo usamos
+      res.status(res.statusCode === 200 ? 500 : res.statusCode);
+      throw new Error(error.message);
     } else {
       res.status(500);
-      throw new Error('Error al registrar usuario: ' + error.message);
+      throw new Error('Error al registrar usuario. Por favor intente de nuevo más tarde.');
     }
   }
 });

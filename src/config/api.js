@@ -35,17 +35,28 @@ const api = axios.create({
   },
 });
 
-// Interceptor que agrega el token de Supabase automáticamente
+// Función segura para obtener el token de Supabase
+const getSupabaseToken = async () => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token || null;
+  } catch (error) {
+    console.error('Error al obtener token de Supabase:', error);
+    return null;
+  }
+};
+
+// Interceptor que agrega el token de forma segura
 api.interceptors.request.use(
   async (config) => {
-    // Obtener la sesión actual de Supabase
-    const { data } = await supabase.auth.getSession();
-    
-    // Si hay una sesión activa, agregar el token a la solicitud
-    if (data?.session?.access_token) {
-      config.headers.Authorization = `Bearer ${data.session.access_token}`;
+    try {
+      const token = await getSupabaseToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (error) {
+      console.error('Error en interceptor de API:', error);
     }
-    
     return config;
   },
   (error) => {

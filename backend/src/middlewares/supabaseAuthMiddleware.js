@@ -32,11 +32,29 @@ const supabaseAuth = async (req, res, next) => {
       });
     }
     
+    // Obtener información adicional del usuario (incluyendo el rol)
+    const { data: userData, error: userError } = await supabase
+      .from('usuario')
+      .select(`
+        *,
+        rol:rol(descripcion)
+      `)
+      .eq('id_autentificar', data.user.id)
+      .single();
+    
+    if (userError) {
+      console.error('Error al obtener datos del usuario:', userError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al verificar la identidad del usuario.'
+      });
+    }
+    
     // Agregar información del usuario a la solicitud
     req.user = {
       uid: data.user.id,
       email: data.user.email,
-      role: data.user.user_metadata?.role || 'user'
+      role: userData.rol ? userData.rol.descripcion : 'user'
     };
     
     // Verificar si se requiere un rol específico

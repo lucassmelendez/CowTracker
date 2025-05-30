@@ -17,63 +17,87 @@ export const AuthProvider = ({ children }) => {
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
 
-  // Verifica si la sesión de Supabase está activa al cargar la aplicación
-  useEffect(() => {
-    const loadSavedUser = async () => {
-      try {
-        setLoading(true);
+  // Función segura para verificar y cargar la sesión de usuario
+  const loadUserSession = async () => {
+    try {
+      setLoading(true);
 
-        // Comprobar si hay una sesión activa en Supabase
-        const { data: session } = await supabase.auth.getSession();
-        
-        if (session?.session) {
-          // Hay una sesión activa, obtener los datos del usuario desde la API
-          api.setAuthToken(session.session.access_token);
-          
-          try {
-            const profile = await api.users.getProfile();
-            setUserInfo(profile);
-            setCurrentUser(profile);
-          } catch (profileError) {
-            console.error('Error al obtener perfil de usuario:', profileError);
-            await supabase.auth.signOut();
-            api.clearAuthToken();
-            setCurrentUser(null);
-            setUserInfo(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error al cargar usuario guardado:', error);
-      } finally {
-        setLoading(false);
+      // Comprobar si hay una sesión activa en Supabase
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error al obtener sesión de Supabase:', error);
+        return;
       }
-    };
-    
-    loadSavedUser();
-
-    // Suscribirse a cambios en la sesión de autenticación
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session) {
-          api.setAuthToken(session.access_token);
+      
+      if (data?.session) {
+        // Hay una sesión activa, obtener los datos del usuario desde la API
+        api.setAuthToken(data.session.access_token);
+        
+        try {
+          const profile = await api.users.getProfile();
+          setUserInfo(profile);
+          setCurrentUser(profile);
+        } catch (profileError) {
+          console.error('Error al obtener perfil de usuario:', profileError);
+          
+          // Intentar cerrar sesión en Supabase en caso de error
           try {
-            const profile = await api.users.getProfile();
-            setUserInfo(profile);
-            setCurrentUser(profile);
-          } catch (error) {
-            console.error('Error al obtener perfil de usuario:', error);
+            await supabase.auth.signOut();
+          } catch (signOutError) {
+            console.error('Error al cerrar sesión después de fallo:', signOutError);
           }
-        } else {
+          
           api.clearAuthToken();
           setCurrentUser(null);
           setUserInfo(null);
         }
       }
-    );
+    } catch (error) {
+      console.error('Error al cargar usuario guardado:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verifica si la sesión de Supabase está activa al cargar la aplicación
+  useEffect(() => {
+    loadUserSession();
+
+    // Suscribirse a cambios en la sesión de autenticación de manera segura
+    let authSubscription = null;
+    try {
+      const { data } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (session) {
+            api.setAuthToken(session.access_token);
+            try {
+              const profile = await api.users.getProfile();
+              setUserInfo(profile);
+              setCurrentUser(profile);
+            } catch (error) {
+              console.error('Error al obtener perfil de usuario:', error);
+            }
+          } else {
+            api.clearAuthToken();
+            setCurrentUser(null);
+            setUserInfo(null);
+          }
+        }
+      );
+      
+      authSubscription = data.subscription;
+    } catch (error) {
+      console.error('Error al suscribirse a cambios de autenticación:', error);
+    }
 
     return () => {
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
+      if (authSubscription) {
+        try {
+          authSubscription.unsubscribe();
+        } catch (error) {
+          console.error('Error al cancelar suscripción:', error);
+        }
       }
     };
   }, []);
@@ -185,7 +209,8 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       
       // Cerrar sesión en Supabase
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
       // Limpiar el estado local
       setCurrentUser(null);

@@ -46,9 +46,37 @@ class SupabaseAuthService {
         primer_apellido: normalizedData.primer_apellido
       });
       
-      const user = await userModel.createUser(normalizedData);
-      
-      return user;
+      try {
+        // Verificar primero si la estructura de la base de datos es correcta
+        const { data: checkData, error: checkError } = await supabase
+          .from('usuario')
+          .select('*')
+          .limit(1);
+          
+        if (checkError) {
+          console.error('Error al verificar estructura de tabla usuario:', checkError);
+          throw checkError;
+        }
+        
+        const user = await userModel.createUser(normalizedData);
+        return user;
+      } catch (error) {
+        console.error('Error en el proceso de registro:', error);
+        
+        // Verificar si es un error relacionado con la estructura de la tabla
+        if (error.code === 'PGRST204' || 
+            (error.message && error.message.includes('created_at'))) {
+          console.error('Posible problema con la estructura de la tabla usuario.');
+          
+          // Crear respuesta de error más descriptiva
+          const enhancedError = new Error('Error en la estructura de la base de datos. Por favor aplique las actualizaciones necesarias.');
+          enhancedError.code = 'DB_STRUCTURE_ERROR';
+          enhancedError.details = error.message;
+          throw enhancedError;
+        }
+        
+        throw error;
+      }
     } catch (error) {
       console.error('Error en servicio de registro:', error);
       throw error;

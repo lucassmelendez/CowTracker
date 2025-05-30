@@ -98,6 +98,15 @@ const getFincaById = async (id) => {
       return null;
     }
     
+    if (data) {
+      return {
+        ...data,
+        _id: data.id_finca.toString(),
+        name: data.nombre,
+        size: data.tamano
+      };
+    }
+    
     return data;
   } catch (error) {
     console.error('Error al obtener finca:', error);
@@ -233,10 +242,11 @@ const getAllFincas = async () => {
     // Formatear para compatibilidad con el frontend
     return data.map(finca => ({
       ...finca,
+      _id: finca.id_finca.toString(),
       name: finca.nombre,
       size: finca.tamano,
       propietario: finca.usuario ? {
-        id: finca.usuario.id_autentificar, // Usamos id_autentificar como ID para compatibilidad
+        id: finca.usuario.id_autentificar,
         id_usuario: finca.usuario.id_usuario,
         name: `${finca.usuario.primer_nombre} ${finca.usuario.primer_apellido}`
       } : null
@@ -266,6 +276,9 @@ const getFincasByOwner = async (userId) => {
     
     return data.map(finca => ({
       ...finca,
+      _id: finca.id_finca.toString(),
+      name: finca.nombre,
+      size: finca.tamano,
       area: finca.tamano // Para mantener compatibilidad
     }));
   } catch (error) {

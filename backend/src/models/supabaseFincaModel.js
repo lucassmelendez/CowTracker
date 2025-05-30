@@ -28,9 +28,7 @@ const createFinca = async (datos) => {
       id_finca: nuevoId,
       nombre: datos.nombre,
       ubicacion: datos.ubicacion,
-      tamano: datos.area || datos.tamano || 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      tamano: datos.area || datos.tamano || 0
     };
     
     // Si hay información de propietario
@@ -104,10 +102,7 @@ const updateFinca = async (id, datos) => {
     }
     
     // Preparar datos para actualizar
-    const updateData = {
-      ...datos,
-      updated_at: new Date().toISOString()
-    };
+    const updateData = { ...datos };
     
     // Si hay información de área en formato diferente
     if (datos.area && !datos.tamano) {

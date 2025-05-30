@@ -36,9 +36,7 @@ const FarmsScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    location: '',
-    size: '',
-    type: ''
+    size: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
   const [editingFarm, setEditingFarm] = useState(null);
@@ -93,10 +91,13 @@ const FarmsScreen = () => {
         return;
       }
 
+      // Adaptar datos al formato que espera el backend
       const farmData = {
-        ...formData,
-        type: formData.type || 'general'
+        name: formData.name, // El backend traducirá esto a nombre
+        size: formData.size ? parseInt(formData.size) : 0 // El backend traducirá esto a tamano
       };
+
+      console.log('Enviando datos de finca:', farmData);
 
       if (editingFarm) {
         // Actualizar granja existente
@@ -143,9 +144,7 @@ const FarmsScreen = () => {
   const resetForm = () => {
     setFormData({
       name: '',
-      location: '',
-      size: '',
-      type: ''
+      size: ''
     });
     setEditingFarm(null);
   };
@@ -154,9 +153,7 @@ const FarmsScreen = () => {
     setEditingFarm(farm);
     setFormData({
       name: farm.name || '',
-      location: farm.location || '',
-      size: farm.size?.toString() || '',
-      type: farm.type || 'general'
+      size: farm.size?.toString() || ''
     });
     setModalVisible(true);
   };
@@ -478,28 +475,12 @@ const FarmsScreen = () => {
               placeholder="Nombre de la granja"
             />
 
-            <Text style={farmsStyles.label}>Ubicación</Text>
-            <TextInput 
-              style={farmsStyles.input}
-              value={formData.location}
-              onChangeText={(text) => setFormData({ ...formData, location: text })}
-              placeholder="Ubicación"
-            />
-
             <Text style={farmsStyles.label}>Tamaño</Text>
             <TextInput 
               style={farmsStyles.input}
               value={formData.size}
               onChangeText={(text) => setFormData({ ...formData, size: text })}
               placeholder="Ej. 150 hectáreas"
-            />
-
-            <Text style={farmsStyles.label}>Tipo</Text>
-            <TextInput 
-              style={farmsStyles.input}
-              value={formData.type}
-              onChangeText={(text) => setFormData({ ...formData, type: text })}
-              placeholder="Tipo de granja"
             />
 
             <View style={farmsStyles.modalButtons}>

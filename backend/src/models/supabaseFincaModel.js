@@ -27,13 +27,31 @@ const createFinca = async (datos) => {
     const fincaData = {
       id_finca: nuevoId,
       nombre: datos.nombre,
-      ubicacion: datos.ubicacion,
-      tamano: datos.area || datos.tamano || 0
+      tamano: datos.tamano || 0
     };
     
-    // Si hay información de propietario
+    // Si hay información de propietario, primero necesitamos obtener el id_usuario a partir del id_autentificar
     if (datos.propietario_id) {
-      fincaData.id_usuario = datos.propietario_id;
+      // Si el ID del propietario es un UUID, buscar su id_usuario correspondiente
+      if (datos.propietario_id.includes('-')) {
+        const { data: usuario, error: userError } = await supabase
+          .from('usuario')
+          .select('id_usuario')
+          .eq('id_autentificar', datos.propietario_id)
+          .single();
+          
+        if (userError) {
+          console.error('Error al buscar id_usuario:', userError);
+          throw userError;
+        }
+        
+        if (usuario) {
+          fincaData.id_usuario = usuario.id_usuario;
+        }
+      } else {
+        // Si ya es un número, usarlo directamente
+        fincaData.id_usuario = parseInt(datos.propietario_id);
+      }
     }
     
     // Insertar en la tabla finca
@@ -47,7 +65,12 @@ const createFinca = async (datos) => {
       throw error;
     }
     
-    return data;
+    // Devolver los datos con formato para compatibilidad
+    return {
+      ...data,
+      name: data.nombre,
+      size: data.tamano
+    };
   } catch (error) {
     console.error('Error al crear finca:', error);
     throw error;
@@ -110,9 +133,29 @@ const updateFinca = async (id, datos) => {
       delete updateData.area;
     }
     
-    // Si hay información de propietario
+    // Si hay información de propietario, primero necesitamos obtener el id_usuario a partir del id_autentificar
     if (datos.propietario_id) {
-      updateData.id_usuario = datos.propietario_id;
+      // Si el ID del propietario es un UUID, buscar su id_usuario correspondiente
+      if (datos.propietario_id.includes('-')) {
+        const { data: usuario, error: userError } = await supabase
+          .from('usuario')
+          .select('id_usuario')
+          .eq('id_autentificar', datos.propietario_id)
+          .single();
+          
+        if (userError) {
+          console.error('Error al buscar id_usuario:', userError);
+          throw userError;
+        }
+        
+        if (usuario) {
+          updateData.id_usuario = usuario.id_usuario;
+        }
+      } else {
+        // Si ya es un número, usarlo directamente
+        updateData.id_usuario = parseInt(datos.propietario_id);
+      }
+      
       delete updateData.propietario_id;
     }
     
@@ -179,7 +222,7 @@ const getAllFincas = async () => {
       .from('finca')
       .select(`
         *,
-        usuario:usuario(id, primer_nombre, primer_apellido, email)
+        usuario:usuario(id_usuario, primer_nombre, primer_apellido, id_autentificar)
       `)
       .order('id_finca');
     
@@ -187,14 +230,16 @@ const getAllFincas = async () => {
       throw error;
     }
     
+    // Formatear para compatibilidad con el frontend
     return data.map(finca => ({
       ...finca,
+      name: finca.nombre,
+      size: finca.tamano,
       propietario: finca.usuario ? {
-        id: finca.usuario.id,
-        name: `${finca.usuario.primer_nombre} ${finca.usuario.primer_apellido}`,
-        email: finca.usuario.email
-      } : null,
-      area: finca.tamano // Para mantener compatibilidad
+        id: finca.usuario.id_autentificar, // Usamos id_autentificar como ID para compatibilidad
+        id_usuario: finca.usuario.id_usuario,
+        name: `${finca.usuario.primer_nombre} ${finca.usuario.primer_apellido}`
+      } : null
     }));
   } catch (error) {
     console.error('Error al obtener fincas:', error);
@@ -287,7 +332,7 @@ const getFincaTrabajadores = async (fincaId) => {
         *,
         rol:rol(*)
       `)
-      .neq('id', finca.id_usuario)
+      .neq('id_usuario', finca.id_usuario)
       .eq('id_rol', 2); // Asumiendo que el rol 2 es para trabajadores regulares
     
     if (error) {
@@ -295,9 +340,9 @@ const getFincaTrabajadores = async (fincaId) => {
     }
     
     return data.map(usuario => ({
-      id: usuario.id,
+      id: usuario.id_autentificar,
+      id_usuario: usuario.id_usuario,
       name: `${usuario.primer_nombre} ${usuario.primer_apellido}`,
-      email: usuario.email,
       role: 'user',
       fecha_asociacion: new Date().toISOString() // No tenemos esta información en el esquema
     }));

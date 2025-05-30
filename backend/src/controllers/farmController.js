@@ -50,12 +50,28 @@ const getFarmById = asyncHandler(async (req, res) => {
  */
 const createFarm = asyncHandler(async (req, res) => {
   try {
+    console.log('Cuerpo completo de la solicitud:', JSON.stringify(req.body, null, 2));
+    
+    // Validar que el nombre de la finca no sea nulo o vacío
+    if (!req.body.nombre && !req.body.name) {
+      res.status(400);
+      throw new Error('El nombre de la finca es obligatorio');
+    }
+    
+    // Traducir los campos del frontend al formato del backend
+    // Solo incluir campos que existen en la tabla finca
     const farmData = {
-      ...req.body,
-      propietario_id: req.user.uid,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      nombre: req.body.nombre || req.body.name,
+      tamano: req.body.tamano || req.body.size || 0,
+      propietario_id: req.user.uid
     };
+
+    // Asegurarse de que el nombre esté definido
+    console.log('Datos de finca a crear:', {
+      nombre: farmData.nombre,
+      tamano: farmData.tamano,
+      propietario_id: farmData.propietario_id
+    });
 
     const newFarm = await supabaseService.createFinca(farmData);
     
@@ -73,13 +89,31 @@ const createFarm = asyncHandler(async (req, res) => {
  */
 const updateFarm = asyncHandler(async (req, res) => {
   try {
-    const updateData = {
-      ...req.body,
-      updated_at: new Date().toISOString()
-    };
+    console.log('Cuerpo completo de la solicitud de actualización:', JSON.stringify(req.body, null, 2));
+    
+    // Validar que haya datos para actualizar
+    if (Object.keys(req.body).length === 0) {
+      res.status(400);
+      throw new Error('No se proporcionaron datos para actualizar');
+    }
+    
+    // Traducir los campos del frontend al formato del backend
+    // Solo incluir campos que existen en la tabla finca
+    const updateData = {};
+    
+    // Mapear campos
+    if (req.body.name || req.body.nombre) {
+      updateData.nombre = req.body.nombre || req.body.name;
+    }
+    
+    if (req.body.size || req.body.tamano) {
+      updateData.tamano = req.body.tamano || req.body.size;
+    }
     
     // No permitir cambiar el propietario
     delete updateData.propietario_id;
+    
+    console.log('Datos de finca a actualizar:', updateData);
     
     const updatedFarm = await supabaseService.updateFinca(req.params.id, updateData);
     

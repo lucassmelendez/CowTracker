@@ -55,6 +55,63 @@ const createUser = async (userData) => {
     // Extraer el UUID generado
     const uid = authData.user.id;
     
+    // Verificar si el usuario ya existe en la tabla usuario
+    const { data: existingUser, error: checkError } = await supabase
+      .from('usuario')
+      .select('id')
+      .eq('id_autentificar', uid)
+      .maybeSingle();
+      
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error al verificar usuario existente:', checkError);
+      throw checkError;
+    }
+    
+    if (existingUser) {
+      console.log('Usuario ya existe en la tabla usuario, saltando inserción');
+      return {
+        uid,
+        email: normalizedEmail,
+        primer_nombre: primerNombre,
+        segundo_nombre: segundoNombre,
+        primer_apellido: primerApellido,
+        segundo_apellido: segundoApellido,
+        role: userData.role || 'user'
+      };
+    }
+    
+    // Primero verificar que la tabla autentificar tenga este usuario
+    const { data: authCheck, error: authCheckError } = await supabase
+      .from('autentificar')
+      .select('id_autentificar')
+      .eq('id_autentificar', uid)
+      .maybeSingle();
+    
+    if (authCheckError) {
+      console.error('Error al verificar autentificar:', authCheckError);
+    }
+    
+    if (!authCheck) {
+      // Insertar en autentificar si no existe
+      const { error: authInsertError } = await supabase
+        .from('autentificar')
+        .insert({
+          id_autentificar: uid,
+          correo: normalizedEmail,
+          contrasena: '' // No guardamos la contraseña real
+        });
+      
+      if (authInsertError) {
+        console.error('Error al insertar en autentificar:', authInsertError);
+        throw authInsertError;
+      }
+    }
+    
+    // Determinar el id_rol basado en el role
+    let id_rol = 2; // Por defecto 'user'
+    if (userData.role === 'admin') id_rol = 1;
+    else if (userData.role === 'veterinario') id_rol = 3;
+    
     // Guardar información adicional en la tabla usuario
     const { data: profileData, error: profileError } = await supabase
       .from('usuario')
@@ -63,16 +120,31 @@ const createUser = async (userData) => {
         segundo_nombre: segundoNombre,
         primer_apellido: primerApellido,
         segundo_apellido: segundoApellido,
-        id_autentificar: uid,
-        id_rol: userData.role === 'admin' ? 1 : (userData.role === 'veterinario' ? 3 : 2) // Asignar id_rol según el rol
+        id_rol: id_rol,
+        id_autentificar: uid
       })
       .select()
       .single();
     
     if (profileError) {
       console.error('Error al guardar datos adicionales del usuario:', profileError);
+      console.error('Datos que intentamos insertar:', {
+        primer_nombre: primerNombre,
+        segundo_nombre: segundoNombre,
+        primer_apellido: primerApellido,
+        segundo_apellido: segundoApellido,
+        id_rol: id_rol,
+        id_autentificar: uid,
+        id_autentificar_tipo: typeof uid
+      });
+      
       // Si hay error al guardar el perfil, intentamos eliminar el usuario de Auth
-      await supabase.auth.admin.deleteUser(uid);
+      try {
+        await supabase.auth.admin.deleteUser(uid);
+      } catch (deleteError) {
+        console.error('Error al intentar eliminar usuario después de fallo:', deleteError);
+      }
+      
       throw profileError;
     }
     

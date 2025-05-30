@@ -3,6 +3,7 @@ import { Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
+import { supabase } from '../config/supabase';
 
 const AuthContext = createContext();
 
@@ -16,33 +17,29 @@ export const AuthProvider = ({ children }) => {
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
 
+  // Verifica si la sesión de Supabase está activa al cargar la aplicación
   useEffect(() => {
     const loadSavedUser = async () => {
       try {
         setLoading(true);
-        const savedUserToken = await AsyncStorage.getItem('@user_token');
-        const savedUserInfo = await AsyncStorage.getItem('@user_info');
+
+        // Comprobar si hay una sesión activa en Supabase
+        const { data: session } = await supabase.auth.getSession();
         
-        if (savedUserToken && savedUserInfo) {
-          const userInfoObj = JSON.parse(savedUserInfo);
-          setUserInfo(userInfoObj);
-          setCurrentUser(userInfoObj);
-          api.setAuthToken(savedUserToken);
+        if (session?.session) {
+          // Hay una sesión activa, obtener los datos del usuario desde la API
+          api.setAuthToken(session.session.access_token);
           
-          // Verificar si el token es válido consultando el perfil del usuario
           try {
             const profile = await api.users.getProfile();
             setUserInfo(profile);
             setCurrentUser(profile);
           } catch (profileError) {
-            console.error('Error al validar token guardado:', profileError);
-            
-            // Si hay error, limpiar datos guardados
-            await AsyncStorage.removeItem('@user_token');
-            await AsyncStorage.removeItem('@user_info');
+            console.error('Error al obtener perfil de usuario:', profileError);
+            await supabase.auth.signOut();
+            api.clearAuthToken();
             setCurrentUser(null);
             setUserInfo(null);
-            api.clearAuthToken();
           }
         }
       } catch (error) {
@@ -53,6 +50,32 @@ export const AuthProvider = ({ children }) => {
     };
     
     loadSavedUser();
+
+    // Suscribirse a cambios en la sesión de autenticación
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session) {
+          api.setAuthToken(session.access_token);
+          try {
+            const profile = await api.users.getProfile();
+            setUserInfo(profile);
+            setCurrentUser(profile);
+          } catch (error) {
+            console.error('Error al obtener perfil de usuario:', error);
+          }
+        } else {
+          api.clearAuthToken();
+          setCurrentUser(null);
+          setUserInfo(null);
+        }
+      }
+    );
+
+    return () => {
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const register = async (userData) => {
@@ -121,15 +144,25 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
+      // Iniciar sesión con Supabase primero
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (authError) throw authError;
+      
+      // Obtener token de la sesión de Supabase
+      const token = authData.session.access_token;
+      
+      // Configurar el token en la API
+      api.setAuthToken(token);
+      
+      // Obtener el perfil completo del usuario desde nuestra API
       const response = await api.users.login({ email, password });
       
       setUserInfo(response);
       setCurrentUser(response);
-      
-      await AsyncStorage.setItem('@user_token', response.token);
-      await AsyncStorage.setItem('@user_info', JSON.stringify(response));
-      
-      api.setAuthToken(response.token);
       
       return response;
     } catch (error) {
@@ -151,14 +184,14 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       
-      await api.users.logout();
+      // Cerrar sesión en Supabase
+      await supabase.auth.signOut();
       
-      await AsyncStorage.removeItem('@user_token');
-      await AsyncStorage.removeItem('@user_info');
-      
+      // Limpiar el estado local
       setCurrentUser(null);
       setUserInfo(null);
       
+      // Limpiar el token de la API
       api.clearAuthToken();
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -187,7 +220,23 @@ export const AuthProvider = ({ children }) => {
       setUserInfo(updatedUser);
       setCurrentUser(updatedUser);
       
-      await AsyncStorage.setItem('@user_info', JSON.stringify(updatedUser));
+      // Si se actualiza el email, actualizarlo también en Supabase
+      if (data.email && data.email !== userInfo.email) {
+        const { error } = await supabase.auth.updateUser({
+          email: data.email
+        });
+        
+        if (error) throw error;
+      }
+      
+      // Si se actualiza la contraseña, actualizarla también en Supabase
+      if (data.password) {
+        const { error } = await supabase.auth.updateUser({
+          password: data.password
+        });
+        
+        if (error) throw error;
+      }
       
       return updatedUser;
     } catch (error) {

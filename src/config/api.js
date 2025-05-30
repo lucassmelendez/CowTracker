@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from './supabase';
 import { PROD_API_URL, isProd, LOCAL_IP } from './env';
 
 let API_URL;
@@ -35,12 +35,17 @@ const api = axios.create({
   },
 });
 
+// Interceptor que agrega el token de Supabase automáticamente
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('userToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Obtener la sesión actual de Supabase
+    const { data } = await supabase.auth.getSession();
+    
+    // Si hay una sesión activa, agregar el token a la solicitud
+    if (data?.session?.access_token) {
+      config.headers.Authorization = `Bearer ${data.session.access_token}`;
     }
+    
     return config;
   },
   (error) => {

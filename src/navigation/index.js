@@ -13,8 +13,6 @@ import CattleDetailScreen from '../screens/CattleDetailScreen';
 import AddCattleScreen from '../screens/AddCattleScreen';
 import SalesScreen from '../screens/SalesScreen';
 import FarmsScreen from '../screens/FarmsScreen';
-import VinculacionScreen from '../screens/VinculacionScreen';
-import AdminScreen from '../screens/AdminScreen';
 
 import { useAuth } from '../components/AuthContext';
 
@@ -48,7 +46,7 @@ const AuthStack = () => {
 };
 
 const AppStack = () => {
-  const { hasRole, isAdmin, isVeterinario } = useAuth();
+  const { hasRole } = useAuth();
 
   return (
     <Stack.Navigator
@@ -72,13 +70,6 @@ const AppStack = () => {
         component={ProfileScreen} 
         options={{ title: 'Mi Perfil' }}
       />
-      {(isVeterinario() || hasRole('user')) && (
-        <Stack.Screen 
-          name="Vinculacion" 
-          component={VinculacionScreen} 
-          options={{ title: 'Vincular a Finca' }}
-        />
-      )}
       {hasRole('user') && (
         <>
           <Stack.Screen 
@@ -107,13 +98,6 @@ const AppStack = () => {
             options={{ title: 'Mis Granjas' }}
           />
         </>
-      )}
-      {isAdmin() && (
-        <Stack.Screen 
-          name="Admin" 
-          component={AdminScreen} 
-          options={{ title: 'Administración' }}
-        />
       )}
     </Stack.Navigator>
   );

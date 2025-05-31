@@ -29,7 +29,9 @@ const AdminScreen = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   
   useEffect(() => {
-    if (selectedFarm?._id) {
+    if (selectedFarm) {
+      const fincaId = selectedFarm.id_finca || selectedFarm._id;
+      console.log('Finca seleccionada cambió:', fincaId);
       loadPersonnel();
     }
   }, [selectedFarm]);
@@ -37,13 +39,47 @@ const AdminScreen = () => {
   const loadPersonnel = async () => {
     setLoading(true);
     try {
+      if (!selectedFarm) {
+        console.log('No hay finca seleccionada');
+        setWorkers([]);
+        setVets([]);
+        return;
+      }
+
+      // Usar id_finca en lugar de _id
+      const fincaId = selectedFarm.id_finca || selectedFarm._id;
+      console.log('Cargando personal para la finca:', fincaId);
+      
       // Cargar trabajadores
-      const workersResponse = await api.farms.getWorkers(selectedFarm._id);
-      setWorkers(workersResponse.data || []);
+      const workersResponse = await api.farms.getWorkers(fincaId);
+      console.log('Respuesta de trabajadores:', workersResponse);
+      
+      // Asegurarse de que workersResponse sea un array
+      const workersData = Array.isArray(workersResponse) ? workersResponse : 
+                         Array.isArray(workersResponse.data) ? workersResponse.data : [];
+      
+      setWorkers(workersData.map(worker => ({
+        _id: worker.id_usuario || worker._id,
+        name: worker.nombre_completo || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim(),
+        email: worker.email || worker.correo || 'Sin correo',
+        role: 'trabajador'
+      })));
       
       // Cargar veterinarios
-      const vetsResponse = await api.farms.getVeterinarians(selectedFarm._id);
-      setVets(vetsResponse.data || []);
+      const vetsResponse = await api.farms.getVeterinarians(fincaId);
+      console.log('Respuesta de veterinarios:', vetsResponse);
+      
+      // Asegurarse de que vetsResponse sea un array
+      const vetsData = Array.isArray(vetsResponse) ? vetsResponse : 
+                      Array.isArray(vetsResponse.data) ? vetsResponse.data : [];
+      
+      setVets(vetsData.map(vet => ({
+        _id: vet.id_usuario || vet._id,
+        name: vet.nombre_completo || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim(),
+        email: vet.email || vet.correo || 'Sin correo',
+        role: 'veterinario'
+      })));
+
     } catch (error) {
       console.error("Error cargando personal:", error);
       Alert.alert("Error", "No se pudo cargar la lista de personal");

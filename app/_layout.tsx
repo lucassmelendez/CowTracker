@@ -90,6 +90,13 @@ function RootLayoutNav() {
                 headerTitle: () => <CustomHeader title="Informe" /> 
               }} 
             />
+            <Stack.Screen 
+              name="vinculacion" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Vincular a Finca" /> 
+              }} 
+            />
           </>
         ) : (
           <>

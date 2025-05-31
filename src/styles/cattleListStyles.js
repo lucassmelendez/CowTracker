@@ -79,6 +79,12 @@ export const cattleListStyles = StyleSheet.create({
   cattleBody: {
     marginBottom: 10,
   },
+  cattleTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginBottom: 3,
+  },
   cattleType: {
     fontSize: 14,
     color: colors.text,
@@ -159,4 +165,4 @@ export const cattleListStyles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-}); 
+});

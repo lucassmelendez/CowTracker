@@ -50,16 +50,23 @@ const CattleListScreen = () => {
         
         // Para cada granja, cargamos su ganado
         const allCattlePromises = farmsData.map(farm => 
-          api.farms.getCattle(farm._id)
+          api.farms.getCattle(farm._id || farm.id_finca)
             .then(cattle => {
-              // Añadimos el nombre de la granja a cada animal
-              return cattle.map(animal => ({
-                ...animal,
-                farmName: farm.name
-              }));
+              // Añadimos el nombre de la granja a cada animal si no viene en el modelo
+              return cattle.map(animal => {
+                // Si el animal ya tiene información de la finca anidada, no es necesario añadirla
+                if (animal.finca && animal.finca.nombre) {
+                  return animal;
+                }
+                // Si no tiene la información anidada, la añadimos
+                return {
+                  ...animal,
+                  farmName: farm.name || farm.nombre
+                };
+              });
             })
             .catch(err => {
-              console.error(`Error al cargar ganado de granja ${farm.name}:`, err);
+              console.error(`Error al cargar ganado de granja ${farm.name || farm.nombre}:`, err);
               return [];
             })
         );
@@ -75,12 +82,21 @@ const CattleListScreen = () => {
       else if (selectedFarm?._id) {
         // Cargamos ganado de esa granja específica
         cattleData = await api.farms.getCattle(selectedFarm._id);
-        // Añadimos el nombre de la granja a cada animal
-        cattleData = cattleData.map(animal => ({
-          ...animal,
-          farmName: selectedFarm.name
-        }));
-        console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name})`);
+        
+        // Añadimos el nombre de la granja a cada animal (solo si es necesario)
+        cattleData = cattleData.map(animal => {
+          // Si el animal ya tiene información de la finca anidada, no es necesario añadirla
+          if (animal.finca && animal.finca.nombre) {
+            return animal;
+          }
+          // Si no tiene la información anidada, la añadimos
+          return {
+            ...animal,
+            farmName: selectedFarm.name || selectedFarm.nombre
+          };
+        });
+        
+        console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name || selectedFarm.nombre})`);
       }
       
       setCattle(cattleData);
@@ -144,15 +160,21 @@ const CattleListScreen = () => {
 
     // Buscar el nombre de la granja si existe
     const getFarmName = () => {
-      if (!item.farmId) return 'Sin granja asignada';
+      if (!item.farmId && !item.id_finca) return 'Sin granja asignada';
       
       // Si estamos en modo "granja específica", podemos usar el nombre de la granja seleccionada
-      if (selectedFarm && !selectedFarm.isSpecialOption && selectedFarm._id === item.farmId) {
+      if (selectedFarm && !selectedFarm.isSpecialOption && 
+          (selectedFarm._id === item.farmId || selectedFarm._id === item.id_finca)) {
         return selectedFarm.name;
       }
       
-      // Si no tenemos el nombre de la granja en los datos del ganado, mostramos el ID
-      return item.farmName || `Granja: ${item.farmId}`;
+      // Si tenemos datos de finca anidados del modelo de Supabase
+      if (item.finca && item.finca.nombre) {
+        return item.finca.nombre;
+      }
+      
+      // Compatibilidad con el modelo anterior
+      return item.farmName || `Granja: ${item.farmId || item.id_finca}`;
     };
 
     return (
@@ -160,25 +182,44 @@ const CattleListScreen = () => {
         style={cattleListStyles.cattleItem}
         onPress={() => router.push({
           pathname: '/(tabs)/cattle-details',
-          params: { id: item._id }
+          params: { id: item._id || item.id_ganado }
         })}
       >
         <View style={cattleListStyles.cattleHeader}>
-          <Text style={cattleListStyles.cattleId}>ID: {item.identificationNumber}</Text>
-          <View style={[cattleListStyles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-            <Text style={cattleListStyles.statusText}>{formatStatus(item.status)}</Text>
+          <Text style={cattleListStyles.cattleId}>
+            ID: {item.identificationNumber || item.numero_identificacion}
+          </Text>
+          <View style={[
+            cattleListStyles.statusBadge, 
+            { backgroundColor: getStatusColor(item.status || (item.estado_salud?.descripcion)) }
+          ]}>
+            <Text style={cattleListStyles.statusText}>
+              {formatStatus(item.status || (item.estado_salud?.descripcion))}
+            </Text>
           </View>
         </View>
 
         <View style={cattleListStyles.cattleBody}>
-          <Text style={cattleListStyles.cattleType}>{item.type} - {item.breed}</Text>
-          <Text style={cattleListStyles.cattleGender}>{item.gender}</Text>
-          <Text style={cattleListStyles.cattleWeight}>{item.weight} kg</Text>
+          <Text style={cattleListStyles.cattleTitle}>{item.nombre || 'Sin nombre'}</Text>
+          <Text style={cattleListStyles.cattleType}>
+            {item.type || 'Tipo no especificado'} - {item.breed || 'Raza no especificada'}
+          </Text>
+          <Text style={cattleListStyles.cattleGender}>
+            {item.gender || (item.genero?.descripcion) || 'Género no especificado'}
+          </Text>
+          <Text style={cattleListStyles.cattleWeight}>
+            {item.weight || 'Peso no disponible'} {item.weight ? 'kg' : ''}
+          </Text>
         </View>
 
         <View style={cattleListStyles.cattleFooter}>
-          <View style={[cattleListStyles.healthBadge, { backgroundColor: getHealthStatusColor(item.healthStatus) }]}>
-            <Text style={cattleListStyles.healthText}>{formatStatus(item.healthStatus)}</Text>
+          <View style={[
+            cattleListStyles.healthBadge, 
+            { backgroundColor: getHealthStatusColor(item.healthStatus || item.estado_salud?.descripcion) }
+          ]}>
+            <Text style={cattleListStyles.healthText}>
+              {formatStatus(item.healthStatus || (item.estado_salud?.descripcion) || 'No disponible')}
+            </Text>
           </View>
           <Text style={cattleListStyles.locationText}>{getFarmName()}</Text>
         </View>

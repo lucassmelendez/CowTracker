@@ -155,7 +155,17 @@ const cattle = {
 
 // API para granjas
 const farms = {
-  getAll: () => instance.get('farms'),
+  getAll: async () => {
+    try {
+      console.log('API - Solicitando todas las granjas...');
+      const response = await instance.get('farms');
+      console.log(`API - Recibidas ${response?.length || 0} granjas`);
+      return response;
+    } catch (error) {
+      console.error('Error en farms.getAll:', error);
+      throw error;
+    }
+  },
   getById: (id) => instance.get(`farms/${id}`),
   create: (farmData) => instance.post('farms', farmData),
   update: (id, farmData) => instance.put(`farms/${id}`, farmData),

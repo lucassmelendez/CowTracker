@@ -155,16 +155,49 @@ const cattle = {
 
 // API para granjas
 const farms = {
-  getAll: async () => {
-    try {
-      console.log('API - Solicitando todas las granjas...');
-      const response = await instance.get('farms');
-      console.log(`API - Recibidas ${response?.length || 0} granjas`);
-      return response;
-    } catch (error) {
-      console.error('Error en farms.getAll:', error);
-      throw error;
-    }
+  getAll: () => {
+    console.log('API - Solicitando todas las granjas');
+    return instance.get('farms')
+      .then(response => {
+        console.log('Respuesta de API farms:', response);
+        
+        // Si la respuesta es válida y contiene datos
+        if (response && response.data) {
+          const farmData = response.data;
+          
+          // Si farmData es un array, devolverlo como está
+          if (Array.isArray(farmData)) {
+            console.log(`API devolvió ${farmData.length} granjas en formato array`);
+            return farmData;
+          }
+          
+          // Si farmData tiene una propiedad 'farms' que es un array
+          if (farmData.farms && Array.isArray(farmData.farms)) {
+            console.log(`API devolvió ${farmData.farms.length} granjas dentro de un objeto`);
+            return farmData.farms;
+          }
+          
+          // Si farmData es un objeto con propiedades individuales (posiblemente un solo elemento)
+          if (typeof farmData === 'object' && !Array.isArray(farmData) && Object.keys(farmData).length > 0) {
+            console.log('API devolvió una sola granja u objeto de granjas');
+            // Convertir a array si parece ser una sola granja
+            if (farmData._id || farmData.id_finca || farmData.name || farmData.nombre) {
+              return [farmData];
+            }
+            
+            // Intentar extraer valores si parece ser un mapa de granjas
+            return Object.values(farmData);
+          }
+        }
+        
+        console.warn('API devolvió un formato de datos no reconocido para granjas');
+        return [];
+      })
+      .catch(error => {
+        console.error('Error al obtener granjas:', error);
+        // En caso de error, devolver array vacío en lugar de fallar
+        return [];
+      });
   },
   getById: (id) => instance.get(`farms/${id}`),
   create: (farmData) => instance.post('farms', farmData),

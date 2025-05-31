@@ -421,7 +421,10 @@ const getFincaTrabajadores = async (fincaId) => {
           primer_apellido,
           segundo_apellido,
           id_autentificar,
-          id_rol
+          id_rol,
+          autentificar:autentificar(
+            correo
+          )
         )
       `)
       .eq('id_finca', fincaId);
@@ -436,6 +439,7 @@ const getFincaTrabajadores = async (fincaId) => {
       .map(item => ({
         ...item.usuario,
         nombre_completo: `${item.usuario.primer_nombre} ${item.usuario.primer_apellido}`,
+        correo: item.usuario.autentificar?.correo || 'Sin correo',
         rol_finca: 'trabajador'
       }));
   } catch (error) {
@@ -462,7 +466,10 @@ const getFincaVeterinarios = async (fincaId) => {
           primer_apellido,
           segundo_apellido,
           id_autentificar,
-          id_rol
+          id_rol,
+          autentificar:autentificar(
+            correo
+          )
         )
       `)
       .eq('id_finca', fincaId);
@@ -477,6 +484,7 @@ const getFincaVeterinarios = async (fincaId) => {
       .map(item => ({
         ...item.usuario,
         nombre_completo: `${item.usuario.primer_nombre} ${item.usuario.primer_apellido}`,
+        correo: item.usuario.autentificar?.correo || 'Sin correo',
         rol_finca: 'veterinario'
       }));
   } catch (error) {

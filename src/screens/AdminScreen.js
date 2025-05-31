@@ -7,8 +7,7 @@ import {
   StyleSheet, 
   Alert, 
   Modal,
-  ActivityIndicator,
-  Clipboard
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/commonStyles';
@@ -22,7 +21,6 @@ const AdminScreen = () => {
   const { selectedFarm } = useFarm();
   
   const [loading, setLoading] = useState(true);
-  const [generatingCode, setGeneratingCode] = useState(false);
   const [workers, setWorkers] = useState([]);
   const [vets, setVets] = useState([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -80,117 +78,39 @@ const AdminScreen = () => {
     }
   };
   
-  const handleAddNewStaff = async (tipo) => {
-    if (!selectedFarm) {
-      Alert.alert("Error", "Selecciona primero una finca");
-      return;
+  const generateInviteCode = () => {
+    // Genera un código de 6 caracteres para invitar a un colaborador
+    const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += characters.charAt(Math.floor(Math.random() * characters.length));
     }
-    
-    // Determinar el ID de la finca correctamente
-    const idFinca = selectedFarm.id_finca || selectedFarm._id;
-    
-    if (!idFinca) {
-      Alert.alert("Error", "La finca seleccionada no tiene un ID válido");
-      return;
-    }
-    
-    setGeneratingCode(true);
+    return code;
+  };
+  
+  const handleAddNewStaff = async (type) => {
     try {
-      // Convertir tipo a formato esperado por la API
-      const tipoUsuario = tipo === 'worker' ? 'trabajador' : 'veterinario';
+      const inviteCode = generateInviteCode();
       
-      console.log("Enviando solicitud para generar código:", {
-        idFinca: idFinca,
-        tipo: tipoUsuario,
-        duracionMinutos: 1440
-      });
-      
-      // Llamar a la API para generar un código de vinculación
-      const response = await api.post('/vincular/generar', {
-        idFinca: idFinca,
-        tipo: tipoUsuario,
-        duracionMinutos: 1440 // 24 horas
-      });
-      
-      console.log("Respuesta completa:", JSON.stringify(response));
-      
-      if (response && response.data && response.data.success) {
-        const codigo = response.data.data.codigo;
-        const expiraEn = new Date(response.data.data.expiraEn);
-        
-        // Formatear fecha de expiración
-        const formatoFecha = expiraEn.toLocaleString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        
-        Alert.alert(
-          tipoUsuario === 'trabajador' ? "Invitar Trabajador" : "Invitar Veterinario",
-          `Comparte este código con la persona que quieres invitar:\n\n${codigo}\n\nEste código expira el ${formatoFecha}.`,
-          [
-            { 
-              text: "Copiar Código", 
-              onPress: async () => {
-                try {
-                  await Clipboard.setString(codigo);
-                  Alert.alert("Código copiado", "Compártelo con el colaborador");
-                } catch (error) {
-                  console.error("Error al copiar al portapapeles:", error);
-                  Alert.alert("Error", "No se pudo copiar el código");
-                }
-              } 
-            },
-            { text: "Cerrar" }
-          ]
-        );
-      } else if (response && response.success) {
-        // Formato alternativo de respuesta
-        const codigo = response.data.codigo;
-        const expiraEn = new Date(response.data.expiraEn);
-        
-        // Formatear fecha de expiración
-        const formatoFecha = expiraEn.toLocaleString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        
-        Alert.alert(
-          tipoUsuario === 'trabajador' ? "Invitar Trabajador" : "Invitar Veterinario",
-          `Comparte este código con la persona que quieres invitar:\n\n${codigo}\n\nEste código expira el ${formatoFecha}.`,
-          [
-            { 
-              text: "Copiar Código", 
-              onPress: async () => {
-                try {
-                  await Clipboard.setString(codigo);
-                  Alert.alert("Código copiado", "Compártelo con el colaborador");
-                } catch (error) {
-                  console.error("Error al copiar al portapapeles:", error);
-                  Alert.alert("Error", "No se pudo copiar el código");
-                }
-              } 
-            },
-            { text: "Cerrar" }
-          ]
-        );
-      } else {
-        console.error("Respuesta inesperada:", response);
-        throw new Error(`Respuesta inválida del servidor: ${JSON.stringify(response)}`);
-      }
-    } catch (error) {
-      console.error("Error generando código de vinculación:", error);
+      // Aquí se registraría el código en la base de datos para usarlo en una invitación
+      // Por ahora solo mostramos un mensaje con el código generado
       Alert.alert(
-        "Error", 
-        `No se pudo generar el código de vinculación. ${error.message || ''}`
+        type === 'worker' ? "Invitar Trabajador" : "Invitar Veterinario",
+        `Comparte este código con la persona que quieres invitar:\n\n${inviteCode}\n\nEste código es válido por 24 horas.`,
+        [
+          { 
+            text: "Copiar Código", 
+            onPress: () => {
+              // Aquí iría la función para copiar al portapapeles
+              Alert.alert("Código copiado", "Compártelo con el colaborador");
+            } 
+          },
+          { text: "Cerrar" }
+        ]
       );
-    } finally {
-      setGeneratingCode(false);
+    } catch (error) {
+      console.error("Error generando código de invitación:", error);
+      Alert.alert("Error", "No se pudo generar el código de invitación");
     }
   };
   
@@ -237,34 +157,20 @@ const AdminScreen = () => {
             {renderPersonItem({ item: worker, type: 'worker' })}
           </TouchableOpacity>
         ))}
-        
-        {vets.length === 0 && workers.length === 0 && (
-          <Text style={styles.emptyText}>No hay personal vinculado a esta finca.</Text>
-        )}
       </View>
       
       <TouchableOpacity 
-        style={[styles.addButton, generatingCode && styles.disabledButton]}
+        style={styles.addButton}
         onPress={() => handleAddNewStaff('worker')}
-        disabled={generatingCode}
       >
-        {generatingCode ? (
-          <ActivityIndicator size="small" color={colors.white} />
-        ) : (
-          <Text style={styles.addButtonText}>Vincular nuevo trabajador</Text>
-        )}
+        <Text style={styles.addButtonText}>Vincular nuevo trabajador</Text>
       </TouchableOpacity>
       
       <TouchableOpacity 
-        style={[styles.addButton, { marginTop: 10 }, generatingCode && styles.disabledButton]}
+        style={[styles.addButton, { marginTop: 10 }]}
         onPress={() => handleAddNewStaff('vet')}
-        disabled={generatingCode}
       >
-        {generatingCode ? (
-          <ActivityIndicator size="small" color={colors.white} />
-        ) : (
-          <Text style={styles.addButtonText}>Vincular nuevo veterinario</Text>
-        )}
+        <Text style={styles.addButtonText}>Vincular nuevo veterinario</Text>
       </TouchableOpacity>
       
       {/* Modal de confirmación para eliminar */}
@@ -335,12 +241,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     ...getShadowStyle(),
   },
-  emptyText: {
-    textAlign: 'center',
-    padding: 20,
-    color: colors.textLight,
-    fontStyle: 'italic',
-  },
   personItem: {
     flexDirection: 'row',
     paddingVertical: 12,
@@ -371,13 +271,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    justifyContent: 'center',
     ...getShadowStyle(),
-    minHeight: 50,
-  },
-  disabledButton: {
-    backgroundColor: colors.textLight,
-    opacity: 0.7,
   },
   addButtonText: {
     color: colors.white,

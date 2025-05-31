@@ -485,6 +485,34 @@ const changeUserRole = async (uid, role) => {
   }
 };
 
+/**
+ * Obtiene un usuario por su ID de autenticación
+ * @param {string} authId - ID de autenticación (id_autentificar)
+ * @returns {Promise<Object|null>} - Usuario o null si no existe
+ */
+const getUserByAuthId = async (authId) => {
+  try {
+    const { data, error } = await supabase
+      .from('usuario')
+      .select(`
+        *,
+        rol:rol(*)
+      `)
+      .eq('id_autentificar', authId)
+      .single();
+    
+    if (error) {
+      console.error('Error al obtener usuario por id_autentificar:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error al obtener usuario por id_autentificar:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   createUser,
   getUserById,
@@ -492,5 +520,6 @@ module.exports = {
   updateUser,
   deleteUser,
   getAllUsers,
-  changeUserRole
+  changeUserRole,
+  getUserByAuthId
 }; 

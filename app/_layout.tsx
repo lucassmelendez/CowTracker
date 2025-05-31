@@ -9,11 +9,17 @@ import CustomHeader from '../src/components/CustomHeader';
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();
   const router = useRouter();
-
   useEffect(() => {
     if (!loading && !currentUser) {
-      
-      router.replace('/login');
+      console.log('No hay usuario activo, redirigiendo a login...');
+      try {
+        // Usar timeout para evitar problemas con el ciclo de rendering
+        setTimeout(() => {
+          router.replace('/login');
+        }, 100);
+      } catch (e) {
+        console.error('Error al redirigir a login:', e);
+      }
     }
   }, [currentUser, loading]);
 

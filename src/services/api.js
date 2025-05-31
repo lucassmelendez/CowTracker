@@ -143,14 +143,74 @@ const users = {
 
 // API para ganado
 const cattle = {
-  getAll: () => instance.get('cattle'),
-  getAllWithFarmInfo: () => instance.get('cattle/with-farm-info'),
-  getById: (id) => instance.get(`cattle/${id}`),
-  create: (cattleData) => instance.post('cattle', cattleData),
-  update: (id, cattleData) => instance.put(`cattle/${id}`, cattleData),
-  delete: (id) => instance.delete(`cattle/${id}`),
-  getMedicalRecords: (id) => instance.get(`cattle/${id}/medical-records`),
-  addMedicalRecord: (id, recordData) => instance.post(`cattle/${id}/medical`, recordData),
+  getAll: () => {
+    console.log('API - Solicitando todo el ganado');
+    return instance.get('cattle')
+      .then(response => {
+        console.log(`API - Se recibieron ${Array.isArray(response) ? response.length : 'datos'} de ganado`);
+        return response;
+      })
+      .catch(error => {
+        console.error('Error al obtener ganado:', error);
+        return []; // En caso de error, devolver array vacío
+      });
+  },
+  getAllWithFarmInfo: () => {
+    console.log('API - Solicitando ganado con información de granjas');
+    return instance.get('cattle/with-farm-info')
+      .catch(error => {
+        console.error('Error al obtener ganado con info de granjas:', error);
+        return []; // En caso de error, devolver array vacío
+      });
+  },
+  getById: (id) => {
+    console.log(`API - Solicitando ganado con ID: ${id}`);
+    return instance.get(`cattle/${id}`)
+      .catch(error => {
+        console.error(`Error al obtener ganado con ID ${id}:`, error);
+        throw error; // Propagar el error
+      });
+  },
+  create: (cattleData) => {
+    console.log('API - Creando nuevo ganado:', cattleData.nombre || cattleData.name);
+    return instance.post('cattle', cattleData)
+      .catch(error => {
+        console.error('Error al crear ganado:', error);
+        throw error; // Propagar el error
+      });
+  },
+  update: (id, cattleData) => {
+    console.log(`API - Actualizando ganado con ID: ${id}`);
+    return instance.put(`cattle/${id}`, cattleData)
+      .catch(error => {
+        console.error(`Error al actualizar ganado con ID ${id}:`, error);
+        throw error; // Propagar el error
+      });
+  },
+  delete: (id) => {
+    console.log(`API - Eliminando ganado con ID: ${id}`);
+    return instance.delete(`cattle/${id}`)
+      .catch(error => {
+        console.error(`Error al eliminar ganado con ID ${id}:`, error);
+        throw error; // Propagar el error
+      });
+  },
+  getMedicalRecords: (id) => {
+    console.log(`API - Solicitando registros médicos para ganado ID: ${id}`);
+    return instance.get(`cattle/${id}/medical-records`)
+      .catch(error => {
+        console.error(`Error al obtener registros médicos para ganado ID ${id}:`, error);
+        return []; // En caso de error, devolver array vacío
+      });
+  },
+  addMedicalRecord: (id, recordData) => {
+    console.log(`API - Añadiendo registro médico a ganado ID: ${id}`);
+    return instance.post(`cattle/${id}/medical`, recordData)
+      .catch(error => {
+        console.error(`Error al añadir registro médico a ganado ID ${id}:`, error);
+        throw error; // Propagar el error
+      });
+  },
 };
 
 // API para granjas
@@ -179,9 +239,45 @@ const farms = {
   create: (farmData) => instance.post('farms', farmData),
   update: (id, farmData) => instance.put(`farms/${id}`, farmData),
   delete: (id) => instance.delete(`farms/${id}`),
-  
   // Relaciones con ganado
-  getCattle: (id) => instance.get(`farms/${id}/cattle`),
+  getCattle: (id) => {
+    console.log(`Solicitando ganado para la granja ID: ${id}`);
+    
+    if (!id) {
+      console.error('ID de granja no proporcionado');
+      return Promise.resolve({ data: [] });
+    }
+    
+    return instance.get(`farms/${id}/cattle`)
+      .then(response => {
+        // Validar la respuesta
+        if (!response) {
+          console.warn(`Respuesta vacía para ganado de granja ${id}`);
+          return { data: [] };
+        }
+        
+        // Si la respuesta contiene error, devolver un array vacío
+        if (response.error || response.message?.toLowerCase().includes('error')) {
+          console.warn(`Error en respuesta para ganado de granja ${id}:`, response.error || response.message);
+          return { data: [] };
+        }
+        
+        // Asegurarnos de que la respuesta siempre tenga un formato consistente
+        if (Array.isArray(response)) {
+          return { data: response };
+        } else if (response.data && Array.isArray(response.data)) {
+          return response;
+        } else {
+          console.warn(`Formato inesperado en respuesta de granja ${id}:`, response);
+          return { data: [] };
+        }
+      })
+      .catch(error => {
+        console.error(`Error al obtener ganado para granja ${id}:`, error);
+        // En caso de error, devolver un array vacío para evitar errores en la UI
+        return { data: [] };
+      });
+  },
   
   // Relaciones con trabajadores
   getWorkers: (id) => instance.get(`farms/${id}/workers`),

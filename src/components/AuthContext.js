@@ -247,11 +247,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const hasRole = (role) => {
-    if (!userInfo || !userInfo.role) return false;
+    if (!userInfo || !userInfo.rol) return false;
     
-    if (userInfo.role === 'admin') return true;
+    // Manejar admin: el admin puede hacer todo
+    if (userInfo.rol.nombre_rol === 'admin') return true;
     
-    return userInfo.role === role;
+    // Comprobar rol específico
+    return userInfo.rol.nombre_rol === role;
   };
 
   const updateUserProfile = async (data) => {
@@ -302,9 +304,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile: updateUserProfile,
     hasRole,
-    isAdmin: () => hasRole('admin'),
-    isTrabajador: () => hasRole('trabajador'),
-    isVeterinario: () => hasRole('veterinario'),
+    isAdmin: () => userInfo?.id_rol === 1 || userInfo?.rol?.nombre_rol === 'admin',
+    isTrabajador: () => userInfo?.id_rol === 2 || userInfo?.rol?.nombre_rol === 'user',
+    isVeterinario: () => userInfo?.id_rol === 3 || userInfo?.rol?.nombre_rol === 'veterinario',
   };
 
   return (

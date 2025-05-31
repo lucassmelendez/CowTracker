@@ -36,7 +36,7 @@ function RootLayoutNav() {
             elevation: 0,
             shadowOpacity: 0,
             borderBottomWidth: 0,
-            height: 70,
+            height: 70
           },
           headerTitleStyle: {
             fontWeight: 'bold',

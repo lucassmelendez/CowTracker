@@ -61,7 +61,7 @@ const AdminScreen = () => {
       setWorkers(workersData.map(worker => ({
         _id: worker.id_usuario || worker._id,
         name: worker.nombre_completo || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim(),
-        email: worker.email || worker.correo || 'Sin correo',
+        email: worker.correo || 'Sin correo',
         role: 'trabajador'
       })));
       
@@ -76,7 +76,7 @@ const AdminScreen = () => {
       setVets(vetsData.map(vet => ({
         _id: vet.id_usuario || vet._id,
         name: vet.nombre_completo || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim(),
-        email: vet.email || vet.correo || 'Sin correo',
+        email: vet.correo || 'Sin correo',
         role: 'veterinario'
       })));
 

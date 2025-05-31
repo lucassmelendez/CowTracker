@@ -68,8 +68,13 @@ const createFinca = async (datos) => {
       }
       
       if (idUsuario) {
-        // Crear la relación en la tabla usuario_finca con rol 'propietario'
-        await usuarioFincaModel.asociarUsuarioFinca(idUsuario, data.id_finca, 'propietario');
+        // Crear la relación en la tabla usuario_finca
+        try {
+          await usuarioFincaModel.asociarUsuarioFinca(idUsuario, data.id_finca);
+        } catch (error) {
+          console.error('Error al crear relación usuario-finca:', error);
+          // No fallamos aquí, continuamos con la creación de la finca
+        }
       }
     }
     
@@ -94,10 +99,7 @@ const getFincaById = async (id) => {
   try {
     const { data, error } = await supabase
       .from('finca')
-      .select(`
-        *,
-        usuario:usuario(id, primer_nombre, primer_apellido, email)
-      `)
+      .select('*')
       .eq('id_finca', id)
       .single();
     
@@ -150,8 +152,10 @@ const updateFinca = async (id, datos) => {
       delete updateData.area;
     }
     
-    // Si hay información de propietario, primero necesitamos obtener el id_usuario a partir del id_autentificar
+    // Si hay información de propietario, actualizar la relación en usuario_finca
     if (datos.propietario_id) {
+      let idUsuario;
+      
       // Si el ID del propietario es un UUID, buscar su id_usuario correspondiente
       if (datos.propietario_id.includes('-')) {
         const { data: usuario, error: userError } = await supabase
@@ -166,13 +170,18 @@ const updateFinca = async (id, datos) => {
         }
         
         if (usuario) {
-          updateData.id_usuario = usuario.id_usuario;
+          idUsuario = usuario.id_usuario;
+          
+          // Intentar crear la relación en usuario_finca
+          try {
+            await usuarioFincaModel.asociarUsuarioFinca(idUsuario, id);
+          } catch (error) {
+            console.error('Error al actualizar relación usuario-finca:', error);
+          }
         }
-      } else {
-        // Si ya es un número, usarlo directamente
-        updateData.id_usuario = parseInt(datos.propietario_id);
       }
       
+      // No incluimos propietario_id en los datos a actualizar
       delete updateData.propietario_id;
     }
     
@@ -212,6 +221,20 @@ const deleteFinca = async (id) => {
       console.error('Error al desasociar ganados:', updateError);
     }
     
+    // Eliminar relaciones en usuario_finca
+    try {
+      const { error: relError } = await supabase
+        .from('usuario_finca')
+        .delete()
+        .eq('id_finca', id);
+      
+      if (relError) {
+        console.error('Error al eliminar relaciones usuario-finca:', relError);
+      }
+    } catch (relError) {
+      console.error('Error al eliminar relaciones usuario-finca:', relError);
+    }
+    
     // Finalmente eliminar la finca
     const { error } = await supabase
       .from('finca')
@@ -244,26 +267,71 @@ const getAllFincas = async () => {
       throw error;
     }
     
-    // Para cada finca, buscar su propietario (rol = 'propietario')
-    const fincasConPropietarios = await Promise.all(
-      data.map(async (finca) => {
-        const propietarios = await usuarioFincaModel.getUsuariosByFincaAndRol(finca.id_finca, 'propietario');
-        const propietario = propietarios.length > 0 ? propietarios[0] : null;
-        
-        return {
-          ...finca,
-          _id: finca.id_finca.toString(),
-          name: finca.nombre,
-          size: finca.tamano,
-          propietario: propietario
-        };
-      })
-    );
+    // Formatear los datos para el frontend
+    const formattedFincas = data.map(finca => ({
+      ...finca,
+      _id: finca.id_finca.toString(),
+      name: finca.nombre,
+      size: finca.tamano
+    }));
     
-    return fincasConPropietarios;
+    // Para cada finca, buscar sus propietarios (si existen)
+    for (const finca of formattedFincas) {
+      try {
+        const propietarios = await buscarPropietariosFinca(finca.id_finca);
+        if (propietarios && propietarios.length > 0) {
+          finca.propietario = {
+            id: propietarios[0].id_autentificar,
+            id_usuario: propietarios[0].id_usuario,
+            name: `${propietarios[0].primer_nombre} ${propietarios[0].primer_apellido}`
+          };
+        }
+      } catch (err) {
+        console.error(`Error al buscar propietarios para finca ${finca.id_finca}:`, err);
+      }
+    }
+    
+    return formattedFincas;
   } catch (error) {
     console.error('Error al obtener todas las fincas:', error);
     throw error;
+  }
+};
+
+/**
+ * Función auxiliar para buscar propietarios de una finca
+ * @param {number} fincaId - ID de la finca
+ * @returns {Promise<Array>} - Lista de usuarios asociados
+ */
+const buscarPropietariosFinca = async (fincaId) => {
+  try {
+    // Buscamos usuarios asociados a la finca en la tabla usuario_finca
+    const { data, error } = await supabase
+      .from('usuario_finca')
+      .select(`
+        usuario:usuario(
+          id_usuario,
+          primer_nombre,
+          segundo_nombre,
+          primer_apellido,
+          segundo_apellido,
+          id_autentificar,
+          id_rol
+        )
+      `)
+      .eq('id_finca', fincaId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Filtramos para quedarnos con los usuarios que existen
+    return data
+      .filter(item => item.usuario)
+      .map(item => item.usuario);
+  } catch (error) {
+    console.error(`Error en buscarPropietariosFinca para finca ${fincaId}:`, error);
+    return [];
   }
 };
 
@@ -335,7 +403,34 @@ const getFincaGanados = async (fincaId) => {
  */
 const getFincaTrabajadores = async (fincaId) => {
   try {
-    return await usuarioFincaModel.getUsuariosByFincaAndRol(fincaId, 'trabajador');
+    // Obtener todos los usuarios asociados a la finca
+    const { data, error } = await supabase
+      .from('usuario_finca')
+      .select(`
+        usuario:usuario(
+          id_usuario,
+          primer_nombre,
+          segundo_nombre,
+          primer_apellido,
+          segundo_apellido,
+          id_autentificar,
+          id_rol
+        )
+      `)
+      .eq('id_finca', fincaId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Filtrar solo los que tienen rol de trabajador (id_rol=2)
+    return data
+      .filter(item => item.usuario && item.usuario.id_rol === 2)
+      .map(item => ({
+        ...item.usuario,
+        nombre_completo: `${item.usuario.primer_nombre} ${item.usuario.primer_apellido}`,
+        rol_finca: 'trabajador'
+      }));
   } catch (error) {
     console.error('Error al obtener trabajadores de la finca:', error);
     throw error;
@@ -349,7 +444,34 @@ const getFincaTrabajadores = async (fincaId) => {
  */
 const getFincaVeterinarios = async (fincaId) => {
   try {
-    return await usuarioFincaModel.getUsuariosByFincaAndRol(fincaId, 'veterinario');
+    // Obtener todos los usuarios asociados a la finca
+    const { data, error } = await supabase
+      .from('usuario_finca')
+      .select(`
+        usuario:usuario(
+          id_usuario,
+          primer_nombre,
+          segundo_nombre,
+          primer_apellido,
+          segundo_apellido,
+          id_autentificar,
+          id_rol
+        )
+      `)
+      .eq('id_finca', fincaId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Filtrar solo los que tienen rol de veterinario (id_rol=3)
+    return data
+      .filter(item => item.usuario && item.usuario.id_rol === 3)
+      .map(item => ({
+        ...item.usuario,
+        nombre_completo: `${item.usuario.primer_nombre} ${item.usuario.primer_apellido}`,
+        rol_finca: 'veterinario'
+      }));
   } catch (error) {
     console.error('Error al obtener veterinarios de la finca:', error);
     throw error;

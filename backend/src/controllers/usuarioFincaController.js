@@ -3,13 +3,13 @@ const userModel = require('../models/supabaseUserModel');
 const fincaModel = require('../models/supabaseFincaModel');
 
 /**
- * Asocia un usuario a una finca con un rol específico
+ * Asocia un usuario a una finca
  * @param {Request} req - Objeto de solicitud de Express
  * @param {Response} res - Objeto de respuesta de Express
  */
 const asociarUsuarioFinca = async (req, res) => {
   try {
-    const { id_usuario, id_finca, rol } = req.body;
+    const { id_usuario, id_finca } = req.body;
     
     if (!id_usuario || !id_finca) {
       return res.status(400).json({
@@ -42,11 +42,7 @@ const asociarUsuarioFinca = async (req, res) => {
       });
     }
     
-    const data = await usuarioFincaModel.asociarUsuarioFinca(
-      idUsuarioNumerico,
-      id_finca,
-      rol || 'trabajador'
-    );
+    const data = await usuarioFincaModel.asociarUsuarioFinca(idUsuarioNumerico, id_finca);
     
     return res.status(200).json({
       success: true,
@@ -189,32 +185,32 @@ const getUsuariosByFinca = async (req, res) => {
 };
 
 /**
- * Obtiene usuarios por finca y rol
+ * Obtiene propietarios de una finca
  * @param {Request} req - Objeto de solicitud de Express
  * @param {Response} res - Objeto de respuesta de Express
  */
-const getUsuariosByFincaAndRol = async (req, res) => {
+const getPropietariosByFinca = async (req, res) => {
   try {
-    const { id_finca, rol } = req.params;
+    const { id_finca } = req.params;
     
-    if (!id_finca || !rol) {
+    if (!id_finca) {
       return res.status(400).json({
         success: false,
-        message: 'Se requieren id_finca y rol'
+        message: 'Se requiere id_finca'
       });
     }
     
-    const usuarios = await usuarioFincaModel.getUsuariosByFincaAndRol(id_finca, rol);
+    const propietarios = await usuarioFincaModel.getPropietariosByFinca(id_finca);
     
     return res.status(200).json({
       success: true,
-      data: usuarios
+      data: propietarios
     });
   } catch (error) {
-    console.error(`Error al obtener usuarios con rol ${req.params.rol} de la finca:`, error);
+    console.error('Error al obtener propietarios de la finca:', error);
     return res.status(500).json({
       success: false,
-      message: `Error al obtener usuarios con rol ${req.params.rol} de la finca`,
+      message: 'Error al obtener propietarios de la finca',
       error: error.message
     });
   }
@@ -225,5 +221,5 @@ module.exports = {
   desasociarUsuarioFinca,
   getFincasByUsuario,
   getUsuariosByFinca,
-  getUsuariosByFincaAndRol
+  getPropietariosByFinca
 }; 

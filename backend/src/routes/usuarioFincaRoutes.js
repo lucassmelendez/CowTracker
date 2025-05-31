@@ -15,7 +15,7 @@ router.get('/usuario/:id_usuario', authMiddleware.supabaseAuth, usuarioFincaCont
 // Obtener usuarios de una finca
 router.get('/finca/:id_finca', authMiddleware.supabaseAuth, usuarioFincaController.getUsuariosByFinca);
 
-// Obtener usuarios de una finca por rol
-router.get('/finca/:id_finca/rol/:rol', authMiddleware.supabaseAuth, usuarioFincaController.getUsuariosByFincaAndRol);
+// Obtener propietarios de una finca
+router.get('/finca/:id_finca/propietarios', authMiddleware.supabaseAuth, usuarioFincaController.getPropietariosByFinca);
 
 module.exports = router; 

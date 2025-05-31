@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Alert, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
 import { supabase } from '../config/supabase';
@@ -32,12 +31,18 @@ export const AuthProvider = ({ children }) => {
       
       if (data?.session) {
         // Hay una sesión activa, obtener los datos del usuario desde la API
-        api.setAuthToken(data.session.access_token);
+        const token = data.session.access_token;
+        api.setAuthToken(token);
         
         try {
           const profile = await api.users.getProfile();
-          setUserInfo(profile);
-          setCurrentUser(profile);
+          // Asegurarse de que el token esté incluido en userInfo
+          const userInfoWithToken = {
+            ...profile,
+            token: token
+          };
+          setUserInfo(userInfoWithToken);
+          setCurrentUser(userInfoWithToken);
         } catch (profileError) {
           console.error('Error al obtener perfil de usuario:', profileError);
           
@@ -70,11 +75,17 @@ export const AuthProvider = ({ children }) => {
       const { data } = supabase.auth.onAuthStateChange(
         async (event, session) => {
           if (session) {
-            api.setAuthToken(session.access_token);
+            const token = session.access_token;
+            api.setAuthToken(token);
             try {
               const profile = await api.users.getProfile();
-              setUserInfo(profile);
-              setCurrentUser(profile);
+              // Asegurarse de que el token esté incluido en userInfo
+              const userInfoWithToken = {
+                ...profile,
+                token: token
+              };
+              setUserInfo(userInfoWithToken);
+              setCurrentUser(userInfoWithToken);
             } catch (error) {
               console.error('Error al obtener perfil de usuario:', error);
             }
@@ -185,10 +196,18 @@ export const AuthProvider = ({ children }) => {
       // Obtener el perfil completo del usuario desde nuestra API
       const response = await api.users.login({ email, password });
       
-      setUserInfo(response);
-      setCurrentUser(response);
+      // Asegurarse de que el token esté incluido en userInfo
+      const userInfoWithToken = {
+        ...response,
+        token: token // Añadir explícitamente el token
+      };
       
-      return response;
+      console.log('AuthContext - Usuario autenticado con token:', token.substring(0, 15) + '...');
+      
+      setUserInfo(userInfoWithToken);
+      setCurrentUser(userInfoWithToken);
+      
+      return userInfoWithToken;
     } catch (error) {
       console.error('Error de inicio de sesión:', error);
       
@@ -228,11 +247,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const hasRole = (role) => {
-    if (!userInfo || !userInfo.role) return false;
+    if (!userInfo || !userInfo.rol) return false;
     
-    if (userInfo.role === 'admin') return true;
+    // Manejar admin: el admin puede hacer todo
+    if (userInfo.rol.nombre_rol === 'admin') return true;
     
-    return userInfo.role === role;
+    // Comprobar rol específico
+    return userInfo.rol.nombre_rol === role;
   };
 
   const updateUserProfile = async (data) => {
@@ -283,9 +304,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile: updateUserProfile,
     hasRole,
-    isAdmin: () => hasRole('admin'),
-    isTrabajador: () => hasRole('trabajador'),
-    isVeterinario: () => hasRole('veterinario'),
+    isAdmin: () => userInfo?.id_rol === 1 || userInfo?.rol?.nombre_rol === 'admin',
+    isTrabajador: () => userInfo?.id_rol === 2 || userInfo?.rol?.nombre_rol === 'user',
+    isVeterinario: () => userInfo?.id_rol === 3 || userInfo?.rol?.nombre_rol === 'veterinario',
   };
 
   return (

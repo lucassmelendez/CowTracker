@@ -140,9 +140,12 @@ const createUser = async (userData) => {
       
       // Si hay error al guardar el perfil, intentamos eliminar el usuario de Auth
       try {
-        await supabase.auth.admin.deleteUser(uid);
+        // No podemos usar admin.deleteUser, pero podemos registrar el error
+        console.error('Error al crear perfil de usuario. Se creó la autenticación pero no se pudo crear el perfil.');
+        // En este punto, el usuario ya se creó en Auth pero no pudo crearse su perfil
+        // Un administrador debería limpiar esto manualmente
       } catch (deleteError) {
-        console.error('Error al intentar eliminar usuario después de fallo:', deleteError);
+        console.error('Error adicional:', deleteError);
       }
       
       throw profileError;
@@ -270,34 +273,28 @@ const updateUser = async (uid, userData) => {
     
     const updateData = { ...userData };
     
-    // Si se actualiza la contraseña
-    if (userData.password) {
-      const { error: authError } = await supabase.auth.admin.updateUserById(
-        uid,
-        { password: userData.password }
-      );
+    // Para correo y contraseña, necesitamos otra estrategia porque updateUser requiere sesión
+    
+    // Si se actualiza el correo, actualizarlo en la tabla autentificar
+    if (userData.email) {
+      const { error: emailUpdateError } = await supabase
+        .from('autentificar')
+        .update({ correo: userData.email })
+        .eq('id_autentificar', uid);
       
-      if (authError) {
-        throw authError;
+      if (emailUpdateError) {
+        throw emailUpdateError;
       }
       
-      // No incluir password en los datos a actualizar en la tabla usuario
-      delete updateData.password;
+      // Eliminar email de los datos a actualizar en la tabla usuario
+      delete updateData.email;
     }
     
-    // Si se actualiza el email
-    if (userData.email) {
-      const { error: emailError } = await supabase.auth.admin.updateUserById(
-        uid,
-        { email: userData.email }
-      );
-      
-      if (emailError) {
-        throw emailError;
-      }
-      
-      // El email no se guarda en la tabla usuario, así que lo eliminamos
-      delete updateData.email;
+    // Para la contraseña, no podemos actualizarla sin una sesión de autenticación
+    // El usuario tendrá que usar la funcionalidad de "olvidé mi contraseña"
+    if (userData.password) {
+      console.log('No se puede actualizar la contraseña sin una sesión activa. El usuario debe usar "Olvidé mi contraseña"');
+      delete updateData.password;
     }
     
     // Si se actualiza el rol
@@ -314,22 +311,86 @@ const updateUser = async (uid, userData) => {
     delete updateData.created_at;
     delete updateData.updated_at;
     
+    // Si no hay datos para actualizar en la tabla usuario, devolver lo que tenemos
+    if (Object.keys(updateData).length === 0) {
+      // Obtener datos actuales del usuario
+      const { data: currentUserData, error: getUserError } = await supabase
+        .from('usuario')
+        .select(`
+          *,
+          rol:rol(*)
+        `)
+        .eq('id_usuario', userId)
+        .single();
+        
+      if (getUserError) {
+        throw getUserError;
+      }
+      
+      // Obtener email actual desde autentificar
+      const { data: authData, error: authError } = await supabase
+        .from('autentificar')
+        .select('correo')
+        .eq('id_autentificar', uid)
+        .single();
+        
+      // Determinar rol del usuario
+      let role = 'user';
+      if (currentUserData.rol && currentUserData.rol.id_rol) {
+        if (currentUserData.rol.id_rol === 1) role = 'admin';
+        else if (currentUserData.rol.id_rol === 3) role = 'veterinario';
+      }
+      
+      return {
+        uid,
+        id_usuario: userId,
+        email: userData.email || (authData ? authData.correo : ''),
+        role,
+        primer_nombre: currentUserData.primer_nombre,
+        segundo_nombre: currentUserData.segundo_nombre,
+        primer_apellido: currentUserData.primer_apellido,
+        segundo_apellido: currentUserData.segundo_apellido
+      };
+    }
+    
     // Actualizar datos en la tabla usuario
     const { data, error } = await supabase
       .from('usuario')
       .update(updateData)
       .eq('id_usuario', userId)
-      .select()
+      .select(`
+        *,
+        rol:rol(*)
+      `)
       .single();
     
     if (error) {
       throw error;
     }
     
+    // Obtener email actualizado desde autentificar
+    const { data: authData } = await supabase
+      .from('autentificar')
+      .select('correo')
+      .eq('id_autentificar', uid)
+      .single();
+    
+    // Determinar rol del usuario
+    let role = 'user';
+    if (data.rol && data.rol.id_rol) {
+      if (data.rol.id_rol === 1) role = 'admin';
+      else if (data.rol.id_rol === 3) role = 'veterinario';
+    }
+    
     return {
       uid,
-      ...data,
-      email: userData.email // Devolver el email actualizado si se proporcionó
+      id_usuario: userId,
+      email: userData.email || (authData ? authData.correo : ''),
+      role,
+      primer_nombre: data.primer_nombre,
+      segundo_nombre: data.segundo_nombre,
+      primer_apellido: data.primer_apellido,
+      segundo_apellido: data.segundo_apellido
     };
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
@@ -367,11 +428,13 @@ const deleteUser = async (uid) => {
       throw profileError;
     }
     
-    // Eliminar de auth
-    const { error: authError } = await supabase.auth.admin.deleteUser(uid);
+    // En lugar de eliminar el usuario en auth, simplemente cerramos su sesión
+    // ya que eliminar requiere permisos de administrador
+    const { error: signOutError } = await supabase.auth.signOut();
     
-    if (authError) {
-      throw authError;
+    if (signOutError) {
+      console.error('Error al cerrar sesión del usuario:', signOutError);
+      // No lanzamos error aquí para no impedir la operación
     }
     
     return true;
@@ -458,7 +521,8 @@ const changeUserRole = async (uid, role) => {
       .eq('id_usuario', userId)
       .select(`
         *,
-        rol:rol(*)
+        rol:rol(*),
+        autentificar:autentificar(*)
       `)
       .single();
     
@@ -466,19 +530,26 @@ const changeUserRole = async (uid, role) => {
       throw error;
     }
     
-    // Actualizar metadata en auth
-    const { error: authError } = await supabase.auth.admin.updateUserById(
-      uid,
-      { 
-        user_metadata: { role }
-      }
-    );
+    // No intentamos actualizar los metadatos de auth porque requiere permisos de admin
     
-    if (authError) {
-      console.error('Error al actualizar metadatos de autenticación:', authError);
+    // Formatear la respuesta
+    let roleStr = 'user';
+    if (data.rol && data.rol.id_rol) {
+      if (data.rol.id_rol === 1) roleStr = 'admin';
+      else if (data.rol.id_rol === 3) roleStr = 'veterinario';
     }
     
-    return data;
+    return {
+      uid: data.id_autentificar,
+      id_usuario: data.id_usuario,
+      email: data.autentificar ? data.autentificar.correo : '',
+      role: roleStr,
+      name: `${data.primer_nombre} ${data.primer_apellido}`,
+      primer_nombre: data.primer_nombre,
+      segundo_nombre: data.segundo_nombre,
+      primer_apellido: data.primer_apellido,
+      segundo_apellido: data.segundo_apellido
+    };
   } catch (error) {
     console.error('Error al cambiar rol de usuario:', error);
     throw error;

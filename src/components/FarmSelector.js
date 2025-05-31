@@ -26,15 +26,32 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
   const router = useRouter();
   const [farms, setFarms] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (userInfo?.uid) {
+    console.log('FarmSelector - userInfo actualizado:', 
+      userInfo ? `uid: ${userInfo.uid ? 'Sí' : 'No'}, token: ${userInfo.token ? 'Sí' : 'No'}` : 'No hay userInfo');
+    
+    if (userInfo && userInfo.token) {
+      setLoading(true);
       loadFarms();
+    } else {
+      if (retryCount < 3) {
+        const timer = setTimeout(() => {
+          console.log(`FarmSelector - Reintentando carga (${retryCount + 1}/3)`);
+          setRetryCount(prev => prev + 1);
+        }, 1000);
+        
+        return () => clearTimeout(timer);
+      } else if (retryCount === 3) {
+        setLoading(false);
+        setError('Fallo al cargar granjas');
+      }
     }
-  }, [userInfo]);
+  }, [userInfo, retryCount]);
 
   useEffect(() => {
     if (modalVisible && userInfo?.uid) {
@@ -44,24 +61,64 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
 
   const loadFarms = async () => {
     try {
-      setLoading(true);
+      if (!loading) setLoading(true);
       setError(null);
       
-      const farmsData = await api.farms.getAll();
+      console.log('FarmSelector - Iniciando carga de granjas para usuario:', userInfo?.uid);
       
-      const farmsWithOptions = [
-        ALL_FARMS_OPTION,
-        ...farmsData || []
-      ];
+      const farmsData = await api.farms.getUserFarms();
       
-      setFarms(farmsWithOptions);
+      console.log('FarmSelector - Granjas recibidas:', farmsData ? farmsData.length : 0);
       
-      if (!selectedFarm && farmsWithOptions.length > 0) {
-        onSelectFarm(farmsWithOptions[0]);
+      if (!farmsData || farmsData.length === 0) {
+        console.log('FarmSelector - No hay granjas, intentando con getAll');
+        const allFarmsData = await api.farms.getAll();
+        
+        const farmsWithOptions = [
+          ALL_FARMS_OPTION,
+          ...allFarmsData || []
+        ];
+        
+        setFarms(farmsWithOptions);
+        
+        if (!selectedFarm && farmsWithOptions.length > 0) {
+          console.log('FarmSelector - Seleccionando granja por defecto (fallback):', farmsWithOptions[0].name);
+          onSelectFarm(farmsWithOptions[0]);
+        }
+      } else {
+        const farmsWithOptions = [
+          ALL_FARMS_OPTION,
+          ...farmsData
+        ];
+        
+        setFarms(farmsWithOptions);
+        
+        if (!selectedFarm && farmsWithOptions.length > 0) {
+          console.log('FarmSelector - Seleccionando granja por defecto:', farmsWithOptions[0].name);
+          onSelectFarm(farmsWithOptions[0]);
+        }
       }
     } catch (err) {
       console.error('Error loading farms:', err);
-      setError('No se pudieron cargar las granjas');
+      
+      try {
+        console.log('FarmSelector - Intentando fallback con getAll');
+        const fallbackFarmsData = await api.farms.getAll();
+        
+        const farmsWithOptions = [
+          ALL_FARMS_OPTION,
+          ...fallbackFarmsData || []
+        ];
+        
+        setFarms(farmsWithOptions);
+        
+        if (!selectedFarm && farmsWithOptions.length > 0) {
+          onSelectFarm(farmsWithOptions[0]);
+        }
+      } catch (fallbackErr) {
+        console.error('Error en fallback:', fallbackErr);
+        setError('No se pudieron cargar las granjas');
+      }
     } finally {
       setLoading(false);
     }

@@ -14,7 +14,6 @@ const ProfileScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState({
     email: '',
-    phone: '',
     role: '',
     primer_nombre: '',
     segundo_nombre: '',
@@ -33,8 +32,9 @@ const ProfileScreen = () => {
         
         const formattedData = {
           email: profileData.email || '',
-          phone: profileData.phone || '',
-          role: profileData.role === 'admin' ? 'Administrador' : 'Usuario',
+          role: profileData.role === 'admin' ? 'Administrador' : 
+                profileData.role === 'veterinario' ? 'Veterinario' :
+                profileData.role === 'trabajador' ? 'Trabajador' : 'Usuario',
           primer_nombre: profileData.primer_nombre || '',
           segundo_nombre: profileData.segundo_nombre || '',
           primer_apellido: profileData.primer_apellido || '',
@@ -49,8 +49,9 @@ const ProfileScreen = () => {
         if (userInfo) {
           const fallbackData = {
             email: userInfo.email || currentUser?.email || '',
-            phone: userInfo.phone || '',
-            role: userInfo.role === 'admin' ? 'Administrador' : 'Usuario',
+            role: userInfo.role === 'admin' ? 'Administrador' : 
+                  userInfo.role === 'veterinario' ? 'Veterinario' :
+                  userInfo.role === 'trabajador' ? 'Trabajador' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
             segundo_nombre: userInfo.segundo_nombre || '',
             primer_apellido: userInfo.primer_apellido || '',
@@ -83,7 +84,6 @@ const ProfileScreen = () => {
       // Enviar los campos separados directamente
       const updateData = {
         email: formData.email,
-        phone: formData.phone,
         primer_nombre: formData.primer_nombre,
         segundo_nombre: formData.segundo_nombre,
         primer_apellido: formData.primer_apellido,
@@ -99,7 +99,6 @@ const ProfileScreen = () => {
       setUserData({
         ...userData,
         email: formData.email,
-        phone: formData.phone,
         primer_nombre: formData.primer_nombre,
         segundo_nombre: formData.segundo_nombre,
         primer_apellido: formData.primer_apellido,
@@ -240,19 +239,6 @@ const ProfileScreen = () => {
               />
             ) : (
               <Text style={profileStyles.infoText}>{userData.email}</Text>
-            )}
-            
-            <Text style={profileStyles.label}>Teléfono</Text>
-            {isEditing ? (
-              <TextInput
-                style={profileStyles.input}
-                value={formData.phone}
-                onChangeText={(text) => setFormData({...formData, phone: text})}
-                placeholder="Teléfono"
-                keyboardType="phone-pad"
-              />
-            ) : (
-              <Text style={profileStyles.infoText}>{userData.phone || 'No especificado'}</Text>
             )}
             
             {isEditing && (

@@ -156,6 +156,25 @@ const cattle = {
 // API para granjas
 const farms = {
   getAll: () => instance.get('farms'),
+  getUserFarms: async () => {
+    console.log('API - Solicitando granjas del usuario con token:', 
+      instance.defaults.headers.common['Authorization'] ? 'Presente' : 'Ausente');
+    
+    try {
+      // Si no hay token de autorización, rechazar la petición inmediatamente
+      if (!instance.defaults.headers.common['Authorization']) {
+        console.error('API - No hay token de autorización para obtener granjas');
+        throw new Error('No hay token de autorización');
+      }
+      
+      const response = await instance.get('farms');
+      console.log('API - Granjas del usuario recibidas:', response ? response.length : 0);
+      return response;
+    } catch (error) {
+      console.error('API - Error al obtener granjas del usuario:', error);
+      throw error;
+    }
+  },
   getById: (id) => instance.get(`farms/${id}`),
   create: (farmData) => instance.post('farms', farmData),
   update: (id, farmData) => instance.put(`farms/${id}`, farmData),

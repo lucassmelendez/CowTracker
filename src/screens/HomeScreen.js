@@ -5,21 +5,21 @@ import { useRouter } from 'expo-router';
 import { homeStyles } from '../styles/homeStyles';
 
 const HomeScreen = () => {
-  const { userData } = useAuth();
+  const { userInfo, isVeterinario } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     console.log('HomeScreen montado - Mostrando los menús');
   }, []);
 
-  const menuItems = [
-    
+  const allMenuItems = [
     {
       id: 'admin',
       title: 'Administrador',
       icon: '👨‍💼',
       route: '/(tabs)/admin',
       description: 'Gestionar trabajadores y veterinarios',
+      roles: ['admin']
     },
     {
       id: 'cattle',
@@ -27,6 +27,7 @@ const HomeScreen = () => {
       icon: '🐄',
       route: '/(tabs)/explore',
       description: 'Gestiona todo tu ganado',
+      roles: ['admin', 'trabajador']
     },
     {
       id: 'informe',
@@ -34,6 +35,7 @@ const HomeScreen = () => {
       icon: '📊',
       route: '/(tabs)/report',
       description: 'Generar informes de ganado',
+      roles: ['admin', 'trabajador']
     },
     {
       id: 'vet',
@@ -41,6 +43,15 @@ const HomeScreen = () => {
       icon: '💊',
       route: '/(tabs)/veterinary-data',
       description: 'Datos veterinarios y medicamentos',
+      roles: ['veterinario']
+    },
+    {
+      id: 'vincular',
+      title: 'Vincular a Finca',
+      icon: '🔗',
+      route: '/vinculacion',
+      description: 'Vincular con código de finca',
+      roles: ['veterinario']
     },
     {
       id: 'qr',
@@ -48,6 +59,7 @@ const HomeScreen = () => {
       icon: '📷',
       route: '/qr-scanner',
       description: 'Escanear códigos QR',
+      roles: ['admin', 'trabajador', 'veterinario']
     },
     {
       id: 'production',
@@ -55,6 +67,7 @@ const HomeScreen = () => {
       icon: '🥩',
       route: '/(tabs)/production',
       description: 'Gestionar produccion',
+      roles: ['admin', 'trabajador']
     },
     {
       id: 'issue',
@@ -62,6 +75,7 @@ const HomeScreen = () => {
       icon: '🔔',
       route: '/(tabs)/issue-report',
       description: 'Reportar problemas o sugerencias',
+      roles: ['admin', 'trabajador', 'veterinario']
     },
     {
       id: 'help',
@@ -69,12 +83,21 @@ const HomeScreen = () => {
       icon: '🆘',
       route: '/(tabs)/help',
       description: 'Ayuda y soporte',
+      roles: ['admin', 'trabajador', 'veterinario']
     },
   ];
 
+  // Filtrar menú según el rol del usuario
+  const menuItems = allMenuItems.filter(item => {
+    if (isVeterinario()) {
+      return item.roles.includes('veterinario');
+    }
+    // Aquí puedes agregar más condiciones para otros roles
+    return true; // Por defecto mostrar todo
+  });
+
   const navigateTo = (route) => {
     console.log('Navegando a:', route);
-    Alert.alert("Navegación", `Intentando navegar a: ${route}`);
     router.push(route);
   };
 

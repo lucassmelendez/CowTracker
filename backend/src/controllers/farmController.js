@@ -10,7 +10,8 @@ const getFarms = asyncHandler(async (req, res) => {
   try {
     console.log('Buscando fincas para usuario:', req.user.uid);
     
-    const farms = await supabaseService.getAllFincas();
+    // Obtener las fincas asociadas al usuario desde la tabla usuario_finca
+    const farms = await supabaseService.getFincasByOwner(req.user.uid);
     
     res.json(farms);
   } catch (error) {

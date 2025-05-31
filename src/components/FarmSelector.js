@@ -6,8 +6,7 @@ import {
   TouchableOpacity, 
   Modal, 
   FlatList, 
-  ActivityIndicator,
-  Image 
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
@@ -15,12 +14,6 @@ import api from '../services/api';
 import { useRouter } from 'expo-router';
 import { colors } from '../styles/commonStyles';
 import { getShadowStyle } from '../utils/styles';
-
-const ALL_FARMS_OPTION = {
-  _id: 'all-farms',
-  name: 'Todas las granjas',
-  isSpecialOption: true
-};
 
 const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
@@ -73,52 +66,23 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       if (!farmsData || farmsData.length === 0) {
         console.log('FarmSelector - No hay granjas, intentando con getAll');
         const allFarmsData = await api.farms.getAll();
+        setFarms(allFarmsData || []);
         
-        const farmsWithOptions = [
-          ALL_FARMS_OPTION,
-          ...allFarmsData || []
-        ];
-        
-        setFarms(farmsWithOptions);
-        
-        if (!selectedFarm && farmsWithOptions.length > 0) {
-          console.log('FarmSelector - Seleccionando granja por defecto (fallback):', farmsWithOptions[0].name);
-          onSelectFarm(farmsWithOptions[0]);
+        if (!selectedFarm && allFarmsData && allFarmsData.length > 0) {
+          console.log('FarmSelector - Seleccionando granja por defecto:', allFarmsData[0].name);
+          onSelectFarm(allFarmsData[0]);
         }
       } else {
-        const farmsWithOptions = [
-          ALL_FARMS_OPTION,
-          ...farmsData
-        ];
+        setFarms(farmsData);
         
-        setFarms(farmsWithOptions);
-        
-        if (!selectedFarm && farmsWithOptions.length > 0) {
-          console.log('FarmSelector - Seleccionando granja por defecto:', farmsWithOptions[0].name);
-          onSelectFarm(farmsWithOptions[0]);
+        if (!selectedFarm && farmsData.length > 0) {
+          console.log('FarmSelector - Seleccionando granja por defecto:', farmsData[0].name);
+          onSelectFarm(farmsData[0]);
         }
       }
     } catch (err) {
       console.error('Error loading farms:', err);
-      
-      try {
-        console.log('FarmSelector - Intentando fallback con getAll');
-        const fallbackFarmsData = await api.farms.getAll();
-        
-        const farmsWithOptions = [
-          ALL_FARMS_OPTION,
-          ...fallbackFarmsData || []
-        ];
-        
-        setFarms(farmsWithOptions);
-        
-        if (!selectedFarm && farmsWithOptions.length > 0) {
-          onSelectFarm(farmsWithOptions[0]);
-        }
-      } catch (fallbackErr) {
-        console.error('Error en fallback:', fallbackErr);
-        setError('No se pudieron cargar las granjas');
-      }
+      setError('No se pudieron cargar las granjas');
     } finally {
       setLoading(false);
     }
@@ -146,15 +110,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         onPress={() => handleSelectFarm(item)}
       >
         <View style={styles.farmIconContainer}>
-          {item.isSpecialOption ? (
-            item._id === 'all-farms' ? (
-              <Ionicons name="apps" size={24} color={colors.primary} />
-            ) : (
-              <Ionicons name="business" size={24} color={colors.secondary} />
-            )
-          ) : (
-            <Ionicons name="business" size={24} color={colors.secondary} />
-          )}
+          <Ionicons name="business" size={24} color={colors.secondary} />
         </View>
         <View style={styles.farmInfoContainer}>
           <Text style={[
@@ -163,11 +119,8 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
           ]}>
             {item.name}
           </Text>
-          {item.location && !item.isSpecialOption && (
+          {item.location && (
             <Text style={styles.farmLocation}>{item.location}</Text>
-          )}
-          {item.isSpecialOption && item._id === 'all-farms' && (
-            <Text style={styles.farmDescription}>Mostrar todo el ganado</Text>
           )}
         </View>
         {isSelected && (
@@ -213,14 +166,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         style={styles.selectorButton}
         onPress={() => setModalVisible(true)}
       >
-        <Ionicons 
-          name={selectedFarm?.isSpecialOption ? 
-            (selectedFarm._id === 'all-farms' ? 'apps' : 'business') : 
-            'business'
-          } 
-          size={18} 
-          color="#ffffff" 
-        />
+        <Ionicons name="business" size={18} color="#ffffff" />
         <Text style={styles.selectorText} numberOfLines={1}>
           {selectedFarm ? selectedFarm.name : 'Seleccionar granja'}
         </Text>
@@ -372,11 +318,6 @@ const styles = StyleSheet.create({
   farmLocation: {
     fontSize: 14,
     color: colors.textLight,
-  },
-  farmDescription: {
-    fontSize: 13,
-    color: colors.textLight,
-    fontStyle: 'italic',
   },
   addFarmButton: {
     flexDirection: 'row',

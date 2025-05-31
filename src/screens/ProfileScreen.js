@@ -32,7 +32,9 @@ const ProfileScreen = () => {
         
         const formattedData = {
           email: profileData.email || '',
-          role: profileData.role === 'admin' ? 'Administrador' : 'Usuario',
+          role: profileData.role === 'admin' ? 'Administrador' : 
+                profileData.role === 'veterinario' ? 'Veterinario' :
+                profileData.role === 'trabajador' ? 'Trabajador' : 'Usuario',
           primer_nombre: profileData.primer_nombre || '',
           segundo_nombre: profileData.segundo_nombre || '',
           primer_apellido: profileData.primer_apellido || '',
@@ -47,7 +49,9 @@ const ProfileScreen = () => {
         if (userInfo) {
           const fallbackData = {
             email: userInfo.email || currentUser?.email || '',
-            role: userInfo.role === 'admin' ? 'Administrador' : 'Usuario',
+            role: userInfo.role === 'admin' ? 'Administrador' : 
+                  userInfo.role === 'veterinario' ? 'Veterinario' :
+                  userInfo.role === 'trabajador' ? 'Trabajador' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
             segundo_nombre: userInfo.segundo_nombre || '',
             primer_apellido: userInfo.primer_apellido || '',

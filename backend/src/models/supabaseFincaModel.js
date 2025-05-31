@@ -1,4 +1,5 @@
 const { supabase } = require('../config/supabase');
+const usuarioFincaModel = require('./supabaseUsuarioFincaModel');
 
 /**
  * Crea una nueva finca
@@ -30,8 +31,21 @@ const createFinca = async (datos) => {
       tamano: datos.tamano || 0
     };
     
-    // Si hay información de propietario, primero necesitamos obtener el id_usuario a partir del id_autentificar
+    // Insertar en la tabla finca
+    const { data, error } = await supabase
+      .from('finca')
+      .insert(fincaData)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Si hay información de propietario, crear la relación en la tabla usuario_finca
     if (datos.propietario_id) {
+      let idUsuario;
+      
       // Si el ID del propietario es un UUID, buscar su id_usuario correspondiente
       if (datos.propietario_id.includes('-')) {
         const { data: usuario, error: userError } = await supabase
@@ -46,23 +60,22 @@ const createFinca = async (datos) => {
         }
         
         if (usuario) {
-          fincaData.id_usuario = usuario.id_usuario;
+          idUsuario = usuario.id_usuario;
         }
       } else {
         // Si ya es un número, usarlo directamente
-        fincaData.id_usuario = parseInt(datos.propietario_id);
+        idUsuario = parseInt(datos.propietario_id);
       }
-    }
-    
-    // Insertar en la tabla finca
-    const { data, error } = await supabase
-      .from('finca')
-      .insert(fincaData)
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
+      
+      if (idUsuario) {
+        // Crear la relación en la tabla usuario_finca
+        try {
+          await usuarioFincaModel.asociarUsuarioFinca(idUsuario, data.id_finca);
+        } catch (error) {
+          console.error('Error al crear relación usuario-finca:', error);
+          // No fallamos aquí, continuamos con la creación de la finca
+        }
+      }
     }
     
     // Devolver los datos con formato para compatibilidad
@@ -86,10 +99,7 @@ const getFincaById = async (id) => {
   try {
     const { data, error } = await supabase
       .from('finca')
-      .select(`
-        *,
-        usuario:usuario(id, primer_nombre, primer_apellido, email)
-      `)
+      .select('*')
       .eq('id_finca', id)
       .single();
     
@@ -142,8 +152,10 @@ const updateFinca = async (id, datos) => {
       delete updateData.area;
     }
     
-    // Si hay información de propietario, primero necesitamos obtener el id_usuario a partir del id_autentificar
+    // Si hay información de propietario, actualizar la relación en usuario_finca
     if (datos.propietario_id) {
+      let idUsuario;
+      
       // Si el ID del propietario es un UUID, buscar su id_usuario correspondiente
       if (datos.propietario_id.includes('-')) {
         const { data: usuario, error: userError } = await supabase
@@ -158,13 +170,18 @@ const updateFinca = async (id, datos) => {
         }
         
         if (usuario) {
-          updateData.id_usuario = usuario.id_usuario;
+          idUsuario = usuario.id_usuario;
+          
+          // Intentar crear la relación en usuario_finca
+          try {
+            await usuarioFincaModel.asociarUsuarioFinca(idUsuario, id);
+          } catch (error) {
+            console.error('Error al actualizar relación usuario-finca:', error);
+          }
         }
-      } else {
-        // Si ya es un número, usarlo directamente
-        updateData.id_usuario = parseInt(datos.propietario_id);
       }
       
+      // No incluimos propietario_id en los datos a actualizar
       delete updateData.propietario_id;
     }
     
@@ -204,6 +221,20 @@ const deleteFinca = async (id) => {
       console.error('Error al desasociar ganados:', updateError);
     }
     
+    // Eliminar relaciones en usuario_finca
+    try {
+      const { error: relError } = await supabase
+        .from('usuario_finca')
+        .delete()
+        .eq('id_finca', id);
+      
+      if (relError) {
+        console.error('Error al eliminar relaciones usuario-finca:', relError);
+      }
+    } catch (relError) {
+      console.error('Error al eliminar relaciones usuario-finca:', relError);
+    }
+    
     // Finalmente eliminar la finca
     const { error } = await supabase
       .from('finca')
@@ -229,60 +260,108 @@ const getAllFincas = async () => {
   try {
     const { data, error } = await supabase
       .from('finca')
-      .select(`
-        *,
-        usuario:usuario(id_usuario, primer_nombre, primer_apellido, id_autentificar)
-      `)
+      .select('*')
       .order('id_finca');
     
     if (error) {
       throw error;
     }
     
-    // Formatear para compatibilidad con el frontend
-    return data.map(finca => ({
+    // Formatear los datos para el frontend
+    const formattedFincas = data.map(finca => ({
       ...finca,
       _id: finca.id_finca.toString(),
       name: finca.nombre,
-      size: finca.tamano,
-      propietario: finca.usuario ? {
-        id: finca.usuario.id_autentificar,
-        id_usuario: finca.usuario.id_usuario,
-        name: `${finca.usuario.primer_nombre} ${finca.usuario.primer_apellido}`
-      } : null
+      size: finca.tamano
     }));
+    
+    // Para cada finca, buscar sus propietarios (si existen)
+    for (const finca of formattedFincas) {
+      try {
+        const propietarios = await buscarPropietariosFinca(finca.id_finca);
+        if (propietarios && propietarios.length > 0) {
+          finca.propietario = {
+            id: propietarios[0].id_autentificar,
+            id_usuario: propietarios[0].id_usuario,
+            name: `${propietarios[0].primer_nombre} ${propietarios[0].primer_apellido}`
+          };
+        }
+      } catch (err) {
+        console.error(`Error al buscar propietarios para finca ${finca.id_finca}:`, err);
+      }
+    }
+    
+    return formattedFincas;
   } catch (error) {
-    console.error('Error al obtener fincas:', error);
+    console.error('Error al obtener todas las fincas:', error);
     throw error;
   }
 };
 
 /**
- * Obtiene las fincas por propietario
- * @param {number} userId - ID del propietario
- * @returns {Promise<Array>} - Lista de fincas del propietario
+ * Función auxiliar para buscar propietarios de una finca
+ * @param {number} fincaId - ID de la finca
+ * @returns {Promise<Array>} - Lista de usuarios asociados
  */
-const getFincasByOwner = async (userId) => {
+const buscarPropietariosFinca = async (fincaId) => {
   try {
+    // Buscamos usuarios asociados a la finca en la tabla usuario_finca
     const { data, error } = await supabase
-      .from('finca')
-      .select('*')
-      .eq('id_usuario', userId)
-      .order('id_finca');
+      .from('usuario_finca')
+      .select(`
+        usuario:usuario(
+          id_usuario,
+          primer_nombre,
+          segundo_nombre,
+          primer_apellido,
+          segundo_apellido,
+          id_autentificar,
+          id_rol
+        )
+      `)
+      .eq('id_finca', fincaId);
     
     if (error) {
       throw error;
     }
     
-    return data.map(finca => ({
-      ...finca,
-      _id: finca.id_finca.toString(),
-      name: finca.nombre,
-      size: finca.tamano,
-      area: finca.tamano // Para mantener compatibilidad
-    }));
+    // Filtramos para quedarnos con los usuarios que existen
+    return data
+      .filter(item => item.usuario)
+      .map(item => item.usuario);
   } catch (error) {
-    console.error('Error al obtener fincas por propietario:', error);
+    console.error(`Error en buscarPropietariosFinca para finca ${fincaId}:`, error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene las fincas asociadas a un usuario
+ * @param {string} userId - ID del usuario (id_autentificar)
+ * @returns {Promise<Array>} - Lista de fincas
+ */
+const getFincasByOwner = async (userId) => {
+  try {
+    // Primero obtener el id_usuario a partir del id_autentificar
+    const { data: usuario, error: userError } = await supabase
+      .from('usuario')
+      .select('id_usuario')
+      .eq('id_autentificar', userId)
+      .single();
+    
+    if (userError) {
+      console.error('Error al buscar id_usuario:', userError);
+      throw userError;
+    }
+    
+    if (!usuario) {
+      throw new Error(`Usuario con ID ${userId} no encontrado`);
+    }
+    
+    // Usar el modelo de usuario_finca para obtener las fincas del usuario
+    return await usuarioFincaModel.getFincasByUsuario(usuario.id_usuario);
+  } catch (error) {
+    console.error('Error al obtener fincas del propietario:', error);
     throw error;
   }
 };
@@ -318,47 +397,40 @@ const getFincaGanados = async (fincaId) => {
 };
 
 /**
- * Obtiene los trabajadores de una finca
+ * Obtiene todos los trabajadores de una finca
  * @param {number} fincaId - ID de la finca
- * @returns {Promise<Array>} - Lista de trabajadores de la finca
+ * @returns {Promise<Array>} - Lista de usuarios con rol trabajador
  */
 const getFincaTrabajadores = async (fincaId) => {
   try {
-    // Esta funcionalidad puede que no exista en el esquema actual
-    // Basándonos en la imagen, no vemos una relación directa entre fincas y trabajadores
-    console.warn('La relación entre fincas y trabajadores no está claramente definida en el esquema');
-    
-    // Como alternativa, podríamos devolver todos los usuarios excepto el propietario de la finca
-    const { data: finca } = await supabase
-      .from('finca')
-      .select('id_usuario')
-      .eq('id_finca', fincaId)
-      .single();
-    
-    if (!finca) {
-      return [];
-    }
-    
+    // Obtener todos los usuarios asociados a la finca
     const { data, error } = await supabase
-      .from('usuario')
+      .from('usuario_finca')
       .select(`
-        *,
-        rol:rol(*)
+        usuario:usuario(
+          id_usuario,
+          primer_nombre,
+          segundo_nombre,
+          primer_apellido,
+          segundo_apellido,
+          id_autentificar,
+          id_rol
+        )
       `)
-      .neq('id_usuario', finca.id_usuario)
-      .eq('id_rol', 2); // Asumiendo que el rol 2 es para trabajadores regulares
+      .eq('id_finca', fincaId);
     
     if (error) {
       throw error;
     }
     
-    return data.map(usuario => ({
-      id: usuario.id_autentificar,
-      id_usuario: usuario.id_usuario,
-      name: `${usuario.primer_nombre} ${usuario.primer_apellido}`,
-      role: 'user',
-      fecha_asociacion: new Date().toISOString() // No tenemos esta información en el esquema
-    }));
+    // Filtrar solo los que tienen rol de trabajador (id_rol=2)
+    return data
+      .filter(item => item.usuario && item.usuario.id_rol === 2)
+      .map(item => ({
+        ...item.usuario,
+        nombre_completo: `${item.usuario.primer_nombre} ${item.usuario.primer_apellido}`,
+        rol_finca: 'trabajador'
+      }));
   } catch (error) {
     console.error('Error al obtener trabajadores de la finca:', error);
     throw error;
@@ -366,36 +438,40 @@ const getFincaTrabajadores = async (fincaId) => {
 };
 
 /**
- * Obtiene los veterinarios de una finca
+ * Obtiene todos los veterinarios de una finca
  * @param {number} fincaId - ID de la finca
- * @returns {Promise<Array>} - Lista de veterinarios de la finca
+ * @returns {Promise<Array>} - Lista de usuarios con rol veterinario
  */
 const getFincaVeterinarios = async (fincaId) => {
   try {
-    // Esta funcionalidad puede que no exista en el esquema actual
-    // Basándonos en la imagen, no vemos una relación directa entre fincas y veterinarios
-    console.warn('La relación entre fincas y veterinarios no está claramente definida en el esquema');
-    
-    // Como alternativa, podríamos devolver todos los usuarios con rol de veterinario
+    // Obtener todos los usuarios asociados a la finca
     const { data, error } = await supabase
-      .from('usuario')
+      .from('usuario_finca')
       .select(`
-        *,
-        rol:rol(*)
+        usuario:usuario(
+          id_usuario,
+          primer_nombre,
+          segundo_nombre,
+          primer_apellido,
+          segundo_apellido,
+          id_autentificar,
+          id_rol
+        )
       `)
-      .eq('id_rol', 3); // Asumiendo que el rol 3 es para veterinarios
+      .eq('id_finca', fincaId);
     
     if (error) {
       throw error;
     }
     
-    return data.map(usuario => ({
-      id: usuario.id,
-      name: `${usuario.primer_nombre} ${usuario.primer_apellido}`,
-      email: usuario.email,
-      role: 'veterinario',
-      fecha_asociacion: new Date().toISOString() // No tenemos esta información en el esquema
-    }));
+    // Filtrar solo los que tienen rol de veterinario (id_rol=3)
+    return data
+      .filter(item => item.usuario && item.usuario.id_rol === 3)
+      .map(item => ({
+        ...item.usuario,
+        nombre_completo: `${item.usuario.primer_nombre} ${item.usuario.primer_apellido}`,
+        rol_finca: 'veterinario'
+      }));
   } catch (error) {
     console.error('Error al obtener veterinarios de la finca:', error);
     throw error;

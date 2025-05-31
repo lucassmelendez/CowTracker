@@ -100,21 +100,16 @@ export const addCattleStyles = StyleSheet.create({
   },
   selectedOptionText: {
     color: '#fff',
-  },  farmSelector: {
+  },
+  farmSelector: {
     marginBottom: 15,
-    backgroundColor: '#f9f9f9',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#eaeaea',
   },
   farmOption: {
-    padding: 15,
-    borderWidth: 2,
+    padding: 12,
+    borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    marginBottom: 10,
-    backgroundColor: '#ffffff',
+    marginBottom: 8,
   },
   selectedFarmOption: {
     borderColor: '#27ae60',
@@ -123,11 +118,10 @@ export const addCattleStyles = StyleSheet.create({
   farmOptionText: {
     fontSize: 16,
     color: '#333',
-    textAlign: 'center',
   },
   selectedFarmOptionText: {
     color: '#27ae60',
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
   noFarmsText: {
     color: '#e74c3c',

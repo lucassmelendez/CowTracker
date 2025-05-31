@@ -45,96 +45,110 @@ const AddCattleScreen = ({ route }) => {
   const [purchaseDateText, setPurchaseDateText] = useState('');
   const [showDateOfBirthPicker, setShowDateOfBirthPicker] = useState(false);
   const [showPurchaseDatePicker, setShowPurchaseDatePicker] = useState(false);
-    // Estados para carga
+  // Estados para carga
   const [farms, setFarms] = useState([]);
   const [loadingFarms, setLoadingFarms] = useState(false);
   const [farmsError, setFarmsError] = useState(null);
   const [loadingCattle, setLoadingCattle] = useState(isEditMode);
-  // Cargar granjas
-  useEffect(() => {
-    const loadFarms = async () => {
-      try {
-        setLoadingFarms(true);
-        setFarmsError(null);
+  
+  // Datos de granja de prueba para asegurar que siempre haya al menos una granja disponible
+  const testFarms = [
+    { _id: 'test-farm-1', id_finca: 'test-farm-1', name: 'Granja de Prueba 1', nombre: 'Granja de Prueba 1' },
+    { _id: 'test-farm-2', id_finca: 'test-farm-2', name: 'Granja de Prueba 2', nombre: 'Granja de Prueba 2' }
+  ];  // Función para cargar granjas - extraída para poder reutilizarla
+  const loadFarms = async () => {
+    try {
+      setLoadingFarms(true);
+      setFarmsError(null);
+      
+      if (userInfo && userInfo.uid) {
+        // Usar la API para obtener las granjas
+        console.log('Cargando granjas para el usuario:', userInfo.uid);
         
-        if (userInfo && userInfo.uid) {
-          // Usar la API para obtener las granjas
-          console.log('Cargando granjas para el usuario:', userInfo.uid);
+        try {
           const userFarms = await api.farms.getAll();
           console.log('Granjas obtenidas (cantidad):', userFarms?.length || 0);
           
-          // Validar datos recibidos
-          if (!userFarms) {
-            console.error('API devolvió respuesta nula');
-            setFarmsError('La respuesta de la API fue nula');
-            setFarms([]);
-            return;
-          }
+          let finalFarms = [];
           
-          if (!Array.isArray(userFarms)) {
-            console.error('API no devolvió un array:', typeof userFarms, userFarms);
-            setFarmsError(`La respuesta no es un array: ${typeof userFarms}`);
-            setFarms([]);
-            return;
-          }
-
-          console.log('Granjas datos completos:', JSON.stringify(userFarms.slice(0, 2), null, 2));
-          
-          if (userFarms.length === 0) {
-            console.warn('No se encontraron granjas para el usuario');
-            setFarms([]);
-            return;
-          }
-          
-          // Crear array para prueba forzada (eliminar en producción)
-          const dummyFarms = [
-            { _id: 'farm-1', name: 'Granja de Prueba 1' },
-            { _id: 'farm-2', name: 'Granja de Prueba 2' },
-            { _id: 'farm-3', name: 'Granja de Prueba 3' }
-          ];
-          
-          // Asegurar que cada granja tenga un ID único identificable
-          const farmsWithIds = userFarms.map(farm => {
-            // Asegurar que cada granja tenga un ID accesible
-            const farmId = farm._id || farm.id_finca;
-            const farmName = farm.name || farm.nombre;
+          if (userFarms && Array.isArray(userFarms) && userFarms.length > 0) {
+            // Procesar las granjas recibidas de la API
+            finalFarms = userFarms.map(farm => {
+              // Asegurar que cada granja tenga un ID accesible
+              const farmId = farm._id || farm.id_finca;
+              const farmName = farm.name || farm.nombre;
+              
+              if (!farmId) {
+                console.warn('Granja sin ID encontrada:', farm);
+              }
+              if (!farmName) {
+                console.warn('Granja sin nombre encontrada:', farm);
+              }
+              
+              return {
+                ...farm,
+                _id: farmId || `temp-${Math.random().toString(36).substring(2, 9)}`,
+                name: farmName || 'Granja sin nombre'
+              };
+            });
             
-            if (!farmId) {
-              console.warn('Granja sin ID encontrada:', farm);
-            }
-            if (!farmName) {
-              console.warn('Granja sin nombre encontrada:', farm);
-            }
-            
-            return {
-              ...farm,
-              _id: farmId || `temp-${Math.random().toString(36).substring(2, 9)}`, // Aseguramos que siempre haya un _id
-              name: farmName || 'Granja sin nombre' // Aseguramos que siempre haya un name
-            };
-          });
-          
-          // Agregar granjas de prueba (eliminar en producción)
-          const combinedFarms = [...farmsWithIds, ...dummyFarms];
-          
-          console.log('Granjas procesadas:', combinedFarms.length);
-          if (combinedFarms.length > 0) {
-            console.log('Primera granja procesada:', JSON.stringify(combinedFarms[0], null, 2));
+            console.log('Granjas procesadas:', finalFarms.length);
+          } else {
+            console.warn('No se recibieron granjas de la API o el formato no es válido');
           }
           
-          setFarms(combinedFarms);
+          // Incluir las granjas de prueba siempre (excepto en producción)
+          // Comentar esta línea en producción
+          finalFarms = [...finalFarms, ...testFarms];
+          
+          console.log(`Total granjas disponibles (incluyendo pruebas): ${finalFarms.length}`);
+          setFarms(finalFarms);
+          
+        } catch (apiError) {
+          console.error('Error en la API al obtener granjas:', apiError);
+          setFarmsError(`Error al obtener granjas: ${apiError.message || 'Error desconocido'}`);
+          
+          // Establecer granjas de prueba como respaldo
+          console.log('Usando granjas de prueba como respaldo');
+          setFarms(testFarms);
         }
-      } catch (error) {
-        console.error('Error al cargar granjas:', error);
-        setFarmsError(error.message || 'Error desconocido al cargar granjas');
-      } finally {
-        setLoadingFarms(false);
       }
-    };
-    
+    } catch (error) {
+      console.error('Error general al cargar granjas:', error);
+      setFarmsError(`Error general: ${error.message || 'Error desconocido'}`);
+      
+      // Establecer granjas de prueba como respaldo
+      setFarms(testFarms);
+    } finally {
+      setLoadingFarms(false);
+    }
+  };
+
+  // Cargar granjas cuando se monta el componente
+  useEffect(() => {
     if (userInfo) {
       loadFarms();
     }
   }, [userInfo]);
+  
+  // Configurar un efecto para actualizar las granjas cuando la pantalla obtiene foco
+  // Esto es útil si el usuario navega para crear una granja y luego regresa
+  useEffect(() => {
+    // Agregar un listener para detectar cuando la pantalla obtiene foco
+    const focusListener = router.addListener('focus', () => {
+      console.log('AddCattleScreen recibió foco, actualizando granjas...');
+      if (userInfo) {
+        loadFarms();
+      }
+    });
+    
+    // Limpiar el listener cuando el componente se desmonta
+    return () => {
+      if (typeof focusListener?.remove === 'function') {
+        focusListener.remove();
+      }
+    };
+  }, [userInfo, router]);
   
   useEffect(() => {
     setDateOfBirthText(formatDate(dateOfBirth));
@@ -618,58 +632,122 @@ const AddCattleScreen = ({ route }) => {
                 alignItems: 'center'
               }}
               onPress={() => {
+                // Reintentar cargar granjas
                 setFarmsError(null);
                 setLoadingFarms(true);
+                
+                // Intentar cargar granjas reales
                 api.farms.getAll()
                   .then(data => {
-                    const processed = data.map(farm => ({
+                    console.log('API response on retry:', data);
+                    
+                    // Procesar datos
+                    const processed = Array.isArray(data) ? data.map(farm => ({
                       ...farm,
-                      _id: farm._id || farm.id_finca,
-                      name: farm.name || farm.nombre
-                    }));
-                    setFarms(processed);
+                      _id: farm._id || farm.id_finca || `farm-${Math.random().toString(36).slice(2)}`,
+                      name: farm.name || farm.nombre || 'Granja sin nombre'
+                    })) : [];
+                    
+                    // Añadir granjas de prueba si no hay suficientes
+                    const allFarms = [...processed, ...testFarms];
+                    setFarms(allFarms);
                   })
-                  .catch(err => setFarmsError(err.message || 'Error al cargar granjas'))
+                  .catch(err => {
+                    console.error('Error en reintento:', err);
+                    setFarmsError(`Error al reintentar: ${err.message || 'Error desconocido'}`);
+                    // Usar granjas de prueba como respaldo
+                    setFarms(testFarms);
+                  })
                   .finally(() => setLoadingFarms(false));
               }}
             >
               <Text style={{color: 'white'}}>Reintentar</Text>
             </TouchableOpacity>
-          </View>
-        ) : farms && farms.length > 0 ? (
-          <View style={styles.farmSelector}>
-            <Text style={{marginBottom: 8, color: '#555'}}>Selecciona una granja ({farms.length} disponibles):</Text>
-            {farms.map((farm, index) => {
-              console.log(`Renderizando granja ${index+1}:`, farm);
-              const farmId = farm._id || farm.id_finca || `farm-${index}`;
-              const farmName = farm.name || farm.nombre || `Granja ${index+1}`;
-              
-              return (
+          </View>        ) : (
+          <View style={styles.farmSelector}>            {farms && farms.length > 0 ? (
+              <View>
+                <Text style={{marginBottom: 12, color: '#444', fontWeight: '500'}}>
+                  Selecciona una granja ({farms.length} disponibles):
+                </Text>
+                {farms.map((farm, index) => {
+                  console.log(`Renderizando granja ${index+1}:`, farm);
+                  const farmId = farm._id || farm.id_finca || `farm-${index}`;
+                  const farmName = farm.name || farm.nombre || `Granja ${index+1}`;
+                  
+                  return (
+                    <TouchableOpacity
+                      key={farmId}
+                      style={[
+                        styles.farmOption, 
+                        selectedFarmId === farmId && styles.selectedFarmOption
+                      ]}
+                      onPress={() => {
+                        console.log(`Seleccionando granja: ${farmId} - ${farmName}`);
+                        setSelectedFarmId(farmId);
+                      }}
+                    >
+                      <Text 
+                        style={[
+                          styles.farmOptionText, 
+                          selectedFarmId === farmId && styles.selectedFarmOptionText
+                        ]}
+                      >
+                        {farmName}
+                      </Text>
+                      
+                      {farm._id && farm._id.startsWith('test-') && (
+                        <Text style={{color: '#888', fontSize: 12, marginTop: 4}}>
+                          (Granja de prueba)
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
                 <TouchableOpacity
-                  key={farmId}
-                  style={[
-                    styles.farmOption, 
-                    selectedFarmId === farmId && styles.selectedFarmOption
-                  ]}
+                  style={{
+                    marginTop: 15,
+                    backgroundColor: '#007BFF',
+                    padding: 10,
+                    borderRadius: 5,
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'center'
+                  }}
                   onPress={() => {
-                    console.log(`Seleccionando granja: ${farmId} - ${farmName}`);
-                    setSelectedFarmId(farmId);
+                    console.log('Navegando a pantalla de creación de granjas');
+                    router.push('/farms');
                   }}
                 >
-                  <Text 
-                    style={[
-                      styles.farmOptionText, 
-                      selectedFarmId === farmId && styles.selectedFarmOptionText
-                    ]}
-                  >
-                    {farmName}
-                  </Text>
+                  <Ionicons name="add-circle-outline" size={20} color="white" style={{marginRight: 5}} />
+                  <Text style={{color: 'white', fontWeight: '500'}}>Agregar Nueva Granja</Text>
                 </TouchableOpacity>
-              );
-            })}
+              </View>
+            ) : (
+              <View>
+                <Text style={styles.noFarmsText}>
+                  No hay granjas disponibles. Por favor, crea una granja primero.
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    marginTop: 15,
+                    backgroundColor: '#27ae60',
+                    padding: 10,
+                    borderRadius: 5,
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'center'
+                  }}
+                  onPress={() => {
+                    console.log('Navegando a pantalla de creación de granjas');
+                    router.push('/farms');
+                  }}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color="white" style={{marginRight: 5}} />
+                  <Text style={{color: 'white', fontWeight: '500'}}>Crear Nueva Granja</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-        ) : (
-          <Text style={styles.noFarmsText}>No hay granjas disponibles. Por favor, crea una granja primero.</Text>
         )}
 
         <View style={styles.buttonContainer}>

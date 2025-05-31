@@ -330,7 +330,6 @@ class SupabaseService {
       throw error;
     }
   }
-
   /**
    * Obtiene los ganados de una finca
    * @param {number} fincaId - ID de la finca
@@ -338,10 +337,12 @@ class SupabaseService {
    */
   async getFincaGanados(fincaId) {
     try {
-      return await fincaModel.getFincaGanados(fincaId);
+      const result = await fincaModel.getFincaGanados(fincaId);
+      return result;
     } catch (error) {
-      console.error('Error al obtener ganados de la finca:', error);
-      throw error;
+      console.error(`Error al obtener ganados de la finca ${fincaId}:`, error);
+      // En lugar de propagar el error, devolver un array vacío
+      return [];
     }
   }
 

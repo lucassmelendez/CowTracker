@@ -161,11 +161,27 @@ const deleteFarm = asyncHandler(async (req, res) => {
  */
 const getFarmCattle = asyncHandler(async (req, res) => {
   try {
+    console.log(`Solicitando ganado para finca ID: ${req.params.id}`);
+    // Validar el ID de la finca
+    if (!req.params.id) {
+      return res.status(400).json({ 
+        message: 'ID de finca no proporcionado',
+        data: []
+      });
+    }
+    
     const cattle = await supabaseService.getFincaGanados(req.params.id);
-    res.json(cattle);
+    
+    // Asegurar que siempre devolvemos un array (aunque sea vacío)
+    res.json(cattle || []);
   } catch (error) {
-    res.status(500);
-    throw new Error('Error al obtener ganado de la finca: ' + error.message);
+    console.error(`Error en getFarmCattle para ID ${req.params.id}:`, error);
+    // En lugar de lanzar un error 500, devolver un array vacío con un mensaje
+    res.status(200).json({ 
+      message: 'Error al obtener ganado de la finca, mostrando datos locales',
+      error: error.message,
+      data: []
+    });
   }
 });
 

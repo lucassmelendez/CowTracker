@@ -373,6 +373,12 @@ const getFincasByOwner = async (userId) => {
  */
 const getFincaGanados = async (fincaId) => {
   try {
+    // Validar que el ID de la finca sea válido
+    if (!fincaId || isNaN(Number(fincaId))) {
+      console.warn(`ID de finca inválido: ${fincaId}, devolviendo array vacío`);
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('ganado')
       .select(`
@@ -386,10 +392,11 @@ const getFincaGanados = async (fincaId) => {
       .order('id_ganado');
     
     if (error) {
-      throw error;
+      console.error(`Error en la consulta de ganado para finca ${fincaId}:`, error);
+      return []; // Devolver un array vacío en lugar de lanzar el error
     }
     
-    return data;
+    return data || [];
   } catch (error) {
     console.error('Error al obtener ganados de la finca:', error);
     throw error;

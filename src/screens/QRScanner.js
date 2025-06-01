@@ -1,66 +1,124 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { BarCodeScanner } from 'expo-barcode-scanner';
 import { qrScannerStyles } from '../styles/qrScannerStyles';
 
 const QRScanner = () => {
+  const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const getBarCodeScannerPermissions = async () => {
+      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      setHasPermission(status === 'granted');
+    };
+
+    getBarCodeScannerPermissions();
+  }, []);
+
+  const handleBarCodeScanned = ({ type, data }) => {
+    try {
+      setScanned(true);
+      
+      // Intentar parsear los datos del QR
+      const qrData = JSON.parse(data);
+      
+      if (qrData.deepLink) {
+        // Si tiene un deepLink, extraer el ID del ganado
+        const cattleId = qrData.deepLink.split('/').pop();
+        if (cattleId) {
+          router.push({
+            pathname: '/(tabs)/cattle-details',
+            params: { id: cattleId }
+          });
+          return;
+        }
+      }
+      
+      // Si no tiene deepLink pero tiene datos del ganado
+      if (qrData.data && qrData.data.id) {
+        router.push({
+          pathname: '/(tabs)/cattle-details',
+          params: { id: qrData.data.id }
+        });
+        return;
+      }
+
+      // Si no se pudo procesar el QR correctamente
+      Alert.alert(
+        'Error',
+        'El código QR no contiene información válida de ganado',
+        [{ text: 'OK', onPress: () => setScanned(false) }]
+      );
+    } catch (error) {
+      console.error('Error al procesar el código QR:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo procesar el código QR. Asegúrate de escanear un código QR válido de CowTracker.',
+        [{ text: 'OK', onPress: () => setScanned(false) }]
+      );
+    }
+  };
 
   const handleGoBack = () => {
     router.back();
   };
 
-  const simulateQRScan = () => {
-    setScanned(true);
-    
-    const mockData = JSON.stringify({ id: "12345", name: "Vaca de prueba" });
-    
-    Alert.alert(
-      'Código QR Simulado',
-      `Se ha simulado un escaneo de código QR con información de ganado.\n\n¿Desea ver los detalles?`,
-      [
-        { text: 'Cancelar', style: 'cancel', onPress: () => setScanned(false) },
-        { 
-          text: 'Ver Detalles', 
-          onPress: () => {
-            router.push(`/cattle-detail?id=12345`);
-          }
-        }
-      ]
+  if (hasPermission === null) {
+    return (
+      <View style={qrScannerStyles.container}>
+        <Text style={qrScannerStyles.message}>Solicitando permiso de cámara...</Text>
+      </View>
     );
-  };
+  }
+
+  if (hasPermission === false) {
+    return (
+      <View style={qrScannerStyles.container}>
+        <Text style={qrScannerStyles.message}>Sin acceso a la cámara</Text>
+        <TouchableOpacity 
+          style={qrScannerStyles.button} 
+          onPress={() => Linking.openSettings()}
+        >
+          <Text style={qrScannerStyles.buttonText}>Abrir Configuración</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={qrScannerStyles.container}>
-      <View style={qrScannerStyles.cameraSimulator}>
-        <View style={qrScannerStyles.cameraOverlay}>
-          <View style={qrScannerStyles.scannerFrame} />
-          <Text style={qrScannerStyles.simulatorText}>Vista previa de cámara</Text>
+      <BarCodeScanner
+        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+        style={qrScannerStyles.camera}
+      >
+        <View style={qrScannerStyles.overlay}>
+          <View style={qrScannerStyles.scanFrame} />
+          
+          <TouchableOpacity 
+            style={qrScannerStyles.backButton} 
+            onPress={handleGoBack}
+          >
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+
+          <Text style={qrScannerStyles.instructions}>
+            Coloca el código QR dentro del marco
+          </Text>
+
+          {scanned && (
+            <TouchableOpacity
+              style={qrScannerStyles.rescanButton}
+              onPress={() => setScanned(false)}
+            >
+              <Text style={qrScannerStyles.buttonText}>Escanear Otro</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      </View>
-      
-      <TouchableOpacity style={qrScannerStyles.backButton} onPress={handleGoBack}>
-        <Ionicons name="arrow-back" size={24} color="white" />
-      </TouchableOpacity>
-      
-      <View style={qrScannerStyles.messageContainer}>
-        <Ionicons name="information-circle-outline" size={40} color="#3498db" />
-        <Text style={qrScannerStyles.title}>Modo de Simulación</Text>
-        <Text style={qrScannerStyles.message}>
-          El escáner QR está funcionando en modo de simulación debido a problemas técnicos con el módulo de cámara.
-        </Text>
-        
-        <TouchableOpacity style={qrScannerStyles.scanButton} onPress={simulateQRScan}>
-          <Ionicons name="qr-code-outline" size={24} color="white" style={qrScannerStyles.buttonIcon} />
-          <Text style={qrScannerStyles.buttonText}>Simular escaneo QR</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={[qrScannerStyles.button, {backgroundColor: '#7f8c8d', marginTop: 10}]} onPress={handleGoBack}>
-          <Text style={qrScannerStyles.buttonText}>Volver</Text>
-        </TouchableOpacity>
-      </View>
+      </BarCodeScanner>
     </View>
   );
 };

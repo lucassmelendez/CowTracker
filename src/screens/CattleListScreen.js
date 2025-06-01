@@ -272,56 +272,56 @@ const CattleListScreen = () => {
   };
 
   const renderCattleItem = ({ item }) => {
+    // Función auxiliar para obtener el color del estado de salud
     const getStatusColor = (status) => {
-      switch (status?.toLowerCase()) {
-        case 'activo':
-          return colors.primary;
-        case 'vendido':
-          return colors.secondary;
-        case 'fallecido':
-          return colors.error;
+      switch (status) {
+        case 1: // Saludable
+          return '#4CAF50';
+        case 2: // Enfermo
+          return '#f44336';
+        case 3: // En tratamiento
+          return '#FF9800';
         default:
-          return colors.textLight;
+          return '#9E9E9E';
       }
     };
 
-    const getHealthStatusColor = (status) => {
-      switch (status?.toLowerCase()) {
-        case 'saludable':
-          return colors.primary;
-        case 'enfermo':
-          return colors.error;
-        case 'en tratamiento':
-          return colors.warning;
-        case 'en cuarentena':
-          return colors.info;
-        default:
-          return colors.textLight;
-      }
-    };
-
+    // Función auxiliar para formatear el estado de salud
     const formatStatus = (status) => {
-      if (!status) return 'No disponible';
-      return status.charAt(0).toUpperCase() + status.slice(1);
+      switch (status) {
+        case 1:
+          return 'Saludable';
+        case 2:
+          return 'Enfermo';
+        case 3:
+          return 'En tratamiento';
+        default:
+          return 'Desconocido';
+      }
     };
 
-    // Buscar el nombre de la granja si existe
-    const getFarmName = () => {
-      if (!item.farmId && !item.id_finca) return 'Sin granja asignada';
-      
-      // Si estamos en modo "granja específica", podemos usar el nombre de la granja seleccionada
-      if (selectedFarm && !selectedFarm.isSpecialOption && 
-          (selectedFarm._id === item.farmId || selectedFarm._id === item.id_finca)) {
-        return selectedFarm.name;
+    // Función auxiliar para formatear el tipo de producción
+    const formatProduccion = (id_produccion) => {
+      switch (id_produccion) {
+        case 1:
+          return 'Producción de Leche';
+        case 2:
+          return 'Producción de Carne';
+        default:
+          return 'Tipo no especificado';
       }
-      
-      // Si tenemos datos de finca anidados del modelo de Supabase
-      if (item.finca && item.finca.nombre) {
-        return item.finca.nombre;
+    };
+
+    // Función auxiliar para formatear el género
+    const formatGenero = (id_genero) => {
+      switch (id_genero) {
+        case 1:
+          return 'Macho';
+        case 2:
+          return 'Hembra';
+        default:
+          return 'No especificado';
       }
-      
-      // Compatibilidad con el modelo anterior
-      return item.farmName || `Granja: ${item.farmId || item.id_finca}`;
     };
 
     return (
@@ -329,19 +329,19 @@ const CattleListScreen = () => {
         style={cattleListStyles.cattleItem}
         onPress={() => router.push({
           pathname: '/(tabs)/cattle-details',
-          params: { id: item._id || item.id_ganado }
+          params: { id: item.id_ganado }
         })}
       >
         <View style={cattleListStyles.cattleHeader}>
           <Text style={cattleListStyles.cattleId}>
-            ID: {item.identificationNumber || item.numero_identificacion}
+            ID: {item.numero_identificacion || 'No disponible'}
           </Text>
           <View style={[
             cattleListStyles.statusBadge, 
-            { backgroundColor: getStatusColor(item.status || (item.estado_salud?.descripcion)) }
+            { backgroundColor: getStatusColor(item.id_estado_salud) }
           ]}>
             <Text style={cattleListStyles.statusText}>
-              {formatStatus(item.status || (item.estado_salud?.descripcion))}
+              {formatStatus(item.id_estado_salud)}
             </Text>
           </View>
         </View>
@@ -349,26 +349,27 @@ const CattleListScreen = () => {
         <View style={cattleListStyles.cattleBody}>
           <Text style={cattleListStyles.cattleTitle}>{item.nombre || 'Sin nombre'}</Text>
           <Text style={cattleListStyles.cattleType}>
-            {item.type || 'Tipo no especificado'} - {item.breed || 'Raza no especificada'}
+            {formatProduccion(item.id_produccion)}
           </Text>
           <Text style={cattleListStyles.cattleGender}>
-            {item.gender || (item.genero?.descripcion) || 'Género no especificado'}
+            {formatGenero(item.id_genero)}
           </Text>
-          <Text style={cattleListStyles.cattleWeight}>
-            {item.weight || 'Peso no disponible'} {item.weight ? 'kg' : ''}
-          </Text>
+          {item.precio_compra && (
+            <Text style={cattleListStyles.cattlePrice}>
+              Precio: ${item.precio_compra}
+            </Text>
+          )}
+          {item.nota && (
+            <Text style={cattleListStyles.cattleNotes} numberOfLines={2}>
+              Nota: {item.nota}
+            </Text>
+          )}
         </View>
 
-        <View style={cattleListStyles.cattleFooter}>
-          <View style={[
-            cattleListStyles.healthBadge, 
-            { backgroundColor: getHealthStatusColor(item.healthStatus || item.estado_salud?.descripcion) }
-          ]}>
-            <Text style={cattleListStyles.healthText}>
-              {formatStatus(item.healthStatus || (item.estado_salud?.descripcion) || 'No disponible')}
-            </Text>
-          </View>
-          <Text style={cattleListStyles.locationText}>{getFarmName()}</Text>
+        <View style={cattleListStyles.farmInfo}>
+          <Text style={cattleListStyles.farmName}>
+            Granja: {item.finca?.nombre || 'No asignada'}
+          </Text>
         </View>
       </TouchableOpacity>
     );

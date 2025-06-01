@@ -337,11 +337,24 @@ class SupabaseService {
    */
   async getFincaGanados(fincaId) {
     try {
+      console.log(`[SupabaseService] Solicitando ganados para finca ${fincaId}`);
       const result = await fincaModel.getFincaGanados(fincaId);
       return result;
     } catch (error) {
-      console.error(`Error al obtener ganados de la finca ${fincaId}:`, error);
-      // En lugar de propagar el error, devolver un array vacío
+      // Loguear el error con más detalle
+      console.error(`[SupabaseService] Error al obtener ganados de la finca ${fincaId}:`, {
+        message: error.message,
+        stack: error.stack,
+        originalError: error
+      });
+
+      // Si el error es específico de que la finca no existe, propagarlo
+      if (error.message.includes('no existe')) {
+        throw error;
+      }
+
+      // Para otros errores, devolver array vacío y loguear
+      console.warn(`[SupabaseService] Devolviendo array vacío debido a error en finca ${fincaId}`);
       return [];
     }
   }
@@ -396,4 +409,4 @@ class SupabaseService {
   }
 }
 
-module.exports = new SupabaseService(); 
+module.exports = new SupabaseService();

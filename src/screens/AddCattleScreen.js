@@ -61,125 +61,94 @@ const AddCattleScreen = (props) => {
   const [farms, setFarms] = useState([]);
   const [loadingFarms, setLoadingFarms] = useState(false);
   const [loadingCattle, setLoadingCattle] = useState(isEditMode);
-    // Datos de granja de prueba para asegurar que siempre haya al menos una granja disponible
-  const testFarms = [
-    { _id: 'test-farm-1', id_finca: 'test-farm-1', name: 'Granja de Prueba 1', nombre: 'Granja de Prueba 1' },
-    { _id: 'test-farm-2', id_finca: 'test-farm-2', name: 'Granja de Prueba 2', nombre: 'Granja de Prueba 2' }
-  ];
+
   // Función para cargar granjas de manera segura
   const loadFarms = async () => {
     try {
       setLoadingFarms(true);
       
-      // Asegurar que haya datos disponibles en caso de fallo
-      let defaultFarms = [
-        { _id: 'default-farm-1', id_finca: 'default-farm-1', name: 'Granja por defecto', nombre: 'Granja por defecto' }
-      ];
-      
       // Verificar si el usuario está autenticado
       if (!userInfo || !userInfo.uid) {
         console.warn('No hay información de usuario disponible');
-        setFarms(defaultFarms);
+        setFarms([]);
         return;
       }
       
       console.log('Cargando granjas para el usuario:', userInfo.uid);
       
       try {
-        // Intenta obtener las granjas a través de la API
-        const userFarms = await api.farms.getAll();
-        console.log('Respuesta de la API (farms.getAll):', userFarms);
-        
+        // Obtener el ID numérico del usuario
+        const { data: userNumericData, error: userNumericError } = await supabase
+          .from('usuario')
+          .select('id_usuario')
+          .eq('id_autentificar', userInfo.uid)
+          .single();
+
+        if (userNumericError) throw userNumericError;
+
+        // Obtener las granjas del usuario a través de la tabla usuario_finca
+        const { data: userFarms, error: farmsError } = await supabase
+          .from('usuario_finca')
+          .select(`
+            id_finca,
+            finca:finca(
+              id_finca,
+              nombre,
+              tamano
+            )
+          `)
+          .eq('id_usuario', userNumericData.id_usuario);
+
+        if (farmsError) throw farmsError;
+
         let finalFarms = [];
         
-        // Verificar y procesar los datos recibidos
-        if (userFarms && Array.isArray(userFarms)) {
-          // Filtrar para remover elementos nulos o indefinidos
-          const validFarms = userFarms.filter(farm => farm !== null && farm !== undefined);
-          
-          if (validFarms.length > 0) {
-            // Procesar y normalizar los datos de las granjas
-            finalFarms = validFarms.map((farm, index) => {
-              const farmId = farm._id || farm.id_finca || `api-farm-${index}`;
-              const farmName = farm.name || farm.nombre || `Granja ${index+1}`;
+        if (userFarms && userFarms.length > 0) {
+          // Procesar y normalizar los datos de las granjas
+          finalFarms = userFarms
+            .filter(userFarm => userFarm.finca) // Filtrar solo las que tienen datos de finca
+            .map((userFarm, index) => {
+              const farm = userFarm.finca;
+              const farmId = farm.id_finca;
+              const farmName = farm.nombre || `Granja ${index + 1}`;
               
               return {
-                ...farm,
                 _id: farmId,
                 id_finca: farmId,
                 name: farmName,
-                nombre: farmName
+                nombre: farmName,
+                tamano: farm.tamano || 0
               };
             });
-            
-            console.log(`Se procesaron ${finalFarms.length} granjas válidas`);
-          } else {
-            console.warn('La API devolvió un array vacío o sin elementos válidos');
-          }
-        } else if (userFarms && typeof userFarms === 'object') {
-          // Si es un objeto pero no un array, puede ser un objeto de datos
-          console.log('La API devolvió un objeto, intentando procesarlo...');
           
-          // Extraer propiedades que podrían contener un array de granjas
-          const possibleArrays = ['data', 'farms', 'items', 'results'];
-          
-          for (const key of possibleArrays) {
-            if (userFarms[key] && Array.isArray(userFarms[key])) {
-              console.log(`Encontrado array de granjas en propiedad: ${key}`);
-              finalFarms = userFarms[key].map((farm, index) => ({
-                ...farm,
-                _id: farm._id || farm.id_finca || `api-farm-${index}`,
-                name: farm.name || farm.nombre || `Granja ${index+1}`
-              }));
-              break;
-            }
-          }
-          
-          // Si no encontramos un array en ninguna propiedad común, tratar todo el objeto como una granja
-          if (finalFarms.length === 0 && (userFarms._id || userFarms.id_finca || userFarms.name || userFarms.nombre)) {
-            console.log('Procesando el objeto completo como una única granja');
-            finalFarms = [{
-              ...userFarms,
-              _id: userFarms._id || userFarms.id_finca || 'single-farm',
-              name: userFarms.name || userFarms.nombre || 'Granja Única'
-            }];
-          }
+          console.log(`Se procesaron ${finalFarms.length} granjas válidas`);
         } else {
-          console.warn('La API devolvió un formato de datos no reconocido:', userFarms);
+          console.log('El usuario no tiene granjas asignadas');
         }
         
-        // Si después de todo el procesamiento no tenemos granjas, usar las predeterminadas
-        if (!finalFarms || finalFarms.length === 0) {
-          console.log('No se pudieron procesar granjas válidas, usando granjas por defecto');
-          finalFarms = defaultFarms;
+        // Si no hay granjas, mostrar mensaje apropiado
+        if (finalFarms.length === 0) {
+          console.log('No se encontraron granjas para el usuario');
         }
         
-        // Agregar las granjas de prueba en entorno de desarrollo
-        if (process.env.NODE_ENV !== 'production' && Array.isArray(testFarms)) {
-          console.log('Agregando granjas de prueba en entorno de desarrollo');
-          finalFarms = [...finalFarms, ...testFarms];
-        }
-        
-        console.log(`Total granjas disponibles: ${finalFarms.length}`);
         setFarms(finalFarms);
         
         // Si hay granjas disponibles, establecer la primera como seleccionada
         if (finalFarms.length > 0 && !selectedFarmId) {
-          setSelectedFarmId(finalFarms[0]._id);
+          setSelectedFarmId(finalFarms[0].id_finca);
         }
         
       } catch (apiError) {
-        console.error('Error en la llamada API a getAll():', apiError);
-        setFarms(defaultFarms);
+        console.error('Error en la consulta de granjas:', apiError);
+        setFarms([]);
       }
     } catch (error) {
       console.error('Error general al cargar granjas:', error);
-      setFarms([
-        { _id: 'error-farm', id_finca: 'error-farm', name: 'Granja (error recuperado)', nombre: 'Granja (error recuperado)' }
-      ]);
+      setFarms([]);
     } finally {
       setLoadingFarms(false);
-    }  };
+    }
+  };
 
   // Verificar el número de vacas del usuario
   const checkCattleCount = async () => {
@@ -193,13 +162,39 @@ const AddCattleScreen = (props) => {
 
       if (userError) throw userError;
 
-      // Obtener el conteo de ganado específico para este usuario
-      const { data: cattle, error } = await supabase
+      // Obtener el ID numérico del usuario
+      const { data: userNumericData, error: userNumericError } = await supabase
+        .from('usuario')
+        .select('id_usuario')
+        .eq('id_autentificar', userInfo?.uid)
+        .single();
+
+      if (userNumericError) throw userNumericError;
+
+      // Obtener las granjas del usuario a través de la tabla usuario_finca
+      const { data: userFarms, error: farmsError } = await supabase
+        .from('usuario_finca')
+        .select('id_finca')
+        .eq('id_usuario', userNumericData.id_usuario);
+
+      if (farmsError) throw farmsError;
+
+      if (!userFarms || userFarms.length === 0) {
+        // Si el usuario no tiene granjas, no tiene ganado
+        setCattleCount(0);
+        return true;
+      }
+
+      // Extraer los IDs de las granjas
+      const farmIds = userFarms.map(farm => farm.id_finca);
+
+      // Obtener el conteo de ganado en las granjas del usuario
+      const { data: cattle, error: cattleError } = await supabase
         .from('ganado')
         .select('id_ganado')
-        .eq('id_usuario', userInfo?.uid);
+        .in('id_finca', farmIds);
       
-      if (error) throw error;
+      if (cattleError) throw cattleError;
       
       const count = cattle ? cattle.length : 0;
       setCattleCount(count);
@@ -214,7 +209,8 @@ const AddCattleScreen = (props) => {
       return true;
     } catch (error) {
       console.error('Error al verificar el número de vacas:', error);
-      return false;
+      // En caso de error, permitir continuar para no bloquear al usuario
+      return true;
     }
   };
 
@@ -393,6 +389,9 @@ const AddCattleScreen = (props) => {
       }
 
       try {
+        // Convertir selectedFarmId a número si es necesario
+        const farmIdNumeric = parseInt(selectedFarmId) || selectedFarmId;
+
         // Primero crear la información veterinaria
         const { data: infoVetData, error: infoVetError } = await supabase
           .from('informacion_veterinaria')
@@ -413,12 +412,14 @@ const AddCattleScreen = (props) => {
           numero_identificacion: parseInt(identifier),
           precio_compra: parseFloat(purchasePrice) || 0,
           nota: notes || '',
-          id_finca: selectedFarmId,
+          id_finca: farmIdNumeric,
           id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
           id_genero: gender === 'Macho' ? 1 : 2,
           id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
           id_produccion: tipoProduccion === 'leche' ? 1 : 2
         };
+        
+        console.log('Datos del ganado a insertar:', cattleData);
         
         // Insertar en la tabla ganado
         const { data, error } = await supabase
@@ -426,14 +427,33 @@ const AddCattleScreen = (props) => {
           .insert([cattleData])
           .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error de Supabase al insertar ganado:', error);
+          throw error;
+        }
+
+        console.log('Ganado insertado exitosamente:', data);
 
         // Si la inserción fue exitosa, mostrar mensaje y navegar
         Alert.alert('Éxito', 'Ganado registrado correctamente');
         router.back();
       } catch (supabaseError) {
-        console.error('Error al registrar ganado:', supabaseError.message);
-        Alert.alert('Error', 'No se pudo registrar el ganado. Por favor, intente nuevamente.');
+        console.error('Error al registrar ganado:', supabaseError);
+        
+        // Proporcionar mensajes de error más específicos
+        let errorMessage = 'No se pudo registrar el ganado. ';
+        
+        if (supabaseError.code === '23503') {
+          errorMessage += 'La granja seleccionada no es válida.';
+        } else if (supabaseError.code === '23505') {
+          errorMessage += 'El número de identificación ya existe.';
+        } else if (supabaseError.message) {
+          errorMessage += supabaseError.message;
+        } else {
+          errorMessage += 'Por favor, intente nuevamente.';
+        }
+        
+        Alert.alert('Error', errorMessage);
       }
     } catch (error) {
       console.error('Error al guardar ganado:', error);

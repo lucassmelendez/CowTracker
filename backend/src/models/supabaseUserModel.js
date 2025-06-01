@@ -19,6 +19,9 @@ const createUser = async (userData) => {
     let primerApellido = userData.primer_apellido;
     let segundoApellido = userData.segundo_apellido || '';
     
+    // Establecer is_premium por defecto como 0 (no premium)
+    const is_premium = userData.is_premium || 0;
+    
     // Si existen los campos de nombre individuales pero no el nombre completo
     if (!displayName && (primerNombre || primerApellido)) {
       displayName = [primerNombre, segundoNombre, primerApellido, segundoApellido]
@@ -111,8 +114,7 @@ const createUser = async (userData) => {
     let id_rol = 2; // Por defecto 'user'
     if (userData.role === 'admin') id_rol = 1;
     else if (userData.role === 'veterinario') id_rol = 3;
-    
-    // Guardar información adicional en la tabla usuario
+      // Guardar información adicional en la tabla usuario
     const { data: profileData, error: profileError } = await supabase
       .from('usuario')
       .insert({
@@ -121,7 +123,8 @@ const createUser = async (userData) => {
         primer_apellido: primerApellido,
         segundo_apellido: segundoApellido,
         id_rol: id_rol,
-        id_autentificar: uid
+        id_autentificar: uid,
+        is_premium: is_premium
       })
       .select()
       .single();
@@ -270,8 +273,12 @@ const updateUser = async (uid, userData) => {
     }
     
     const userId = userFind.id_usuario;
+      const updateData = { ...userData };
     
-    const updateData = { ...userData };
+    // Asegurarse de que is_premium sea un entero
+    if ('is_premium' in updateData) {
+      updateData.is_premium = parseInt(updateData.is_premium) || 0;
+    }
     
     // Para correo y contraseña, necesitamos otra estrategia porque updateUser requiere sesión
     
@@ -381,8 +388,7 @@ const updateUser = async (uid, userData) => {
       if (data.rol.id_rol === 1) role = 'admin';
       else if (data.rol.id_rol === 3) role = 'veterinario';
     }
-    
-    return {
+      return {
       uid,
       id_usuario: userId,
       email: userData.email || (authData ? authData.correo : ''),
@@ -390,7 +396,8 @@ const updateUser = async (uid, userData) => {
       primer_nombre: data.primer_nombre,
       segundo_nombre: data.segundo_nombre,
       primer_apellido: data.primer_apellido,
-      segundo_apellido: data.segundo_apellido
+      segundo_apellido: data.segundo_apellido,
+      is_premium: data.is_premium || 0
     };
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
@@ -469,8 +476,7 @@ const getAllUsers = async () => {
         if (user.rol.id_rol === 1) role = 'admin';
         else if (user.rol.id_rol === 3) role = 'veterinario';
       }
-      
-      return {
+        return {
         uid: user.id_autentificar,
         id_usuario: user.id_usuario,
         email: user.autentificar ? user.autentificar.correo : '',
@@ -479,7 +485,8 @@ const getAllUsers = async () => {
         primer_nombre: user.primer_nombre,
         segundo_nombre: user.segundo_nombre,
         primer_apellido: user.primer_apellido,
-        segundo_apellido: user.segundo_apellido
+        segundo_apellido: user.segundo_apellido,
+        is_premium: user.is_premium || 0
       };
     });
   } catch (error) {
@@ -545,10 +552,10 @@ const changeUserRole = async (uid, role) => {
       email: data.autentificar ? data.autentificar.correo : '',
       role: roleStr,
       name: `${data.primer_nombre} ${data.primer_apellido}`,
-      primer_nombre: data.primer_nombre,
-      segundo_nombre: data.segundo_nombre,
+      primer_nombre: data.primer_nombre,      segundo_nombre: data.segundo_nombre,
       primer_apellido: data.primer_apellido,
-      segundo_apellido: data.segundo_apellido
+      segundo_apellido: data.segundo_apellido,
+      is_premium: data.is_premium || 0
     };
   } catch (error) {
     console.error('Error al cambiar rol de usuario:', error);

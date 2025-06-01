@@ -179,26 +179,42 @@ const AddCattleScreen = (props) => {
       ]);
     } finally {
       setLoadingFarms(false);
-    }
-  };
-  
-  // Cargar granjas cuando se inicia el componente  // Verificar el número de vacas del usuario
+    }  };
+
+  // Verificar el número de vacas del usuario
   const checkCattleCount = async () => {
     try {
+      // Primero verificar si el usuario es premium
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('is_premium')
+        .eq('id', userInfo?.uid)
+        .single();
+
+      if (userError) throw userError;
+
+      // Obtener el conteo de ganado específico para este usuario
       const { data: cattle, error } = await supabase
         .from('ganado')
-        .select('id_ganado');
+        .select('id_ganado')
+        .eq('id_usuario', userInfo?.uid);
       
       if (error) throw error;
       
       const count = cattle ? cattle.length : 0;
       setCattleCount(count);
       
-      if (count >= 2 && !isEditMode) {
+      // Si no es premium y ya tiene 2 o más cabezas de ganado, mostrar advertencia
+      if (!userData?.is_premium && count >= 2 && !isEditMode) {
         setShowCattleWarning(true);
+        // Retornar false para evitar que continúe con el registro
+        return false;
       }
+
+      return true;
     } catch (error) {
       console.error('Error al verificar el número de vacas:', error);
+      return false;
     }
   };
 
@@ -344,10 +360,16 @@ const AddCattleScreen = (props) => {
       } catch (e) {
         console.error('No se pudo navegar:', e);
       }
-    }
-  };
+    }  };
+
   const handleSave = async () => {
     try {
+      // Verificar límite de ganado antes de continuar
+      const canAddCattle = await checkCattleCount();
+      if (!canAddCattle) {
+        return;
+      }
+
       // Validaciones con mensajes específicos
       if (!identifier) {
         Alert.alert('Campo requerido', 'Por favor, ingresa un número de identificación para el ganado');
@@ -703,9 +725,7 @@ const AddCattleScreen = (props) => {
               </View>
             </View>
           </View>
-        </Modal>
-
-        {/* Modal de advertencia de cantidad de ganado */}
+        </Modal>        {/* Modal de advertencia de cantidad de ganado */}
         <Modal
           animationType="fade"
           transparent={true}
@@ -713,13 +733,27 @@ const AddCattleScreen = (props) => {
           onRequestClose={() => setShowCattleWarning(false)}
         >
           <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>
-                Advertencia
-              </Text>
-              <Text style={styles.modalText}>
-                Ya tienes {cattleCount} cabezas de ganado registradas. ¿Deseas continuar con el registro?
-              </Text>
+            <View style={[styles.modalContent, { backgroundColor: '#fff' }]}>
+              <View style={styles.modalHeader}>
+                <Ionicons name="warning" size={40} color="#f39c12" />
+                <Text style={[styles.modalTitle, { color: '#2c3e50', marginTop: 10 }]}>
+                  Límite de Versión Gratuita
+                </Text>
+              </View>
+              
+              <View style={styles.modalBody}>
+                <Text style={[styles.modalText, { fontSize: 16, lineHeight: 24 }]}>
+                  Has alcanzado el límite de <Text style={{ fontWeight: 'bold', color: '#e67e22' }}>2 cabezas de ganado</Text> de la versión gratuita.
+                </Text>
+                <Text style={[styles.modalText, { marginTop: 10, color: '#7f8c8d' }]}>
+                  Actualiza a Premium para obtener:
+                </Text>
+                <View style={styles.benefitsList}>
+                  <Text style={styles.benefitItem}>• Registro ilimitado de ganado</Text>
+                  <Text style={styles.benefitItem}>• Acceso a reportes avanzados</Text>
+                  <Text style={styles.benefitItem}>• Exportación de datos</Text>
+                </View>
+              </View>
               
               <View style={styles.modalButtonsContainer}>
                 <TouchableOpacity

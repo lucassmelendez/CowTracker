@@ -8,7 +8,8 @@ import {
   Modal,
   ActivityIndicator,
   Platform,
-  Share
+  Share,
+  Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -104,16 +105,26 @@ const CattleDetailScreen = () => {
     });
   };
 
+  const generateQRContent = () => {
+    // Crear una URL profunda que apunte a la página de detalles
+    const deepLink = `cowtracker://cattle/${cattle?.id_ganado}`;
+    
+    return JSON.stringify({
+      deepLink,
+      data: {
+        id: cattle?.id_ganado,
+        identifier: cattle?.numero_identificacion,
+        name: cattle?.nombre
+      }
+    });
+  };
+
   const handleShareQR = async () => {
     try {
-      const qrData = JSON.stringify({
-        id: cattle.id_ganado,
-        identifier: cattle.numero_identificacion,
-        name: cattle.nombre
-      });
+      const deepLink = `cowtracker://cattle/${cattle?.id_ganado}`;
       
       await Share.share({
-        message: `Información del ganado: ${cattle.nombre} (ID: ${cattle.numero_identificacion})`,
+        message: `Escanea este código QR para ver los detalles del ganado: ${cattle.nombre} (ID: ${cattle.numero_identificacion})\n\nEnlace directo: ${deepLink}`,
         title: 'Código QR del Ganado'
       });
     } catch (error) {
@@ -328,11 +339,7 @@ const CattleDetailScreen = () => {
             
             <View style={cattleDetailStyles.qrContainer}>
               <QRCode
-                value={JSON.stringify({
-                  id: cattle?.id_ganado,
-                  identifier: cattle?.numero_identificacion,
-                  name: cattle?.nombre
-                })}
+                value={generateQRContent()}
                 size={200}
                 backgroundColor="white"
                 color="black"
@@ -342,6 +349,10 @@ const CattleDetailScreen = () => {
             <Text style={cattleDetailStyles.qrInfo}>
               ID: {cattle?.numero_identificacion}{'\n'}
               Nombre: {cattle?.nombre}
+            </Text>
+
+            <Text style={cattleDetailStyles.qrInstructions}>
+              Escanea este código QR para ver los detalles del ganado directamente en la aplicación
             </Text>
 
             <View style={cattleDetailStyles.qrButtonsContainer}>

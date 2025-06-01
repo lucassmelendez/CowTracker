@@ -215,8 +215,16 @@ export const cattleDetailStyles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     lineHeight: 24,
+  },
+  qrInstructions: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    fontStyle: 'italic',
   },
   qrButtonsContainer: {
     flexDirection: 'row',

@@ -1,87 +1,97 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors } from './commonStyles';
-
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const scanFrameSize = SCREEN_WIDTH * 0.7;
 
 export const qrScannerStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: '#000',
   },
-  camera: {
-    flex: 1,
+  cameraSimulator: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#222',
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
+  cameraOverlay: {
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
-  scanFrame: {
-    width: scanFrameSize,
-    height: scanFrameSize,
+  scannerFrame: {
+    width: 250,
+    height: 250,
     borderWidth: 2,
     borderColor: colors.primary,
     backgroundColor: 'transparent',
-    borderRadius: 12,
+  },
+  simulatorText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 16,
+    marginTop: 20,
+  },
+  messageContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 20,
+    right: 20,
+    backgroundColor: colors.white,
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginBottom: 10,
+    color: colors.text,
+  },
+  message: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: colors.text,
+  },
+  button: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    width: '100%',
+  },
+  scanButton: {
+    backgroundColor: colors.secondary,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  buttonIcon: {
+    marginRight: 10,
+  },
+  buttonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   backButton: {
     position: 'absolute',
     top: 40,
     left: 20,
-    padding: 10,
-    borderRadius: 30,
     backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  instructions: {
-    position: 'absolute',
-    bottom: SCREEN_HEIGHT * 0.2,
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    padding: 15,
-    borderRadius: 8,
-    width: '80%',
-  },
-  rescanButton: {
-    position: 'absolute',
-    bottom: SCREEN_HEIGHT * 0.1,
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 5,
-      },
-    }),
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  message: {
-    color: colors.text,
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 20,
-    marginHorizontal: 20,
-  },
-  button: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 15,
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
   },
 }); 

@@ -373,33 +373,67 @@ const getFincasByOwner = async (userId) => {
  */
 const getFincaGanados = async (fincaId) => {
   try {
-    // Validar que el ID de la finca sea válido
-    if (!fincaId || isNaN(Number(fincaId))) {
-      console.warn(`ID de finca inválido: ${fincaId}, devolviendo array vacío`);
-      return [];
+    // Validación estricta del ID de finca
+    if (!fincaId) {
+      console.error('getFincaGanados: ID de finca no proporcionado');
+      throw new Error('ID de finca es requerido');
+    }
+
+    // Asegurar que el ID es un número
+    const numericFincaId = Number(fincaId);
+    if (isNaN(numericFincaId)) {
+      console.error(`getFincaGanados: ID de finca inválido: "${fincaId}"`);
+      throw new Error('ID de finca debe ser un número');
+    }
+
+    console.log(`getFincaGanados: Consultando finca ${numericFincaId}`);
+    
+    // Verificar si la finca existe
+    const { data: finca, error: fincaError } = await supabase
+      .from('finca')
+      .select('id_finca, nombre')
+      .eq('id_finca', numericFincaId)
+      .single();
+      
+    if (fincaError) {
+      console.error(`getFincaGanados: Error al verificar finca ${numericFincaId}:`, fincaError);
+      throw new Error(`Error al verificar finca: ${fincaError.message}`);
     }
     
+    if (!finca) {
+      console.error(`getFincaGanados: La finca ${numericFincaId} no existe en la base de datos`);
+      throw new Error(`La finca ${numericFincaId} no existe`);
+    }
+    
+    console.log(`getFincaGanados: Finca ${numericFincaId} (${finca.nombre}) encontrada, buscando ganado...`);
+
+    // Consultar ganado con todas las relaciones
     const { data, error } = await supabase
       .from('ganado')
       .select(`
         *,
+        finca:finca(*),
         informacion_veterinaria:informacion_veterinaria(*),
         produccion:produccion(*),
         estado_salud:estado_salud(*),
         genero:genero(*)
       `)
-      .eq('id_finca', fincaId)
+      .eq('id_finca', numericFincaId)
       .order('id_ganado');
     
     if (error) {
-      console.error(`Error en la consulta de ganado para finca ${fincaId}:`, error);
-      return []; // Devolver un array vacío en lugar de lanzar el error
+      console.error(`getFincaGanados: Error en la consulta de ganado para finca ${numericFincaId}:`, error);
+      throw new Error(`Error al consultar ganado: ${error.message}`);
     }
     
+    const cattleCount = data ? data.length : 0;
+    console.log(`getFincaGanados: Encontrados ${cattleCount} ganados para finca ${numericFincaId}`);
+    
+    // Asegurar que siempre devolvemos un array
     return data || [];
   } catch (error) {
-    console.error('Error al obtener ganados de la finca:', error);
-    throw error;
+    console.error(`getFincaGanados: Error general al obtener ganados de la finca ${fincaId}:`, error);
+    throw error; // Propagar el error para que sea manejado en capas superiores
   }
 };
 
@@ -503,4 +537,4 @@ module.exports = {
   getFincaGanados,
   getFincaTrabajadores,
   getFincaVeterinarios
-}; 
+};

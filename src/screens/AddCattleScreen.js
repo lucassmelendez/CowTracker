@@ -17,6 +17,7 @@ import { getShadowStyle } from '../utils/styles';
 import { useAuth } from '../components/AuthContext';
 import FarmSelector from '../components/FarmSelector';
 import api from '../services/api';
+import { supabase } from '../config/supabase';
 
 const AddCattleScreen = (props) => {
   const router = useRouter();
@@ -35,8 +36,6 @@ const AddCattleScreen = (props) => {
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
   const [name, setName] = useState('');
-  const [type, setType] = useState('');
-  const [breed, setBreed] = useState('');
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
   const [location, setLocation] = useState('');
@@ -45,6 +44,7 @@ const AddCattleScreen = (props) => {
   const [selectedFarmId, setSelectedFarmId] = useState('');
   const [healthStatus, setHealthStatus] = useState('saludable');
   const [status, setStatus] = useState('activo');
+  const [tipoProduccion, setTipoProduccion] = useState('leche');
   
   // Estados para fecha
   const [dateOfBirth, setDateOfBirth] = useState(new Date());
@@ -204,14 +204,13 @@ const AddCattleScreen = (props) => {
           // Establecer todos los valores del formulario desde los datos del ganado
           setIdentifier(cattleData.identificationNumber || '');
           setName(cattleData.name || '');
-          setType(cattleData.type || '');
-          setBreed(cattleData.breed || '');
           setGender(cattleData.gender || '');
           setWeight(cattleData.weight ? cattleData.weight.toString() : '');
           setNotes(cattleData.notes || '');
           setPurchasePrice(cattleData.purchasePrice ? cattleData.purchasePrice.toString() : '');
           setStatus(cattleData.status || 'activo');
           setHealthStatus(cattleData.healthStatus || 'saludable');
+          setTipoProduccion(cattleData.tipoProduccion || 'leche');
           
           // Establecer fecha de nacimiento
           if (cattleData.birthDate) {
@@ -328,22 +327,12 @@ const AddCattleScreen = (props) => {
     try {
       // Validaciones con mensajes específicos
       if (!identifier) {
-        Alert.alert('Campo requerido', 'Por favor, ingresa un identificador para el ganado');
+        Alert.alert('Campo requerido', 'Por favor, ingresa un número de identificación para el ganado');
         return;
       }
       
       if (!name) {
         Alert.alert('Campo requerido', 'Por favor, ingresa un nombre para el ganado');
-        return;
-      }
-      
-      if (!type) {
-        Alert.alert('Campo requerido', 'Por favor, selecciona el tipo de ganado');
-        return;
-      }
-      
-      if (!breed) {
-        Alert.alert('Campo requerido', 'Por favor, ingresa la raza del ganado');
         return;
       }
       
@@ -357,100 +346,50 @@ const AddCattleScreen = (props) => {
         Alert.alert('Error de sesión', 'No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.');
         return;
       }
-      
-      // Validar y analizar fechas de texto si es necesario
-      let birthDateToSave = dateOfBirth || new Date();
-      let purchaseDateToSave = purchaseDate || new Date();
-      
-      if (dateOfBirthText) {
-        const parsedBirthDate = parseDate(dateOfBirthText);
-        if (parsedBirthDate && !isNaN(parsedBirthDate.getTime())) {
-          birthDateToSave = parsedBirthDate;
-        }
-      }
-      
-      if (purchaseDateText) {
-        const parsedPurchaseDate = parseDate(purchaseDateText);
-        if (parsedPurchaseDate && !isNaN(parsedPurchaseDate.getTime())) {
-          purchaseDateToSave = parsedPurchaseDate;
-        }
-      }
-        // Crear una estructura de datos compatible con ambos modelos (MongoDB y Supabase)
-      const cattleData = {
-        // Campos para compatibilidad con MongoDB
-        identificationNumber: identifier,
-        name,
-        type,
-        breed,
-        gender,
-        weight: parseFloat(weight) || 0,
-        location: {
-          area: location || '',
-          farm: selectedFarmId
-        },
-        notes,
-        purchasePrice: parseFloat(purchasePrice) || 0,
-        birthDate: birthDateToSave,
-        purchaseDate: purchaseDateToSave,
-        status: status || 'activo',
-        healthStatus: healthStatus || 'saludable',
-        owner: userInfo.uid,
-        farmId: selectedFarmId,
+
+      try {
+        // Primero crear la información veterinaria
+        const { data: infoVetData, error: infoVetError } = await supabase
+          .from('informacion_veterinaria')
+          .insert({
+            fecha_tratamiento: new Date().toISOString(),
+            diagnostico: healthStatus === 'Enfermo' ? 'Requiere revisión' : 'Sin diagnóstico',
+            tratamiento: '',
+            nota: notes || ''
+          })
+          .select()
+          .single();
+
+        if (infoVetError) throw infoVetError;
+
+        // Crear estructura de datos para el ganado
+        const cattleData = {
+          nombre: name,
+          numero_identificacion: parseInt(identifier),
+          precio_compra: parseFloat(purchasePrice) || 0,
+          nota: notes || '',
+          id_finca: selectedFarmId,
+          id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
+          id_genero: gender === 'Macho' ? 1 : 2,
+          id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
+          id_produccion: tipoProduccion === 'leche' ? 1 : 2
+        };
         
-        // Campos para compatibilidad con Supabase
-        nombre: name,
-        numero_identificacion: identifier,
-        precio_compra: parseFloat(purchasePrice) || 0,
-        nota: notes,
-        id_finca: selectedFarmId,
-        // Datos para relaciones
-        genero: gender,
-        estado_salud: healthStatus || 'saludable',
-        // Información adicional como objetos anidados
-        informacion_veterinaria: {
-          fecha_tratamiento: new Date().toISOString(),
-          diagnostico: 'Inicial',
-          tratamiento: '',
-          nota: 'Registro inicial'
-        }
-      };
-      
-      if (isEditMode) {
-        // Actualizar ganado existente usando la API
-        await api.cattle.update(cattleId, cattleData);
-      } else {
-        // Crear nuevo ganado usando la API
-        await api.cattle.create(cattleData);
+        // Insertar en la tabla ganado
+        const { data, error } = await supabase
+          .from('ganado')
+          .insert([cattleData])
+          .select();
+
+        if (error) throw error;
+
+        // Si la inserción fue exitosa, mostrar mensaje y navegar
+        Alert.alert('Éxito', 'Ganado registrado correctamente');
+        router.back();
+      } catch (supabaseError) {
+        console.error('Error al registrar ganado:', supabaseError.message);
+        Alert.alert('Error', 'No se pudo registrar el ganado. Por favor, intente nuevamente.');
       }
-        Alert.alert(
-        isEditMode ? 'Ganado Actualizado' : 'Ganado Agregado',
-        isEditMode ? 'Los datos se han actualizado correctamente.' : 'El ganado se ha agregado correctamente.',
-        [{ 
-          text: 'OK', 
-          onPress: () => {
-            // Usar diferente navegación según plataforma y disponibilidad
-            try {
-              if (router && typeof router.back === 'function') {
-                router.back();
-              } else if (router && typeof router.navigate === 'function') {
-                router.navigate('/(tabs)');
-              } else {
-                console.log('Navegación no disponible, usando enfoque alternativo');
-                // Intento alternativo para web
-                router.push('/(tabs)');
-              }
-            } catch (navError) {
-              console.error('Error durante la navegación:', navError);
-              // Último intento
-              try {
-                router.push('/');
-              } catch (e) {
-                console.error('No se pudo navegar:', e);
-              }
-            }
-          } 
-        }]
-      );
     } catch (error) {
       console.error('Error al guardar ganado:', error);
       Alert.alert('Error', 'No se pudo guardar el ganado. Inténtalo de nuevo.');
@@ -525,12 +464,13 @@ const AddCattleScreen = (props) => {
       <View style={styles.formContainer}>
         <Text style={styles.sectionTitle}>Información básica</Text>
 
-        <Text style={styles.label}>Identificador *</Text>
+        <Text style={styles.label}>Número de Identificación *</Text>
         <TextInput
           style={styles.input}
           value={identifier}
           onChangeText={setIdentifier}
-          placeholder="Ej. BOV-2023-001"
+          placeholder="Número de identificación"
+          keyboardType="numeric"
         />
 
         <Text style={styles.label}>Nombre *</Text>
@@ -541,141 +481,59 @@ const AddCattleScreen = (props) => {
           placeholder="Nombre del animal"
         />
 
-        <Text style={styles.label}>Tipo *</Text>
-        <TextInput
-          style={styles.input}
-          value={type}
-          onChangeText={setType}
-          placeholder="Ej. Vaca, Toro, Novillo"
-        />
-
-        <Text style={styles.label}>Raza *</Text>
-        <TextInput
-          style={styles.input}
-          value={breed}
-          onChangeText={setBreed}
-          placeholder="Ej. Holstein, Jersey, Angus"
-        />
-
         <Text style={styles.label}>Género</Text>
-        <TextInput
-          style={styles.input}
-          value={gender}
-          onChangeText={setGender}
-          placeholder="Ej. Macho, Hembra"
-        />
-
-        <Text style={styles.label}>Fecha de nacimiento</Text>
-        <View style={styles.dateInputContainer}>
-          <TextInput
-            style={styles.dateInput}
-            value={dateOfBirthText}
-            onChangeText={setDateOfBirthText}
-            placeholder="DD/MM/AAAA"
-            keyboardType="numbers-and-punctuation"
-          />
-          <TouchableOpacity 
-            style={styles.calendarButton}
-            onPress={() => setShowDateOfBirthPicker(true)}
-          >
-            <Ionicons name="calendar-outline" size={24} color="#27ae60" />
-          </TouchableOpacity>
-        </View>
-        
-        {showDateOfBirthPicker && (
-          <DateTimePicker
-            value={dateOfBirth}
-            mode="date"
-            display="default"
-            onChange={onChangeDateOfBirth}
-          />
-        )}
-
-        <Text style={styles.label}>Peso (kg)</Text>
-        <TextInput
-          style={styles.input}
-          value={weight}
-          onChangeText={setWeight}
-          placeholder="Peso en kilogramos"
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Ubicación</Text>
-        <TextInput
-          style={styles.input}
-          value={location}
-          onChangeText={setLocation}
-          placeholder="Ej. Potrero Norte, Establo 2"
-        />
-
-        <Text style={styles.sectionTitle}>Estado y Salud</Text>
-        
-        <Text style={styles.label}>Estado</Text>
         <View style={styles.optionsContainer}>
-          {['activo', 'vendido', 'fallecido'].map(option => (
+          {['Macho', 'Hembra'].map(option => (
             <TouchableOpacity
               key={option}
-              style={[styles.optionButton, status === option && styles.selectedOption]}
-              onPress={() => setStatus(option)}
+              style={[styles.optionButton, gender === option && styles.selectedOption]}
+              onPress={() => setGender(option)}
             >
-              <Text style={[styles.optionText, status === option && styles.selectedOptionText]}>
-                {option.charAt(0).toUpperCase() + option.slice(1)}
+              <Text style={[styles.optionText, gender === option && styles.selectedOptionText]}>
+                {option}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-        
+
         <Text style={styles.label}>Estado de Salud</Text>
         <View style={styles.optionsContainer}>
-          {['saludable', 'enfermo', 'en tratamiento', 'en cuarentena'].map(option => (
+          {['Saludable', 'Enfermo', 'En tratamiento'].map(option => (
             <TouchableOpacity
               key={option}
               style={[styles.optionButton, healthStatus === option && styles.selectedOption]}
               onPress={() => setHealthStatus(option)}
             >
               <Text style={[styles.optionText, healthStatus === option && styles.selectedOptionText]}>
-                {option.charAt(0).toUpperCase() + option.slice(1)}
+                {option}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-
-        <Text style={styles.sectionTitle}>Información económica</Text>
-
-        <Text style={styles.label}>Fecha de compra</Text>
-        <View style={styles.dateInputContainer}>
-          <TextInput
-            style={styles.dateInput}
-            value={purchaseDateText}
-            onChangeText={setPurchaseDateText}
-            placeholder="DD/MM/AAAA"
-            keyboardType="numbers-and-punctuation"
-          />
-          <TouchableOpacity 
-            style={styles.calendarButton}
-            onPress={() => setShowPurchaseDatePicker(true)}
-          >
-            <Ionicons name="calendar-outline" size={24} color="#27ae60" />
-          </TouchableOpacity>
-        </View>
-
-        {showPurchaseDatePicker && (
-          <DateTimePicker
-            value={purchaseDate}
-            mode="date"
-            display="default"
-            onChange={onChangePurchaseDate}
-          />
-        )}
 
         <Text style={styles.label}>Precio de compra</Text>
         <TextInput
           style={styles.input}
           value={purchasePrice}
           onChangeText={setPurchasePrice}
-          placeholder="Ej. 1200"
+          placeholder="Precio de compra"
           keyboardType="numeric"
         />
+
+        <Text style={styles.label}>Tipo de Producción</Text>
+        <View style={styles.optionsContainer}>
+          {['Leche', 'Carne'].map(option => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, tipoProduccion === option.toLowerCase() && styles.selectedOption]}
+              onPress={() => setTipoProduccion(option.toLowerCase())}
+            >
+              <Text style={[styles.optionText, tipoProduccion === option.toLowerCase() && styles.selectedOptionText]}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={styles.label}>Notas</Text>
         <TextInput
@@ -703,11 +561,10 @@ const AddCattleScreen = (props) => {
                   Selecciona una granja ({farms.length} disponibles):
                 </Text>
                 {farms.map((farm, index) => {
-                  // Verificación de seguridad para evitar errores con datos undefined
                   if (!farm) return null;
                   
-                  const farmId = farm._id || farm.id_finca || `farm-${index}`;
-                  const farmName = farm.name || farm.nombre || `Granja ${index+1}`;
+                  const farmId = farm.id_finca || `farm-${index}`;
+                  const farmName = farm.nombre || `Granja ${index+1}`;
                   
                   return (
                     <TouchableOpacity
@@ -735,14 +592,7 @@ const AddCattleScreen = (props) => {
               <View>
                 <Text style={styles.noFarmsText}>No hay granjas disponibles. Por favor, crea una granja primero.</Text>
                 <TouchableOpacity
-                  style={{
-                    marginTop: 15, 
-                    backgroundColor: '#27ae60',
-                    paddingVertical: 10,
-                    paddingHorizontal: 15,
-                    borderRadius: 5,
-                    alignItems: 'center'
-                  }}
+                  style={styles.createFarmButton}
                   onPress={() => {
                     try {
                       router.push('/(tabs)/farms');
@@ -752,7 +602,7 @@ const AddCattleScreen = (props) => {
                     }
                   }}
                 >
-                  <Text style={{color: 'white', fontWeight: '500'}}>Crear Granja</Text>
+                  <Text style={styles.createFarmButtonText}>Crear Granja</Text>
                 </TouchableOpacity>
               </View>
             )}

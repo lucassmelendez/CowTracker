@@ -162,26 +162,64 @@ const deleteFarm = asyncHandler(async (req, res) => {
  */
 const getFarmCattle = asyncHandler(async (req, res) => {
   try {
-    console.log(`Solicitando ganado para finca ID: ${req.params.id}`);
-    // Validar el ID de la finca
-    if (!req.params.id) {
+    const fincaId = req.params.id;
+    console.log(`[FarmController] Solicitando ganado para finca ID: ${fincaId}`);
+    
+    // Validación de entrada
+    if (!fincaId) {
+      console.warn('[FarmController] ID de finca no proporcionado');
       return res.status(400).json({ 
+        success: false,
         message: 'ID de finca no proporcionado',
-        data: []
+        data: [],
+        metadata: { requestedFarmId: fincaId }
+      });
+    }
+
+    console.log(`[FarmController] Buscando ganado para finca ${fincaId} con usuario ${req.user.uid}`);
+    const cattle = await supabaseService.getFincaGanados(fincaId);
+    
+    // Estructura de respuesta mejorada
+    const response = {
+      success: true,
+      data: cattle || [],
+      message: cattle.length === 0 ? `No se encontró ganado para la finca ${fincaId}` : `Se encontraron ${cattle.length} registros de ganado`,
+      metadata: {
+        farmId: fincaId,
+        count: cattle ? cattle.length : 0,
+        userId: req.user.uid,
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    console.log(`[FarmController] Respondiendo con ${response.data.length} registros de ganado para finca ${fincaId}`);
+    return res.json(response);
+    
+  } catch (error) {
+    console.error(`[FarmController] Error en getFarmCattle para ID ${req.params.id}:`, error);
+    
+    // Manejar errores específicos
+    if (error.message.includes('no existe')) {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+        data: [],
+        metadata: {
+          farmId: req.params.id,
+          error: 'FARM_NOT_FOUND'
+        }
       });
     }
     
-    const cattle = await supabaseService.getFincaGanados(req.params.id);
-    
-    // Asegurar que siempre devolvemos un array (aunque sea vacío)
-    res.json(cattle || []);
-  } catch (error) {
-    console.error(`Error en getFarmCattle para ID ${req.params.id}:`, error);
-    // En lugar de lanzar un error 500, devolver un array vacío con un mensaje
-    res.status(200).json({ 
-      message: 'Error al obtener ganado de la finca, mostrando datos locales',
-      error: error.message,
-      data: []
+    // Para otros errores, devolver error 500
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener ganado de la finca',
+      data: [],
+      metadata: {
+        farmId: req.params.id,
+        error: 'INTERNAL_SERVER_ERROR'
+      }
     });
   }
 });
@@ -285,4 +323,4 @@ module.exports = {
   addVeterinarianToFarm,
   removeWorkerFromFarm,
   removeVeterinarianFromFarm
-}; 
+};

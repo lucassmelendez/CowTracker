@@ -7,13 +7,15 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
-  Platform
+  Platform,
+  Share
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { cattleDetailStyles } from '../styles/cattleDetailStyles';
 import { useAuth } from '../components/AuthContext';
 import { supabase } from '../config/supabase';
+import QRCode from 'react-native-qrcode-svg';
 
 const CattleDetailScreen = () => {
   const router = useRouter();
@@ -25,6 +27,7 @@ const CattleDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
 
   useEffect(() => {
     loadCattleDetails();
@@ -99,6 +102,23 @@ const CattleDetailScreen = () => {
       pathname: '/edit-cattle',
       params: { id: cattleId }
     });
+  };
+
+  const handleShareQR = async () => {
+    try {
+      const qrData = JSON.stringify({
+        id: cattle.id_ganado,
+        identifier: cattle.numero_identificacion,
+        name: cattle.nombre
+      });
+      
+      await Share.share({
+        message: `Información del ganado: ${cattle.nombre} (ID: ${cattle.numero_identificacion})`,
+        title: 'Código QR del Ganado'
+      });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo compartir el código QR');
+    }
   };
 
   if (loading) {
@@ -248,6 +268,17 @@ const CattleDetailScreen = () => {
             <Text style={cattleDetailStyles.buttonText}>Eliminar</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Botón QR */}
+        <View style={cattleDetailStyles.qrButtonContainer}>
+          <TouchableOpacity 
+            style={cattleDetailStyles.qrButton}
+            onPress={() => setQrModalVisible(true)}
+          >
+            <Ionicons name="qr-code-outline" size={24} color="#fff" />
+            <Text style={cattleDetailStyles.buttonText}>Generar QR</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       {/* Modal de Confirmación de Eliminación */}
@@ -278,6 +309,55 @@ const CattleDetailScreen = () => {
                 }}
               >
                 <Text style={cattleDetailStyles.modalButtonText}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal del Código QR */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={qrModalVisible}
+        onRequestClose={() => setQrModalVisible(false)}
+      >
+        <View style={cattleDetailStyles.modalContainer}>
+          <View style={cattleDetailStyles.qrModalContent}>
+            <Text style={cattleDetailStyles.modalTitle}>Código QR del Ganado</Text>
+            
+            <View style={cattleDetailStyles.qrContainer}>
+              <QRCode
+                value={JSON.stringify({
+                  id: cattle?.id_ganado,
+                  identifier: cattle?.numero_identificacion,
+                  name: cattle?.nombre
+                })}
+                size={200}
+                backgroundColor="white"
+                color="black"
+              />
+            </View>
+
+            <Text style={cattleDetailStyles.qrInfo}>
+              ID: {cattle?.numero_identificacion}{'\n'}
+              Nombre: {cattle?.nombre}
+            </Text>
+
+            <View style={cattleDetailStyles.qrButtonsContainer}>
+              <TouchableOpacity
+                style={[cattleDetailStyles.qrActionButton, cattleDetailStyles.shareButton]}
+                onPress={handleShareQR}
+              >
+                <Ionicons name="share-outline" size={20} color="#fff" />
+                <Text style={cattleDetailStyles.buttonText}>Compartir</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[cattleDetailStyles.qrActionButton, cattleDetailStyles.closeButton]}
+                onPress={() => setQrModalVisible(false)}
+              >
+                <Text style={cattleDetailStyles.buttonText}>Cerrar</Text>
               </TouchableOpacity>
             </View>
           </View>

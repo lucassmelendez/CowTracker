@@ -1,6 +1,7 @@
 const { supabase } = require('../config/supabase');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const premiumModel = require('./supabasePremiumModel');
 
 /**
  * Crea un nuevo usuario en Supabase
@@ -19,8 +20,13 @@ const createUser = async (userData) => {
     let primerApellido = userData.primer_apellido;
     let segundoApellido = userData.segundo_apellido || '';
     
-    // Establecer is_premium por defecto como 0 (no premium)
-    const is_premium = userData.is_premium || 0;
+    // Convertir is_premium a id_premium (por defecto Free = 1)
+    let id_premium = 1; // Free por defecto
+    if (userData.is_premium !== undefined) {
+      id_premium = premiumModel.convertIsPremiumToId(userData.is_premium);
+    } else if (userData.id_premium !== undefined) {
+      id_premium = userData.id_premium;
+    }
     
     // Si existen los campos de nombre individuales pero no el nombre completo
     if (!displayName && (primerNombre || primerApellido)) {
@@ -111,10 +117,11 @@ const createUser = async (userData) => {
     }
     
     // Determinar el id_rol basado en el role
-    let id_rol = 2; // Por defecto 'user'
+    let id_rol = 2;
     if (userData.role === 'admin') id_rol = 1;
     else if (userData.role === 'veterinario') id_rol = 3;
-      // Guardar información adicional en la tabla usuario
+    
+    // Guardar información adicional en la tabla usuario
     const { data: profileData, error: profileError } = await supabase
       .from('usuario')
       .insert({
@@ -124,7 +131,7 @@ const createUser = async (userData) => {
         segundo_apellido: segundoApellido,
         id_rol: id_rol,
         id_autentificar: uid,
-        is_premium: is_premium
+        id_premium: id_premium
       })
       .select()
       .single();
@@ -138,6 +145,7 @@ const createUser = async (userData) => {
         segundo_apellido: segundoApellido,
         id_rol: id_rol,
         id_autentificar: uid,
+        id_premium: id_premium,
         id_autentificar_tipo: typeof uid
       });
       
@@ -176,7 +184,8 @@ const getUserById = async (uid) => {
       .from('usuario')
       .select(`
         *,
-        rol:rol(*)
+        rol:rol(*),
+        premium:premium(*)
       `)
       .eq('id_autentificar', uid)
       .single();
@@ -273,11 +282,14 @@ const updateUser = async (uid, userData) => {
     }
     
     const userId = userFind.id_usuario;
-      const updateData = { ...userData };
+    const updateData = { ...userData };
     
-    // Asegurarse de que is_premium sea un entero
+    // Manejar conversión de is_premium a id_premium
     if ('is_premium' in updateData) {
-      updateData.is_premium = parseInt(updateData.is_premium) || 0;
+      updateData.id_premium = premiumModel.convertIsPremiumToId(updateData.is_premium);
+      delete updateData.is_premium;
+    } else if ('id_premium' in updateData) {
+      updateData.id_premium = parseInt(updateData.id_premium) || 1;
     }
     
     // Para correo y contraseña, necesitamos otra estrategia porque updateUser requiere sesión
@@ -325,7 +337,8 @@ const updateUser = async (uid, userData) => {
         .from('usuario')
         .select(`
           *,
-          rol:rol(*)
+          rol:rol(*),
+          premium:premium(*)
         `)
         .eq('id_usuario', userId)
         .single();
@@ -356,7 +369,10 @@ const updateUser = async (uid, userData) => {
         primer_nombre: currentUserData.primer_nombre,
         segundo_nombre: currentUserData.segundo_nombre,
         primer_apellido: currentUserData.primer_apellido,
-        segundo_apellido: currentUserData.segundo_apellido
+        segundo_apellido: currentUserData.segundo_apellido,
+        id_premium: currentUserData.id_premium || 1,
+        is_premium: premiumModel.convertIdToIsPremium(currentUserData.id_premium || 1),
+        premium_type: currentUserData.premium ? currentUserData.premium.descripcion : 'Free'
       };
     }
     
@@ -367,7 +383,8 @@ const updateUser = async (uid, userData) => {
       .eq('id_usuario', userId)
       .select(`
         *,
-        rol:rol(*)
+        rol:rol(*),
+        premium:premium(*)
       `)
       .single();
     
@@ -388,7 +405,8 @@ const updateUser = async (uid, userData) => {
       if (data.rol.id_rol === 1) role = 'admin';
       else if (data.rol.id_rol === 3) role = 'veterinario';
     }
-      return {
+    
+    return {
       uid,
       id_usuario: userId,
       email: userData.email || (authData ? authData.correo : ''),
@@ -397,7 +415,9 @@ const updateUser = async (uid, userData) => {
       segundo_nombre: data.segundo_nombre,
       primer_apellido: data.primer_apellido,
       segundo_apellido: data.segundo_apellido,
-      is_premium: data.is_premium || 0
+      id_premium: data.id_premium || 1,
+      is_premium: premiumModel.convertIdToIsPremium(data.id_premium || 1),
+      premium_type: data.premium ? data.premium.descripcion : 'Free'
     };
   } catch (error) {
     console.error('Error al actualizar usuario:', error);
@@ -462,7 +482,8 @@ const getAllUsers = async () => {
       .select(`
         *,
         rol:rol(*),
-        autentificar:autentificar(*)
+        autentificar:autentificar(*),
+        premium:premium(*)
       `);
     
     if (error) {
@@ -476,7 +497,8 @@ const getAllUsers = async () => {
         if (user.rol.id_rol === 1) role = 'admin';
         else if (user.rol.id_rol === 3) role = 'veterinario';
       }
-        return {
+      
+      return {
         uid: user.id_autentificar,
         id_usuario: user.id_usuario,
         email: user.autentificar ? user.autentificar.correo : '',
@@ -486,7 +508,9 @@ const getAllUsers = async () => {
         segundo_nombre: user.segundo_nombre,
         primer_apellido: user.primer_apellido,
         segundo_apellido: user.segundo_apellido,
-        is_premium: user.is_premium || 0
+        id_premium: user.id_premium || 1,
+        is_premium: premiumModel.convertIdToIsPremium(user.id_premium || 1),
+        premium_type: user.premium ? user.premium.descripcion : 'Free'
       };
     });
   } catch (error) {
@@ -529,7 +553,8 @@ const changeUserRole = async (uid, role) => {
       .select(`
         *,
         rol:rol(*),
-        autentificar:autentificar(*)
+        autentificar:autentificar(*),
+        premium:premium(*)
       `)
       .single();
     
@@ -552,10 +577,13 @@ const changeUserRole = async (uid, role) => {
       email: data.autentificar ? data.autentificar.correo : '',
       role: roleStr,
       name: `${data.primer_nombre} ${data.primer_apellido}`,
-      primer_nombre: data.primer_nombre,      segundo_nombre: data.segundo_nombre,
+      primer_nombre: data.primer_nombre,
+      segundo_nombre: data.segundo_nombre,
       primer_apellido: data.primer_apellido,
       segundo_apellido: data.segundo_apellido,
-      is_premium: data.is_premium || 0
+      id_premium: data.id_premium || 1,
+      is_premium: premiumModel.convertIdToIsPremium(data.id_premium || 1),
+      premium_type: data.premium ? data.premium.descripcion : 'Free'
     };
   } catch (error) {
     console.error('Error al cambiar rol de usuario:', error);
@@ -574,7 +602,8 @@ const getUserByAuthId = async (authId) => {
       .from('usuario')
       .select(`
         *,
-        rol:rol(*)
+        rol:rol(*),
+        premium:premium(*)
       `)
       .eq('id_autentificar', authId)
       .single();
@@ -591,6 +620,81 @@ const getUserByAuthId = async (authId) => {
   }
 };
 
+/**
+ * Actualiza el tipo de premium de un usuario
+ * @param {string} uid - ID del usuario
+ * @param {number} idPremium - ID del tipo de premium (1: Free, 2: Premium)
+ * @returns {Promise<Object>} - Usuario actualizado
+ */
+const updateUserPremium = async (uid, idPremium) => {
+  try {
+    // Validar que el id_premium sea válido
+    if (![1, 2].includes(idPremium)) {
+      throw new Error('ID de premium inválido. Debe ser 1 (Free) o 2 (Premium)');
+    }
+    
+    // Buscar el usuario por id_autentificar
+    const { data: userFind, error: findError } = await supabase
+      .from('usuario')
+      .select('id_usuario')
+      .eq('id_autentificar', uid)
+      .single();
+    
+    if (findError) {
+      throw findError;
+    }
+    
+    const userId = userFind.id_usuario;
+    
+    // Actualizar el tipo de premium
+    const { data, error } = await supabase
+      .from('usuario')
+      .update({ id_premium: idPremium })
+      .eq('id_usuario', userId)
+      .select(`
+        *,
+        rol:rol(*),
+        premium:premium(*)
+      `)
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Obtener email desde autentificar
+    const { data: authData } = await supabase
+      .from('autentificar')
+      .select('correo')
+      .eq('id_autentificar', uid)
+      .single();
+    
+    // Determinar rol del usuario
+    let role = 'user';
+    if (data.rol && data.rol.id_rol) {
+      if (data.rol.id_rol === 1) role = 'admin';
+      else if (data.rol.id_rol === 3) role = 'veterinario';
+    }
+    
+    return {
+      uid: data.id_autentificar,
+      id_usuario: data.id_usuario,
+      email: authData ? authData.correo : '',
+      role,
+      primer_nombre: data.primer_nombre,
+      segundo_nombre: data.segundo_nombre,
+      primer_apellido: data.primer_apellido,
+      segundo_apellido: data.segundo_apellido,
+      id_premium: data.id_premium,
+      is_premium: premiumModel.convertIdToIsPremium(data.id_premium),
+      premium_type: data.premium ? data.premium.descripcion : 'Free'
+    };
+  } catch (error) {
+    console.error('Error al actualizar premium de usuario:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   createUser,
   getUserById,
@@ -599,5 +703,6 @@ module.exports = {
   deleteUser,
   getAllUsers,
   changeUserRole,
-  getUserByAuthId
+  getUserByAuthId,
+  updateUserPremium
 }; 

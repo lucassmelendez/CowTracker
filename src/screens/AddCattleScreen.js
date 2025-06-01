@@ -186,9 +186,9 @@ const AddCattleScreen = (props) => {
     try {
       // Primero verificar si el usuario es premium
       const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('is_premium')
-        .eq('id', userInfo?.uid)
+        .from('usuario')
+        .select('id_premium')
+        .eq('id_autentificar', userInfo?.uid)
         .single();
 
       if (userError) throw userError;
@@ -204,8 +204,8 @@ const AddCattleScreen = (props) => {
       const count = cattle ? cattle.length : 0;
       setCattleCount(count);
       
-      // Si no es premium y ya tiene 2 o más cabezas de ganado, mostrar advertencia
-      if (!userData?.is_premium && count >= 2 && !isEditMode) {
+      // Si no es premium (id_premium !== 2) y ya tiene 2 o más cabezas de ganado, mostrar advertencia
+      if (userData?.id_premium !== 2 && count >= 2 && !isEditMode) {
         setShowCattleWarning(true);
         // Retornar false para evitar que continúe con el registro
         return false;

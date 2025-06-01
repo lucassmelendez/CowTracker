@@ -138,6 +138,23 @@ const users = {
       setAuthToken(token);
     }
     return token;
+  },
+  // Funciones de premium
+  getPremiumTypes: () => {
+    console.log('API - Solicitando tipos de premium');
+    return instance.get('users/premium-types')
+      .catch(error => {
+        console.error('Error al obtener tipos de premium:', error);
+        throw error;
+      });
+  },
+  updatePremium: (idPremium) => {
+    console.log(`API - Actualizando premium a ID: ${idPremium}`);
+    return instance.put('users/premium', { id_premium: idPremium })
+      .catch(error => {
+        console.error('Error al actualizar premium:', error);
+        throw error;
+      });
   }
 };
 

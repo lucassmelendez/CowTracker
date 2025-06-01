@@ -223,7 +223,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
         segundo_nombre: user.segundo_nombre || '',
         primer_apellido: user.primer_apellido || '',
         segundo_apellido: user.segundo_apellido || '',
-        id_usuario: user.id_usuario
+        id_usuario: user.id_usuario,
+        id_premium: user.id_premium || 1,
+        is_premium: user.id_premium === 2 ? 1 : 0,
+        premium_type: user.premium ? user.premium.descripcion : 'Free'
       });
     } else {
       res.status(404);
@@ -239,12 +242,20 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   try {
     const { 
       name, email, password,
-      primer_nombre, segundo_nombre, primer_apellido, segundo_apellido 
+      primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
+      is_premium, id_premium
     } = req.body;
     
     const updateData = {};
     if (email) updateData.email = email;
     if (password) updateData.password = password;
+    
+    // Manejar premium
+    if (id_premium !== undefined) {
+      updateData.id_premium = id_premium;
+    } else if (is_premium !== undefined) {
+      updateData.is_premium = is_premium;
+    }
     
     if (primer_nombre || primer_apellido) {
       updateData.primer_nombre = primer_nombre;
@@ -272,7 +283,10 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       segundo_nombre: updatedUser.segundo_nombre || '',
       primer_apellido: updatedUser.primer_apellido || '',
       segundo_apellido: updatedUser.segundo_apellido || '',
-      id_usuario: updatedUser.id_usuario
+      id_usuario: updatedUser.id_usuario,
+      id_premium: updatedUser.id_premium || 1,
+      is_premium: updatedUser.is_premium || 0,
+      premium_type: updatedUser.premium_type || 'Free'
     });
   } catch (error) {
     res.status(500);
@@ -341,6 +355,54 @@ const refreshToken = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * Actualiza el tipo de premium de un usuario
+ */
+const updateUserPremium = asyncHandler(async (req, res) => {
+  try {
+    const { id_premium } = req.body;
+    
+    if (!id_premium || ![1, 2].includes(parseInt(id_premium))) {
+      res.status(400);
+      throw new Error('ID de premium inválido. Debe ser 1 (Free) o 2 (Premium)');
+    }
+    
+    const updatedUser = await supabaseUserModel.updateUserPremium(req.user.uid, parseInt(id_premium));
+    
+    res.json({
+      success: true,
+      message: `Usuario actualizado a ${updatedUser.premium_type} exitosamente`,
+      user: {
+        uid: updatedUser.uid,
+        id_premium: updatedUser.id_premium,
+        is_premium: updatedUser.is_premium,
+        premium_type: updatedUser.premium_type
+      }
+    });
+  } catch (error) {
+    res.status(500);
+    throw new Error('Error al actualizar premium: ' + error.message);
+  }
+});
+
+/**
+ * Obtiene los tipos de premium disponibles
+ */
+const getPremiumTypes = asyncHandler(async (req, res) => {
+  try {
+    const premiumModel = require('../models/supabasePremiumModel');
+    const premiumTypes = await premiumModel.getAllPremiumTypes();
+    
+    res.json({
+      success: true,
+      data: premiumTypes
+    });
+  } catch (error) {
+    res.status(500);
+    throw new Error('Error al obtener tipos de premium: ' + error.message);
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -348,5 +410,7 @@ module.exports = {
   updateUserProfile,
   getUsers,
   changeUserRole,
-  refreshToken
+  refreshToken,
+  updateUserPremium,
+  getPremiumTypes
 };

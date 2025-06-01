@@ -19,7 +19,9 @@ const ProfileScreen = () => {
     primer_nombre: '',
     segundo_nombre: '',
     primer_apellido: '',
-    segundo_apellido: '',    is_premium: 0
+    segundo_apellido: '',
+    id_premium: 1,
+    premium_type: 'Free'
   });
   const [formData, setFormData] = useState({...userData});
 
@@ -38,8 +40,10 @@ const ProfileScreen = () => {
                 profileData.role === 'trabajador' ? 'Trabajador' : 'Usuario',
           primer_nombre: profileData.primer_nombre || '',
           segundo_nombre: profileData.segundo_nombre || '',
-          primer_apellido: profileData.primer_apellido || '',          segundo_apellido: profileData.segundo_apellido || '',
-          is_premium: parseInt(profileData.is_premium) || 0
+          primer_apellido: profileData.primer_apellido || '',
+          segundo_apellido: profileData.segundo_apellido || '',
+          id_premium: parseInt(profileData.id_premium) || 1,
+          premium_type: profileData.premium_type || 'Free'
         };
         console.log('Datos del perfil cargados:', formattedData);
         
@@ -56,8 +60,10 @@ const ProfileScreen = () => {
                   userInfo.role === 'trabajador' ? 'Trabajador' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
             segundo_nombre: userInfo.segundo_nombre || '',
-            primer_apellido: userInfo.primer_apellido || '',            segundo_apellido: userInfo.segundo_apellido || '',
-            is_premium: parseInt(userInfo.is_premium) || 0
+            primer_apellido: userInfo.primer_apellido || '',
+            segundo_apellido: userInfo.segundo_apellido || '',
+            id_premium: parseInt(userInfo.id_premium) || 1,
+            premium_type: userInfo.premium_type || 'Free'
           };
           setUserData(fallbackData);
           setFormData(fallbackData);
@@ -90,7 +96,7 @@ const ProfileScreen = () => {
         segundo_nombre: formData.segundo_nombre,
         primer_apellido: formData.primer_apellido,
         segundo_apellido: formData.segundo_apellido,
-        is_premium: formData.is_premium,
+        id_premium: formData.id_premium,
         ...(formData.password ? { password: formData.password } : {})
       };
 
@@ -106,7 +112,7 @@ const ProfileScreen = () => {
         segundo_nombre: formData.segundo_nombre,
         primer_apellido: formData.primer_apellido,
         segundo_apellido: formData.segundo_apellido,
-        is_premium: formData.is_premium
+        id_premium: formData.id_premium
       });
       
       Alert.alert('Éxito', 'Perfil actualizado correctamente');
@@ -216,12 +222,12 @@ const ProfileScreen = () => {
                   placeholder="Segundo apellido (opcional)"
                 />    
 
-                <Text style={profileStyles.label}>Suscripción</Text>                <TextInput
+                <Text style={profileStyles.label}>Suscripción</Text>
+                <TextInput
                   style={profileStyles.input}
-                  value={formData.is_premium === 1 ? 'Premium' : 'Gratuita'}
+                  value={formData.premium_type || (formData.id_premium === 2 ? 'Premium' : 'Free')}
                   editable={false}
                 />
-
 
               </>
             ) : (
@@ -238,36 +244,36 @@ const ProfileScreen = () => {
                 <Text style={profileStyles.label}>Segundo apellido</Text>
                 <Text style={profileStyles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
 
-              <Text style={profileStyles.label}>Suscripción</Text>              <Text style={profileStyles.infoText}>{userData.is_premium === 1 ? 'Premium' : 'Gratuita'}</Text>
-              {userData.is_premium === 0 && (
-                <TouchableOpacity 
-                  style={[profileStyles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
-                  onPress={async () => {
-                    try {                      const { data, error } = await supabase
-                        .from('usuario')
-                        .update({ is_premium: 1 })
-                        .eq('id_autentificar', userInfo?.uid)
-                        .select();
-
-                      if (error) throw error;
-
-                      setUserData({ ...userData, is_premium: 1 });
-                      setFormData({ ...formData, is_premium: 1 });
-
-                      Alert.alert('Éxito', '¡Felicidades! Ahora eres usuario Premium');
-                    } catch (error) {
-                      console.error('Error al actualizar a premium:', error);
-                      Alert.alert('Error', 'No se pudo actualizar a premium. Por favor, intenta de nuevo.');
-                    }
-                  }}
-                >
-                  <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
-                    Actualizar a Premium
-                  </Text>
-                </TouchableOpacity>
-              )}
+                <Text style={profileStyles.label}>Suscripción</Text>
+                <Text style={profileStyles.infoText}>
+                  {userData.premium_type || (userData.id_premium === 2 ? 'Premium' : 'Free')}
+                </Text>
+                
+                {userData.id_premium !== 2 && (
+                  <TouchableOpacity 
+                    style={[profileStyles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
+                    onPress={async () => {
+                      try {
+                        // Usar la nueva API para actualizar premium
+                        const response = await api.users.updatePremium(2); // 2 = Premium
+                        
+                        if (response.success) {
+                          setUserData({ ...userData, id_premium: 2, premium_type: 'Premium' });
+                          setFormData({ ...formData, id_premium: 2, premium_type: 'Premium' });
+                          Alert.alert('Éxito', '¡Felicidades! Ahora eres usuario Premium');
+                        }
+                      } catch (error) {
+                        console.error('Error al actualizar a premium:', error);
+                        Alert.alert('Error', 'No se pudo actualizar a premium. Por favor, intenta de nuevo.');
+                      }
+                    }}
+                  >
+                    <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
+                      Actualizar a Premium
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </>
-
             )}
             
             <Text style={profileStyles.label}>Correo electrónico</Text>

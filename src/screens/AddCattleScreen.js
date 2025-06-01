@@ -17,6 +17,7 @@ import { getShadowStyle } from '../utils/styles';
 import { useAuth } from '../components/AuthContext';
 import FarmSelector from '../components/FarmSelector';
 import api from '../services/api';
+import { supabase } from '../config/supabase';
 
 const AddCattleScreen = (props) => {
   const router = useRouter();
@@ -344,19 +345,33 @@ const AddCattleScreen = (props) => {
         return;
       }
 
-      // Crear estructura de datos para Supabase - formato simplificado
-      const cattleData = {
-        nombre: name,
-        numero_identificacion: parseInt(identifier),
-        precio_compra: parseFloat(purchasePrice) || 0,
-        nota: notes || '',
-        id_finca: selectedFarmId,
-        // Estado inicial
-        id_estado_salud: 1, // Estado por defecto: Saludable
-        id_genero: gender === 'Macho' ? 1 : 2 // 1 para Macho, 2 para Hembra
-      };
-      
       try {
+        // Primero crear la información veterinaria
+        const { data: infoVetData, error: infoVetError } = await supabase
+          .from('informacion_veterinaria')
+          .insert({
+            fecha_tratamiento: new Date().toISOString(),
+            diagnostico: healthStatus === 'Enfermo' ? 'Requiere revisión' : 'Sin diagnóstico',
+            tratamiento: '',
+            nota: notes || ''
+          })
+          .select()
+          .single();
+
+        if (infoVetError) throw infoVetError;
+
+        // Crear estructura de datos para el ganado
+        const cattleData = {
+          nombre: name,
+          numero_identificacion: parseInt(identifier),
+          precio_compra: parseFloat(purchasePrice) || 0,
+          nota: notes || '',
+          id_finca: selectedFarmId,
+          id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
+          id_genero: gender === 'Macho' ? 1 : 2,
+          id_informacion_veterinaria: infoVetData.id_informacion_veterinaria
+        };
+        
         // Insertar en la tabla ganado
         const { data, error } = await supabase
           .from('ganado')

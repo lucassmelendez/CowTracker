@@ -1,6 +1,4 @@
-const { db } = require('../config/supabase');
-
-const informacionVeterinariaCollection = db.collection('informacion_veterinaria');
+const { supabase } = require('../config/supabase');
 
 /**
  * Crea una nueva información veterinaria
@@ -9,44 +7,22 @@ const informacionVeterinariaCollection = db.collection('informacion_veterinaria'
  */
 const createInformacionVeterinaria = async (datos) => {
   try {
-    // Verificar si ya existe un ID secuencial
-    const snapshot = await informacionVeterinariaCollection.orderBy('id_informacion_veterinaria', 'desc').limit(1).get();
-    let nuevoId = 1;
-    
-    if (!snapshot.empty) {
-      nuevoId = snapshot.docs[0].data().id_informacion_veterinaria + 1;
-    }
-    
-    // Convertir la fecha a formato ISO si existe
-    let fechaTratamiento = null;
-    if (datos.fecha_tratamiento) {
-      if (datos.fecha_tratamiento instanceof Date) {
-        fechaTratamiento = datos.fecha_tratamiento.toISOString();
-      } else {
-        // Si es un string, verificamos si es válido como fecha
-        const fechaComoDate = new Date(datos.fecha_tratamiento);
-        if (!isNaN(fechaComoDate.getTime())) {
-          fechaTratamiento = fechaComoDate.toISOString();
-        }
-      }
-    }
-    
+    // Preparar los datos según la estructura de la tabla
     const informacionVeterinariaData = {
-      id_informacion_veterinaria: nuevoId,
-      fecha_tratamiento: fechaTratamiento,
-      diagnostico: datos.diagnostico || null,
-      tratamiento: datos.tratamiento || null,
-      nota: datos.nota || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      fecha_tratamiento: datos.fecha_tratamiento || new Date().toISOString(),
+      diagnostico: datos.diagnostico || '',
+      tratamiento: datos.tratamiento || '',
+      nota: datos.nota || ''
     };
     
-    const docRef = await informacionVeterinariaCollection.add(informacionVeterinariaData);
+    const { data, error } = await supabase
+      .from('informacion_veterinaria')
+      .insert([informacionVeterinariaData])
+      .select()
+      .single();
     
-    return {
-      id: docRef.id,
-      ...informacionVeterinariaData
-    };
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Error al crear información veterinaria:', error);
     throw error;
@@ -55,21 +31,19 @@ const createInformacionVeterinaria = async (datos) => {
 
 /**
  * Obtiene una información veterinaria por su ID
- * @param {string} id - ID del documento en Firestore
+ * @param {number} id - ID de la información veterinaria
  * @returns {Promise<Object|null>} - Información veterinaria o null si no existe
  */
 const getInformacionVeterinariaById = async (id) => {
   try {
-    const doc = await informacionVeterinariaCollection.doc(id).get();
+    const { data, error } = await supabase
+      .from('informacion_veterinaria')
+      .select('*')
+      .eq('id_informacion_veterinaria', id)
+      .single();
     
-    if (!doc.exists) {
-      return null;
-    }
-    
-    return {
-      id: doc.id,
-      ...doc.data()
-    };
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Error al obtener información veterinaria:', error);
     throw error;
@@ -77,61 +51,34 @@ const getInformacionVeterinariaById = async (id) => {
 };
 
 /**
- * Obtiene una información veterinaria por su ID numérico
- * @param {number} idNumerico - ID numérico de la información veterinaria
- * @returns {Promise<Object|null>} - Información veterinaria o null si no existe
- */
-const getInformacionVeterinariaByNumericId = async (idNumerico) => {
-  try {
-    const snapshot = await informacionVeterinariaCollection
-      .where('id_informacion_veterinaria', '==', parseInt(idNumerico))
-      .limit(1)
-      .get();
-    
-    if (snapshot.empty) {
-      return null;
-    }
-    
-    const doc = snapshot.docs[0];
-    return {
-      id: doc.id,
-      ...doc.data()
-    };
-  } catch (error) {
-    console.error('Error al obtener información veterinaria por ID numérico:', error);
-    throw error;
-  }
-};
-
-/**
  * Actualiza una información veterinaria
- * @param {string} id - ID del documento en Firestore
+ * @param {number} id - ID de la información veterinaria
  * @param {Object} datos - Datos a actualizar
  * @returns {Promise<Object>} - Información veterinaria actualizada
  */
 const updateInformacionVeterinaria = async (id, datos) => {
   try {
-    // Procesar fecha de tratamiento si existe
-    if (datos.fecha_tratamiento) {
-      if (datos.fecha_tratamiento instanceof Date) {
-        datos.fecha_tratamiento = datos.fecha_tratamiento.toISOString();
-      } else {
-        // Si es un string, verificamos si es válido como fecha
-        const fechaComoDate = new Date(datos.fecha_tratamiento);
-        if (!isNaN(fechaComoDate.getTime())) {
-          datos.fecha_tratamiento = fechaComoDate.toISOString();
-        }
-      }
-    }
-    
     const updateData = {
-      ...datos,
-      updatedAt: new Date().toISOString()
+      fecha_tratamiento: datos.fecha_tratamiento,
+      diagnostico: datos.diagnostico,
+      tratamiento: datos.tratamiento,
+      nota: datos.nota
     };
     
-    await informacionVeterinariaCollection.doc(id).update(updateData);
+    // Eliminar campos undefined
+    Object.keys(updateData).forEach(key => 
+      updateData[key] === undefined && delete updateData[key]
+    );
     
-    return await getInformacionVeterinariaById(id);
+    const { data, error } = await supabase
+      .from('informacion_veterinaria')
+      .update(updateData)
+      .eq('id_informacion_veterinaria', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Error al actualizar información veterinaria:', error);
     throw error;
@@ -140,12 +87,17 @@ const updateInformacionVeterinaria = async (id, datos) => {
 
 /**
  * Elimina una información veterinaria
- * @param {string} id - ID del documento en Firestore
+ * @param {number} id - ID de la información veterinaria
  * @returns {Promise<boolean>} - true si se eliminó correctamente
  */
 const deleteInformacionVeterinaria = async (id) => {
   try {
-    await informacionVeterinariaCollection.doc(id).delete();
+    const { error } = await supabase
+      .from('informacion_veterinaria')
+      .delete()
+      .eq('id_informacion_veterinaria', id);
+    
+    if (error) throw error;
     return true;
   } catch (error) {
     console.error('Error al eliminar información veterinaria:', error);
@@ -159,11 +111,13 @@ const deleteInformacionVeterinaria = async (id) => {
  */
 const getAllInformacionesVeterinarias = async () => {
   try {
-    const snapshot = await informacionVeterinariaCollection.orderBy('id_informacion_veterinaria').get();
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const { data, error } = await supabase
+      .from('informacion_veterinaria')
+      .select('*')
+      .order('id_informacion_veterinaria', { ascending: true });
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Error al obtener informaciones veterinarias:', error);
     throw error;
@@ -173,7 +127,6 @@ const getAllInformacionesVeterinarias = async () => {
 module.exports = {
   createInformacionVeterinaria,
   getInformacionVeterinariaById,
-  getInformacionVeterinariaByNumericId,
   updateInformacionVeterinaria,
   deleteInformacionVeterinaria,
   getAllInformacionesVeterinarias

@@ -3,10 +3,6 @@ import { View, StyleSheet } from 'react-native';
 import HomeScreen from '../../src/screens/HomeScreen';
 
 export default function TabOneScreen() {
-  useEffect(() => {
-    console.log('Cargando pantalla de inicio en (tabs)/index.tsx');
-  }, []);
-
   return (
     <View style={styles.container}>
       <HomeScreen />

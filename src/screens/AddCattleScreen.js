@@ -44,6 +44,7 @@ const AddCattleScreen = (props) => {
   const [selectedFarmId, setSelectedFarmId] = useState('');
   const [healthStatus, setHealthStatus] = useState('saludable');
   const [status, setStatus] = useState('activo');
+  const [tipoProduccion, setTipoProduccion] = useState('leche');
   
   // Estados para fecha
   const [dateOfBirth, setDateOfBirth] = useState(new Date());
@@ -209,6 +210,7 @@ const AddCattleScreen = (props) => {
           setPurchasePrice(cattleData.purchasePrice ? cattleData.purchasePrice.toString() : '');
           setStatus(cattleData.status || 'activo');
           setHealthStatus(cattleData.healthStatus || 'saludable');
+          setTipoProduccion(cattleData.tipoProduccion || 'leche');
           
           // Establecer fecha de nacimiento
           if (cattleData.birthDate) {
@@ -369,7 +371,8 @@ const AddCattleScreen = (props) => {
           id_finca: selectedFarmId,
           id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
           id_genero: gender === 'Macho' ? 1 : 2,
-          id_informacion_veterinaria: infoVetData.id_informacion_veterinaria
+          id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
+          id_produccion: tipoProduccion === 'leche' ? 1 : 2
         };
         
         // Insertar en la tabla ganado
@@ -516,6 +519,21 @@ const AddCattleScreen = (props) => {
           placeholder="Precio de compra"
           keyboardType="numeric"
         />
+
+        <Text style={styles.label}>Tipo de Producción</Text>
+        <View style={styles.optionsContainer}>
+          {['Leche', 'Carne'].map(option => (
+            <TouchableOpacity
+              key={option}
+              style={[styles.optionButton, tipoProduccion === option.toLowerCase() && styles.selectedOption]}
+              onPress={() => setTipoProduccion(option.toLowerCase())}
+            >
+              <Text style={[styles.optionText, tipoProduccion === option.toLowerCase() && styles.selectedOptionText]}>
+                {option}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={styles.label}>Notas</Text>
         <TextInput

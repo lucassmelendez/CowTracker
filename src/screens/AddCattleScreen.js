@@ -8,7 +8,8 @@ import {
   ScrollView, 
   Alert,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -29,9 +30,11 @@ const AddCattleScreen = (props) => {
   const isEditMode = !!cattleId;
   
   const { userInfo } = useAuth();
-  
-  // Estado para el manejo de errores
+    // Estado para el manejo de errores
   const [errorMessage, setErrorMessage] = useState(null);
+  const [showCattleWarning, setShowCattleWarning] = useState(false);
+  const [cattleCount, setCattleCount] = useState(0);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
@@ -179,10 +182,30 @@ const AddCattleScreen = (props) => {
     }
   };
   
-  // Cargar granjas cuando se inicia el componente
+  // Cargar granjas cuando se inicia el componente  // Verificar el número de vacas del usuario
+  const checkCattleCount = async () => {
+    try {
+      const { data: cattle, error } = await supabase
+        .from('ganado')
+        .select('id_ganado');
+      
+      if (error) throw error;
+      
+      const count = cattle ? cattle.length : 0;
+      setCattleCount(count);
+      
+      if (count >= 2 && !isEditMode) {
+        setShowCattleWarning(true);
+      }
+    } catch (error) {
+      console.error('Error al verificar el número de vacas:', error);
+    }
+  };
+
   useEffect(() => {
     if (userInfo) {
       loadFarms();
+      checkCattleCount();
     }
   }, [userInfo]);
   
@@ -624,11 +647,320 @@ const AddCattleScreen = (props) => {
             <Text style={styles.saveButtonText}>{isEditMode ? 'Actualizar' : 'Guardar'}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Modal de confirmación de eliminación */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={deleteModalVisible}
+          onRequestClose={() => setDeleteModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                Confirmar Eliminación
+              </Text>
+              <Text style={styles.modalText}>
+                ¿Estás seguro de que deseas eliminar este ganado?
+              </Text>
+              
+              <View style={styles.modalButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setDeleteModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: '#e74c3c' }]}
+                  onPress={async () => {
+                    setDeleteModalVisible(false);
+                    
+                    try {
+                      // Lógica para eliminar el ganado
+                      const { error } = await supabase
+                        .from('ganado')
+                        .delete()
+                        .eq('id_ganado', cattleId);
+                      
+                      if (error) throw error;
+                      
+                      Alert.alert('Éxito', 'Ganado eliminado correctamente');
+                      router.back();
+                    } catch (error) {
+                      console.error('Error al eliminar ganado:', error);
+                      Alert.alert('Error', 'No se pudo eliminar el ganado. Inténtalo de nuevo.');
+                    }
+                  }}
+                >
+                  <Text style={styles.buttonText}>
+                    Eliminar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Modal de advertencia de cantidad de ganado */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={showCattleWarning}
+          onRequestClose={() => setShowCattleWarning(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                Advertencia
+              </Text>
+              <Text style={styles.modalText}>
+                Ya tienes {cattleCount} cabezas de ganado registradas. ¿Deseas continuar con el registro?
+              </Text>
+              
+              <View style={styles.modalButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setShowCattleWarning(false);
+                    handleCancel();
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: '#27ae60' }]}
+                  onPress={() => setShowCattleWarning(false)}
+                >
+                  <Text style={styles.buttonText}>
+                    Continuar
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   );
 };
 
-import { addCattleStyles as styles } from '../styles/addCattleStyles';
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+  },
+  header: {
+    padding: 16,
+    backgroundColor: '#27ae60',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    ...getShadowStyle(4),
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  formContainer: {
+    flex: 1,
+    padding: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    backgroundColor: '#fff',
+    ...getShadowStyle(4),
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    color: '#333',
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+    color: '#333',
+  },
+  input: {
+    height: 40,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    fontSize: 16,
+    color: '#333',
+  },
+  textArea: {
+    minHeight: 80,
+    maxHeight: 120,
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  optionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#27ae60',
+    backgroundColor: 'transparent',
+    marginRight: 8,
+    ...getShadowStyle(2),
+  },
+  selectedOption: {
+    backgroundColor: '#27ae60',
+  },
+  optionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#27ae60',
+  },
+  selectedOptionText: {
+    color: '#fff',
+  },
+  farmSelector: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    backgroundColor: '#fafafa',
+    ...getShadowStyle(2),
+  },
+  farmOption: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#27ae60',
+    backgroundColor: 'transparent',
+    marginBottom: 8,
+    ...getShadowStyle(2),
+  },
+  selectedFarmOption: {
+    backgroundColor: '#27ae60',
+  },
+  farmOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  selectedFarmOptionText: {
+    color: '#fff',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    marginRight: 8,
+    ...getShadowStyle(2),
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: '#27ae60',
+    ...getShadowStyle(2),
+  },
+  cancelButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  saveButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 16,
+    color: '#666',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 0,
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    ...getShadowStyle(4),
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+    color: '#333',
+  },
+  modalText: {
+    fontSize: 14,
+    marginBottom: 24,
+    textAlign: 'center',
+    color: '#666',
+  },
+  modalButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    ...getShadowStyle(2),
+  },
+  noFarmsText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#e74c3c',
+    marginTop: 8,
+  },
+  createFarmButton: {
+    backgroundColor: '#27ae60',
+    borderRadius: 8,
+    paddingVertical: 12,
+    marginTop: 8,
+    ...getShadowStyle(2),
+  },
+  createFarmButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+  },
+});
 
 export default AddCattleScreen;

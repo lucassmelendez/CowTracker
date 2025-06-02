@@ -110,7 +110,7 @@ const PremiumActivate = () => {
             <div style={styles.paymentInfo}>
               <h3 style={styles.paymentInfoTitle}>Información del Pago:</h3>
               <p style={styles.paymentInfoText}>Orden: {buyOrder}</p>
-              <p style={styles.paymentInfoText}>Monto: ${parseInt(amount || '0'):,} CLP</p>
+              <p style={styles.paymentInfoText}>Monto: ${parseInt(amount || '0').toLocaleString()} CLP</p>
               <p style={styles.paymentInfoText}>Autorización: {authCode}</p>
             </div>
           )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -18,6 +18,45 @@ import { useAuth } from './AuthContext';
 const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!", subtitle = "Desbloquea todo el potencial de CowTracker" }) => {
   const { userInfo } = useAuth();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [priceDisplay, setPriceDisplay] = useState('$10.000');
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+
+  // Función para obtener la conversión de precio
+  const fetchPriceConversion = async () => {
+    try {
+      setIsLoadingPrice(true);
+      
+      // Llamar al endpoint de conversión de FastAPI
+      const response = await fetchWithCORS('https://ct-fastapi.vercel.app/currency/convert?amount=10000&from_currency=CLP&to_currency=USD');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.formatted && data.formatted.combined) {
+        setPriceDisplay(data.formatted.combined);
+        console.log('✅ Conversión de precio obtenida:', data.formatted.combined);
+      } else {
+        console.warn('⚠️ No se pudo obtener la conversión, usando precio por defecto');
+        setPriceDisplay('$10.000');
+      }
+    } catch (error) {
+      console.error('❌ Error al obtener conversión de precio:', error);
+      // En caso de error, mantener el precio por defecto
+      setPriceDisplay('$10.000');
+    } finally {
+      setIsLoadingPrice(false);
+    }
+  };
+
+  // Cargar la conversión cuando el modal se abre
+  useEffect(() => {
+    if (visible) {
+      fetchPriceConversion();
+    }
+  }, [visible]);
 
   // Función para procesar el pago premium
   const handlePremiumUpgrade = async () => {
@@ -257,7 +296,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
             </View>
 
             <View style={styles.priceContainer}>
-              <Text style={styles.priceText}>Solo $10.000</Text>
+              <Text style={styles.priceText}>{priceDisplay}</Text>
               <Text style={styles.priceSubtext}>Pago único - Acceso de por vida</Text>
             </View>
           </View>
@@ -283,7 +322,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
                 <>
                   <Ionicons name="diamond" size={20} color="#fff" style={{ marginRight: 8 }} />
                   <Text style={styles.upgradeButtonText}>
-                    Pagar $10.000 - Actualizar a Premium
+                    Pagar {priceDisplay} - Actualizar a Premium
                   </Text>
                 </>
               )}

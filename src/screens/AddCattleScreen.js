@@ -38,6 +38,8 @@ const AddCattleScreen = (props) => {
   const [cattleCount, setCattleCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [priceDisplay, setPriceDisplay] = useState('$10.000');
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
 
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
@@ -327,6 +329,43 @@ const AddCattleScreen = (props) => {
     
     loadCattleData();
   }, [cattleId, isEditMode]);
+
+  // Función para obtener la conversión de precio
+  const fetchPriceConversion = async () => {
+    try {
+      setIsLoadingPrice(true);
+      
+      // Llamar al endpoint de conversión de FastAPI
+      const response = await fetchWithCORS('https://ct-fastapi.vercel.app/currency/convert?amount=10000&from_currency=CLP&to_currency=USD');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.formatted && data.formatted.combined) {
+        setPriceDisplay(data.formatted.combined);
+        console.log('✅ Conversión de precio obtenida:', data.formatted.combined);
+      } else {
+        console.warn('⚠️ No se pudo obtener la conversión, usando precio por defecto');
+        setPriceDisplay('$10.000');
+      }
+    } catch (error) {
+      console.error('❌ Error al obtener conversión de precio:', error);
+      // En caso de error, mantener el precio por defecto
+      setPriceDisplay('$10.000');
+    } finally {
+      setIsLoadingPrice(false);
+    }
+  };
+
+  // Cargar la conversión cuando se muestra la advertencia
+  useEffect(() => {
+    if (showCattleWarning) {
+      fetchPriceConversion();
+    }
+  }, [showCattleWarning]);
 
   // Función para manejar errores de manera consistente
   const handleError = (error, customMessage = 'Se produjo un error') => {
@@ -995,7 +1034,7 @@ const AddCattleScreen = (props) => {
                 </View>
 
                 <View style={styles.priceContainer}>
-                  <Text style={styles.priceText}>Solo $10.000</Text>
+                  <Text style={styles.priceText}>{priceDisplay}</Text>
                   <Text style={styles.priceSubtext}>Pago único - Acceso de por vida</Text>
                 </View>
               </View>
@@ -1021,7 +1060,7 @@ const AddCattleScreen = (props) => {
                     <>
                       <Ionicons name="diamond" size={20} color="#fff" style={{ marginRight: 8 }} />
                       <Text style={styles.upgradeButtonText}>
-                        Pagar $10.000 - Actualizar a Premium
+                        Pagar {priceDisplay} - Actualizar a Premium
                       </Text>
                     </>
                   )}

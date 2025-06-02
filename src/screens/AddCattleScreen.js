@@ -747,56 +747,108 @@ const AddCattleScreen = (props) => {
           </View>
         </Modal>        {/* Modal de advertencia de cantidad de ganado */}
         <Modal
-          animationType="fade"
+          animationType="slide"
           transparent={true}
           visible={showCattleWarning}
           onRequestClose={() => setShowCattleWarning(false)}
         >
-          <View style={styles.modalContainer}>
-            <View style={[styles.modalContent, { backgroundColor: '#fff' }]}>
-              <View style={styles.modalHeader}>
-                <Ionicons name="warning" size={40} color="#f39c12" />
-                <Text style={[styles.modalTitle, { color: '#2c3e50', marginTop: 10 }]}>
-                  Límite de Versión Gratuita
+          <View style={styles.modalOverlay}>
+            <View style={styles.premiumModalContent}>
+              {/* Header con gradiente */}
+              <View style={styles.premiumModalHeader}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="diamond" size={50} color="#fff" />
+                </View>
+                <Text style={styles.premiumModalTitle}>
+                  ¡Actualiza a Premium!
+                </Text>
+                <Text style={styles.premiumModalSubtitle}>
+                  Desbloquea todo el potencial de CowTracker
                 </Text>
               </View>
               
-              <View style={styles.modalBody}>
-                <Text style={[styles.modalText, { fontSize: 16, lineHeight: 24 }]}>
-                  Has alcanzado el límite de <Text style={{ fontWeight: 'bold', color: '#e67e22' }}>2 cabezas de ganado</Text> de la versión gratuita.
+              {/* Contenido principal */}
+              <View style={styles.premiumModalBody}>
+                <View style={styles.limitWarning}>
+                  <Ionicons name="warning-outline" size={24} color="#f39c12" />
+                  <Text style={styles.limitText}>
+                    Has alcanzado el límite de <Text style={styles.boldText}>2 cabezas de ganado</Text> de la versión gratuita
+                  </Text>
+                </View>
+
+                <Text style={styles.benefitsTitle}>
+                  Con Premium obtienes:
                 </Text>
-                <Text style={[styles.modalText, { marginTop: 10, color: '#7f8c8d' }]}>
-                  Actualiza a Premium para obtener:
-                </Text>
+                
                 <View style={styles.benefitsList}>
-                  <Text style={styles.benefitItem}>• Registro ilimitado de ganado</Text>
-                  <Text style={styles.benefitItem}>• Acceso a reportes avanzados</Text>
-                  <Text style={styles.benefitItem}>• Exportación de datos</Text>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Registro ilimitado de ganado</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Reportes avanzados y estadísticas</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Exportación de datos a Excel/PDF</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Soporte prioritario 24/7</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Sincronización en la nube</Text>
+                  </View>
+                </View>
+
+                <View style={styles.priceContainer}>
+                  <Text style={styles.priceText}>Solo $9.99/mes</Text>
+                  <Text style={styles.priceSubtext}>Cancela cuando quieras</Text>
                 </View>
               </View>
               
-              <View style={styles.modalButtonsContainer}>
+              {/* Botones de acción */}
+              <View style={styles.premiumModalButtons}>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
+                  style={styles.upgradeButton}
+                  onPress={async () => {
+                    try {
+                      setShowCattleWarning(false);
+                      // Navegar al perfil para actualizar a premium
+                      router.push('/(tabs)/profile');
+                    } catch (error) {
+                      console.error('Error al navegar al perfil:', error);
+                    }
+                  }}
+                >
+                  <Ionicons name="diamond" size={20} color="#fff" style={{ marginRight: 8 }} />
+                  <Text style={styles.upgradeButtonText}>
+                    Actualizar a Premium
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.laterButton}
                   onPress={() => {
                     setShowCattleWarning(false);
                     handleCancel();
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>
-                    Cancelar
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: '#27ae60' }]}
-                  onPress={() => setShowCattleWarning(false)}
-                >
-                  <Text style={styles.buttonText}>
-                    Continuar
+                  <Text style={styles.laterButtonText}>
+                    Tal vez más tarde
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Botón de cerrar */}
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowCattleWarning(false)}
+              >
+                <Ionicons name="close" size={24} color="#95a5a6" />
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -1014,6 +1066,155 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#fff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  premiumModalContent: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...getShadowStyle(8),
+  },
+  premiumModalHeader: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  premiumModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  premiumModalSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  premiumModalBody: {
+    padding: 24,
+  },
+  limitWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff3cd',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f39c12',
+  },
+  limitText: {
+    fontSize: 15,
+    marginLeft: 12,
+    color: '#856404',
+    flex: 1,
+    lineHeight: 22,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#e67e22',
+  },
+  benefitsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#2c3e50',
+    textAlign: 'center',
+  },
+  benefitsList: {
+    marginBottom: 20,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingLeft: 8,
+  },
+  benefitText: {
+    fontSize: 15,
+    marginLeft: 12,
+    color: '#34495e',
+    flex: 1,
+  },
+  priceContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  priceText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    marginBottom: 4,
+  },
+  priceSubtext: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  premiumModalButtons: {
+    padding: 24,
+    paddingTop: 0,
+    gap: 12,
+  },
+  upgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: '#27ae60',
+    ...getShadowStyle(4),
+  },
+  upgradeButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  laterButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+    backgroundColor: '#fff',
+  },
+  laterButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#7f8c8d',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

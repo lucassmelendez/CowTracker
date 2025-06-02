@@ -64,5 +64,58 @@ api.interceptors.request.use(
   }
 );
 
+// Configuración de la API
+export const API_CONFIG = {
+  // URL base de tu API desplegada en Vercel
+  // Reemplaza esta URL con la URL real de tu despliegue
+  BASE_URL: 'https://ct-fastapi.vercel.app',
+  
+  // Endpoints específicos
+  ENDPOINTS: {
+    WEBPAY: {
+      CREATE_TRANSACTION: '/webpay/create-transaction',
+      RETURN: '/webpay/return',
+      STATUS: '/webpay/status',
+      CONFIRM: '/webpay/confirm'
+    }
+  }
+};
+
+// Función helper para construir URLs completas
+export const buildApiUrl = (endpoint) => {
+  return `${API_CONFIG.BASE_URL}${endpoint}`;
+};
+
+// Función para hacer fetch con configuración CORS mejorada
+export const fetchWithCORS = async (url, options = {}) => {
+  const defaultOptions = {
+    mode: 'cors',
+    credentials: 'omit', // Cambiar de 'include' a 'omit' para evitar problemas de CORS
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Origin': window.location.origin,
+      ...options.headers
+    },
+    ...options
+  };
+
+  try {
+    const response = await fetch(url, defaultOptions);
+    return response;
+  } catch (error) {
+    console.error('Error en fetchWithCORS:', error);
+    throw error;
+  }
+};
+
+// URLs específicas para Webpay
+export const WEBPAY_URLS = {
+  createTransaction: buildApiUrl(API_CONFIG.ENDPOINTS.WEBPAY.CREATE_TRANSACTION),
+  return: buildApiUrl(API_CONFIG.ENDPOINTS.WEBPAY.RETURN),
+  status: (token) => buildApiUrl(`${API_CONFIG.ENDPOINTS.WEBPAY.STATUS}/${token}`),
+  confirm: buildApiUrl(API_CONFIG.ENDPOINTS.WEBPAY.CONFIRM)
+};
+
 export { API_URL };
 export default api;

@@ -9,7 +9,8 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
-  Modal
+  Modal,
+  Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -19,6 +20,7 @@ import { useAuth } from '../components/AuthContext';
 import FarmSelector from '../components/FarmSelector';
 import api from '../services/api';
 import { supabase } from '../config/supabase';
+import { WEBPAY_URLS, fetchWithCORS } from '../config/api';
 
 const AddCattleScreen = (props) => {
   const router = useRouter();
@@ -35,6 +37,8 @@ const AddCattleScreen = (props) => {
   const [showCattleWarning, setShowCattleWarning] = useState(false);
   const [cattleCount, setCattleCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
   const [name, setName] = useState('');
@@ -45,10 +49,6 @@ const AddCattleScreen = (props) => {
   const [purchasePrice, setPurchasePrice] = useState('');
   const [selectedFarmId, setSelectedFarmId] = useState('');
   const [healthStatus, setHealthStatus] = useState('saludable');
-    // Estados para validación de campos numéricos
-  const [identifierError, setIdentifierError] = useState(false);
-  const [purchasePriceError, setPurchasePriceError] = useState(false);
-  const [validationModalVisible, setValidationModalVisible] = useState(false);
   const [status, setStatus] = useState('activo');
   const [tipoProduccion, setTipoProduccion] = useState('leche');
   
@@ -62,33 +62,8 @@ const AddCattleScreen = (props) => {
   
   // Estados para carga
   const [farms, setFarms] = useState([]);
-  const [loadingFarms, setLoadingFarms] = useState(false);  const [loadingCattle, setLoadingCattle] = useState(isEditMode);
-
-  // Funciones de validación numérica
-  const validateNumericInput = (text) => {
-    // Permitir números enteros y decimales (con punto o coma)
-    return /^[0-9]*[.,]?[0-9]*$/.test(text);
-  };
-
-  const handleIdentifierChange = (text) => {
-    setIdentifier(text);
-    // Validar solo si hay texto
-    if (text.trim() !== '') {
-      setIdentifierError(!validateNumericInput(text));
-    } else {
-      setIdentifierError(false);
-    }
-  };
-
-  const handlePurchasePriceChange = (text) => {
-    setPurchasePrice(text);
-    // Validar solo si hay texto
-    if (text.trim() !== '') {
-      setPurchasePriceError(!validateNumericInput(text));
-    } else {
-      setPurchasePriceError(false);
-    }
-  };
+  const [loadingFarms, setLoadingFarms] = useState(false);
+  const [loadingCattle, setLoadingCattle] = useState(isEditMode);
 
   // Función para cargar granjas de manera segura
   const loadFarms = async () => {
@@ -385,14 +360,9 @@ const AddCattleScreen = (props) => {
         console.error('No se pudo navegar:', e);
       }
     }  };
+
   const handleSave = async () => {
     try {
-      // Verificar si hay errores de validación numérica
-      if (identifierError || purchasePriceError) {
-        setValidationModalVisible(true);
-        return;
-      }
-
       // Verificar límite de ganado antes de continuar
       const canAddCattle = await checkCattleCount();
       if (!canAddCattle) {
@@ -494,6 +464,192 @@ const AddCattleScreen = (props) => {
     }
   };
 
+  // Función para procesar el pago premium
+  const handlePremiumUpgrade = async () => {
+    try {
+      setIsProcessingPayment(true);
+      
+      // Generar un buy_order corto (máximo 26 caracteres)
+      const timestamp = Date.now().toString().slice(-8); // Últimos 8 dígitos del timestamp
+      const userIdShort = userInfo?.uid?.slice(-8) || 'user'; // Últimos 8 caracteres del UID
+      const buyOrder = `prem_${userIdShort}_${timestamp}`.slice(0, 26); // Máximo 26 caracteres
+      
+      // Configuración de la transacción
+      const paymentData = {
+        amount: 10000, // $10.000 pesos chilenos
+        buy_order: buyOrder,
+        session_id: `sess_${timestamp}`,
+        return_url: WEBPAY_URLS.return,
+        description: 'Actualización a CowTracker Premium'
+      };
+
+      console.log('Iniciando transacción Webpay con datos:', paymentData);
+
+      // Llamar a tu API de FastAPI en Vercel para crear la transacción usando fetchWithCORS
+      const response = await fetchWithCORS(WEBPAY_URLS.createTransaction, {
+        method: 'POST',
+        body: JSON.stringify(paymentData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Respuesta de la API:', result);
+
+      if (result.success && result.url && result.token) {
+        // Cerrar el modal antes de redirigir
+        setShowCattleWarning(false);
+        
+        console.log('✅ Transacción creada exitosamente');
+        console.log('🔗 URL de Webpay:', result.url);
+        console.log('🎫 Token:', result.token);
+        
+        // Crear la URL completa de Webpay con el token
+        const webpayUrl = `${result.url}?token_ws=${result.token}`;
+        console.log('🌐 URL completa de redirección:', webpayUrl);
+        
+        console.log('🚨 A punto de mostrar Alert...');
+        
+        // Detectar si estamos en web
+        const isWeb = Platform.OS === 'web' || typeof window !== 'undefined';
+        console.log('🌐 Plataforma detectada:', Platform.OS, 'Es web:', isWeb);
+        
+        // Si estamos en web, redirigir directamente sin Alert
+        if (isWeb) {
+          console.log('🌐 Redirección directa en web...');
+          try {
+            window.open(webpayUrl, '_blank', 'noopener,noreferrer');
+            console.log('✅ URL abierta exitosamente en web');
+            
+            // Mostrar mensaje de confirmación
+            Alert.alert(
+              'Redirección Exitosa',
+              'Se ha abierto Webpay en una nueva pestaña. Si no se abrió automáticamente, usa este enlace:\n\n' + webpayUrl,
+              [{ text: 'OK' }]
+            );
+          } catch (webError) {
+            console.error('❌ Error en redirección web:', webError);
+            // Mostrar la URL al usuario como fallback
+            Alert.alert(
+              'Abrir Webpay Manualmente',
+              `Copia y pega esta URL en tu navegador:\n\n${webpayUrl}`,
+              [
+                {
+                  text: 'Copiar URL',
+                  onPress: () => {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      navigator.clipboard.writeText(webpayUrl);
+                    }
+                  }
+                },
+                { text: 'OK' }
+              ]
+            );
+          }
+        } else {
+          // Para móvil, mostrar el Alert original
+          console.log('📱 Mostrando Alert para móvil...');
+          Alert.alert(
+            'Redirigiendo a Webpay',
+            'Serás redirigido al sistema de pagos de Transbank para completar tu compra.',
+            [
+              {
+                text: 'Continuar',
+                onPress: async () => {
+                  try {
+                    console.log('🚀 Intentando abrir URL en móvil:', webpayUrl);
+                    
+                    const supported = await Linking.canOpenURL(webpayUrl);
+                    console.log('🔍 URL soportada en móvil:', supported);
+                    
+                    if (supported) {
+                      console.log('✅ Abriendo URL en navegador móvil...');
+                      await Linking.openURL(webpayUrl);
+                      console.log('✅ URL abierta exitosamente en móvil');
+                    } else {
+                      throw new Error('URL no soportada en esta plataforma móvil');
+                    }
+                  } catch (linkingError) {
+                    console.error('❌ Error al abrir Webpay:', linkingError);
+                    
+                    Alert.alert(
+                      'Abrir Webpay Manualmente',
+                      `No se pudo abrir automáticamente. Por favor, copia y pega esta URL en tu navegador:\n\n${webpayUrl}`,
+                      [
+                        {
+                          text: 'Copiar URL',
+                          onPress: () => {
+                            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                              navigator.clipboard.writeText(webpayUrl);
+                            }
+                          }
+                        },
+                        { text: 'OK' }
+                      ]
+                    );
+                  }
+                }
+              },
+              {
+                text: 'Cancelar',
+                style: 'cancel'
+              }
+            ]
+          );
+        }
+      } else {
+        console.error('❌ Respuesta inválida:', result);
+        throw new Error(result.message || 'Error al crear la transacción');
+      }
+    } catch (error) {
+      console.error('Error al procesar el pago premium:', error);
+      
+      let errorMessage = 'No se pudo procesar el pago. ';
+      
+      // Manejo específico de errores de CORS
+      if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+        errorMessage = 'Error de conectividad. La API está actualizándose. Por favor, intenta nuevamente en unos minutos.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage += 'Verifica tu conexión a internet.';
+      } else if (error.message.includes('HTTP error')) {
+        errorMessage += 'El servidor está temporalmente no disponible.';
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Por favor, intenta nuevamente.';
+      }
+      
+      Alert.alert(
+        'Error de Pago', 
+        errorMessage,
+        [
+          { 
+            text: 'Reintentar', 
+            onPress: () => {
+              // Permitir reintentar después de un breve delay
+              setTimeout(() => {
+                setIsProcessingPayment(false);
+              }, 1000);
+            }
+          },
+          { 
+            text: 'Cancelar', 
+            style: 'cancel',
+            onPress: () => setIsProcessingPayment(false)
+          }
+        ]
+      );
+      return; // No ejecutar el finally si estamos reintentando
+    } finally {
+      // Solo resetear si no estamos reintentando
+      if (!isProcessingPayment) {
+        setIsProcessingPayment(false);
+      }
+    }
+  };
+
   // Formatear fecha para mostrar en la UI
   const formatDate = (date) => {
     try {
@@ -560,19 +716,16 @@ const AddCattleScreen = (props) => {
       </View>
 
       <View style={styles.formContainer}>
-        <Text style={styles.sectionTitle}>Información básica</Text>        <Text style={styles.label}>Número de Identificación *</Text>
+        <Text style={styles.sectionTitle}>Información básica</Text>
+
+        <Text style={styles.label}>Número de Identificación *</Text>
         <TextInput
-          style={identifierError ? styles.inputError : styles.input}
+          style={styles.input}
           value={identifier}
-          onChangeText={handleIdentifierChange}
+          onChangeText={setIdentifier}
           placeholder="Número de identificación"
           keyboardType="numeric"
         />
-        {identifierError && (
-          <Text style={styles.errorText}>
-            Solo se permiten números en este campo
-          </Text>
-        )}
 
         <Text style={styles.label}>Nombre *</Text>
         <TextInput
@@ -610,19 +763,16 @@ const AddCattleScreen = (props) => {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>        <Text style={styles.label}>Precio de compra</Text>
+        </View>
+
+        <Text style={styles.label}>Precio de compra</Text>
         <TextInput
-          style={purchasePriceError ? styles.inputError : styles.input}
+          style={styles.input}
           value={purchasePrice}
-          onChangeText={handlePurchasePriceChange}
+          onChangeText={setPurchasePrice}
           placeholder="Precio de compra"
           keyboardType="numeric"
         />
-        {purchasePriceError && (
-          <Text style={styles.errorText}>
-            Solo se permiten números en este campo
-          </Text>
-        )}
 
         <Text style={styles.label}>Tipo de Producción</Text>
         <View style={styles.optionsContainer}>
@@ -784,7 +934,9 @@ const AddCattleScreen = (props) => {
               </View>
             </View>
           </View>
-        </Modal>        {/* Modal de advertencia de cantidad de ganado */}
+        </Modal>
+        
+        {/* Modal de advertencia de cantidad de ganado */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -843,37 +995,48 @@ const AddCattleScreen = (props) => {
                 </View>
 
                 <View style={styles.priceContainer}>
-                  <Text style={styles.priceText}>Solo $9.99/mes</Text>
-                  <Text style={styles.priceSubtext}>Cancela cuando quieras</Text>
+                  <Text style={styles.priceText}>Solo $10.000</Text>
+                  <Text style={styles.priceSubtext}>Pago único - Acceso de por vida</Text>
                 </View>
               </View>
               
               {/* Botones de acción */}
               <View style={styles.premiumModalButtons}>
                 <TouchableOpacity
-                  style={styles.upgradeButton}
-                  onPress={async () => {
-                    try {
-                      setShowCattleWarning(false);
-                      // Navegar al perfil para actualizar a premium
-                      router.push('/(tabs)/profile');
-                    } catch (error) {
-                      console.error('Error al navegar al perfil:', error);
-                    }
-                  }}
+                  style={[
+                    styles.upgradeButton,
+                    isProcessingPayment && styles.disabledButton
+                  ]}
+                  onPress={handlePremiumUpgrade}
+                  disabled={isProcessingPayment}
                 >
-                  <Ionicons name="diamond" size={20} color="#fff" style={{ marginRight: 8 }} />
-                  <Text style={styles.upgradeButtonText}>
-                    Actualizar a Premium
-                  </Text>
+                  {isProcessingPayment ? (
+                    <>
+                      <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                      <Text style={styles.upgradeButtonText}>
+                        Procesando...
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons name="diamond" size={20} color="#fff" style={{ marginRight: 8 }} />
+                      <Text style={styles.upgradeButtonText}>
+                        Pagar $10.000 - Actualizar a Premium
+                      </Text>
+                    </>
+                  )}
                 </TouchableOpacity>
                 
                 <TouchableOpacity
-                  style={styles.laterButton}
+                  style={[
+                    styles.laterButton,
+                    isProcessingPayment && styles.disabledButton
+                  ]}
                   onPress={() => {
                     setShowCattleWarning(false);
                     handleCancel();
                   }}
+                  disabled={isProcessingPayment}
                 >
                   <Text style={styles.laterButtonText}>
                     Tal vez más tarde
@@ -883,63 +1046,15 @@ const AddCattleScreen = (props) => {
 
               {/* Botón de cerrar */}
               <TouchableOpacity
-                style={styles.closeButton}
+                style={[
+                  styles.closeButton,
+                  isProcessingPayment && styles.disabledButton
+                ]}
                 onPress={() => setShowCattleWarning(false)}
+                disabled={isProcessingPayment}
               >
                 <Ionicons name="close" size={24} color="#95a5a6" />
               </TouchableOpacity>
-            </View>
-          </View>        </Modal>
-
-        {/* Modal de validación de errores */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={validationModalVisible}
-          onRequestClose={() => setValidationModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.validationModalContent}>
-              <View style={styles.validationModalHeader}>
-                <Ionicons name="warning" size={50} color="#e74c3c" />
-                <Text style={styles.validationModalTitle}>
-                  Formulario Incompleto
-                </Text>
-              </View>
-              
-              <View style={styles.validationModalBody}>
-                <Text style={styles.validationModalText}>
-                  Por favor, corrige los siguientes errores antes de guardar:
-                </Text>
-                
-                <View style={styles.errorsList}>
-                  {identifierError && (
-                    <View style={styles.errorItem}>
-                      <Ionicons name="close-circle" size={16} color="#e74c3c" />
-                      <Text style={styles.errorItemText}>
-                        El número de identificación debe contener solo números
-                      </Text>
-                    </View>
-                  )}
-                  {purchasePriceError && (
-                    <View style={styles.errorItem}>
-                      <Ionicons name="close-circle" size={16} color="#e74c3c" />
-                      <Text style={styles.errorItemText}>
-                        El precio de compra debe contener solo números
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-              
-              <View style={styles.validationModalButtons}>
-                <TouchableOpacity
-                  style={styles.validationModalButton}
-                  onPress={() => setValidationModalVisible(false)}
-                >
-                  <Text style={styles.validationModalButtonText}>Entendido</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           </View>
         </Modal>
@@ -986,7 +1101,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
     color: '#333',
-  },  input: {
+  },
+  input: {
     height: 40,
     borderColor: '#ddd',
     borderWidth: 1,
@@ -995,23 +1111,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 16,
     color: '#333',
-  },
-  inputError: {
-    height: 40,
-    borderColor: '#e74c3c',
-    borderWidth: 2,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 4,
-    fontSize: 16,
-    color: '#333',
-    backgroundColor: '#fdf2f2',
-  },
-  errorText: {
-    color: '#e74c3c',
-    fontSize: 12,
-    marginBottom: 12,
-    marginTop: -4,
   },
   textArea: {
     minHeight: 80,
@@ -1311,7 +1410,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#7f8c8d',
-  },  closeButton: {
+  },
+  closeButton: {
     position: 'absolute',
     top: 16,
     right: 16,
@@ -1322,72 +1422,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Estilos para modal de validación
-  validationModalContent: {
-    width: '85%',
-    maxWidth: 350,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-    ...getShadowStyle(8),
-  },
-  validationModalHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  validationModalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  validationModalBody: {
-    width: '100%',
-    marginBottom: 24,
-  },
-  validationModalText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  errorsList: {
-    width: '100%',
-  },
-  errorItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fdf2f2',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#e74c3c',
-  },
-  errorItemText: {
-    fontSize: 13,
-    color: '#e74c3c',
-    marginLeft: 8,
-    flex: 1,
-  },
-  validationModalButtons: {
-    width: '100%',
-  },
-  validationModalButton: {
-    backgroundColor: '#e74c3c',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    ...getShadowStyle(2),
-  },
-  validationModalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  disabledButton: {
+    backgroundColor: '#bdc3c7',
   },
 });
 

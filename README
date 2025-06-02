@@ -1,13 +1,143 @@
-1.clonar el repositorio
-git clone https://github.com/lucassmelendez/CowTracker.git
+CowTracker API - Backend FastAPI con Webpay Plus
+API REST para el sistema de seguimiento de ganado CowTracker, desarrollada con FastAPI y con integración completa de Webpay Plus para procesamiento de pagos, así como una integración con la API del Banco Central de Chile para conversión de divisas. Optimizada para despliegue en Vercel.
 
-2.Instalar dependecias
-npm install
+🚀 Características
+FastAPI: Framework moderno y rápido para APIs
+Webpay Plus: Integración completa con el sistema de pagos de Transbank
+API Banco Central: Integración para tipos de cambio y valores UF/UTM
+Documentación automática: Swagger UI y ReDoc incluidos
+CORS configurado: Listo para frontend
+Validación de datos: Con Pydantic
+Variables de entorno: Configuración segura y flexible
+Optimizado para Vercel: Configuración lista para despliegue
+📋 Endpoints Disponibles
+Información General
+GET / - Mensaje de bienvenida y estado de Webpay
+GET /health - Estado de salud de la API
+GET /config - Verificar configuración (sin mostrar credenciales)
+GET /docs - Documentación Swagger UI
+GET /redoc - Documentación ReDoc
+Gestión de Vacas
+GET /cows - Obtener todas las vacas
+GET /cows/{cow_id} - Obtener una vaca específica
+POST /cows - Crear una nueva vaca
+PUT /cows/{cow_id} - Actualizar una vaca
+DELETE /cows/{cow_id} - Eliminar una vaca
+Filtros
+GET /cows/breed/{breed} - Filtrar por raza
+GET /cows/health/{status} - Filtrar por estado de salud
+💳 Webpay Plus - Pagos
+POST /webpay/create-transaction - Crear una nueva transacción de pago
+POST /cows/{cow_id}/purchase - Iniciar compra de una vaca específica
+POST /webpay/confirm - Confirmar una transacción (webhook)
+GET /webpay/return - Página de retorno después del pago
+GET /webpay/status/{token} - Obtener estado de una transacción
+POST /webpay/refund/{token} - Anular/reversar una transacción
+Gestión de Transacciones
+GET /transactions - Obtener todas las transacciones
+GET /transactions/{buy_order} - Obtener transacción por orden de compra
+🏦 Banco Central de Chile
+GET /bcentral/exchange-rate - Tipo de cambio (USD, EUR, etc.)
+GET /bcentral/uf - Valor de la UF
+GET /bcentral/utm - Valor de la UTM
+GET /bcentral/economic-indicators - Indicadores económicos
+GET /bcentral/series - Series disponibles
+GET /bcentral/series/{code} - Serie específica
+GET /bcentral/currencies - Monedas soportadas
+GET /bcentral/convert - Conversión de divisas
+🛠️ Instalación Local
+1. Configurar Variables de Entorno
+Paso 1: Copia el archivo de plantilla
 
-3.Crear Brach de trabajo en git
+Paso 2: El archivo .env ya contiene las credenciales de integración de Webpay Plus:
 
-4.Iniciar proyecto 
-npx expo start
+2. Instalar Dependencias
+3. Ejecutar la Aplicación
+La API estará disponible en: http://localhost:8000
 
-una vez iniciado se puede abrir en el navegador 
-presionando w en la misma consola
+4. Verificar Configuración
+Visita http://localhost:8000/config para verificar que Webpay esté configurado correctamente.
+
+🧪 Pruebas con Webpay Plus
+Datos de Prueba (Ambiente de Integración)
+Tarjeta de Crédito: 4051 8856 0044 6623
+CVV: 123
+Fecha de vencimiento: Cualquier fecha futura (ej: 12/25)
+RUT: 11.111.111-1
+Página de Prueba
+Abre el archivo test_webpay.html en tu navegador para probar la integración completa.
+
+💳 Flujo de Pago Webpay Plus
+Crear Transacción: El cliente solicita una transacción
+Redirección: Se redirige al usuario a Webpay Plus
+Pago: El usuario ingresa sus datos de tarjeta
+Retorno: Webpay redirige de vuelta a tu aplicación
+Confirmación: Se confirma automáticamente la transacción
+Resultado: Se muestra el resultado del pago
+🌐 Despliegue en Vercel
+Variables de Entorno en Vercel
+En el dashboard de Vercel, configura las siguientes variables de entorno:
+
+Opción 1: Desde GitHub
+Sube tu código a un repositorio de GitHub
+Conecta tu cuenta de Vercel con GitHub
+Importa el proyecto desde Vercel Dashboard
+Configura las variables de entorno
+Vercel detectará automáticamente la configuración
+Opción 2: Vercel CLI
+Instalar Vercel CLI
+Iniciar sesión
+Desplegar
+Configurar variables de entorno
+Desplegar a producción
+🔒 Configuración de Producción
+Para usar en producción, actualiza tu archivo .env:
+
+Requisitos para producción:
+
+Obtener credenciales reales de Transbank
+Implementar HTTPS (obligatorio para Webpay)
+Configurar dominio real en URLs de retorno
+Validar certificados SSL
+🔒 Consideraciones de Seguridad
+HTTPS obligatorio en producción para Webpay
+Variables de entorno para credenciales sensibles
+Archivo .env excluido del control de versiones
+Configurar CORS con dominios específicos
+Validar siempre las respuestas de Webpay
+Implementar logs de transacciones
+Implementar rate limiting para endpoints de pago
+🗄️ Base de Datos
+Actualmente usa una base de datos en memoria para demostración. Para producción, considera:
+
+PostgreSQL con SQLAlchemy para transacciones
+Redis para cache de sesiones
+MongoDB para logs de transacciones
+SQLite para proyectos pequeños
+📚 Documentación API
+Una vez desplegada, la documentación estará disponible en:
+
+Swagger UI: https://tu-api.vercel.app/docs
+ReDoc: https://tu-api.vercel.app/redoc
+🆘 Solución de Problemas
+Error: "WEBPAY_COMMERCE_CODE no está configurado"
+Error: "Token no válido"
+Verifica que el token no haya expirado (5 minutos)
+Asegúrate de usar el token correcto en la confirmación
+Error: "Transacción rechazada"
+Verifica los datos de la tarjeta de prueba
+Asegúrate de estar en el ambiente correcto (integración/producción)
+Error de CORS
+Configura los orígenes permitidos en CORS_ORIGINS
+Verifica que el frontend esté en un dominio permitido
+Webpay no configurado
+Verifica que el archivo .env exista y tenga las variables correctas
+Revisa los logs de la aplicación al iniciar
+📞 Soporte
+Para más información sobre Webpay Plus:
+
+Documentación oficial de Transbank
+SDK Python de Transbank
+Para información sobre la API del Banco Central:
+
+Documentación oficial del Banco Central

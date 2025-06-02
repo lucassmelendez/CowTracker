@@ -75,10 +75,10 @@ export default function PremiumActivateScreen() {
         setActivationSuccess(true);
         setIsActivating(false);
         
-        // Mostrar mensaje de éxito y redirigir después de 3 segundos
+        // Redirigir directamente al perfil después de 2 segundos
         setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 3000);
+          router.replace('/(tabs)/profile');
+        }, 2000);
       } else {
         throw new Error(data.message || 'Error al activar premium');
       }
@@ -155,9 +155,9 @@ export default function PremiumActivateScreen() {
           
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => router.replace('/(tabs)/profile')}
           >
-            <Text style={styles.continueButtonText}>Continuar a CowTracker</Text>
+            <Text style={styles.continueButtonText}>Ir a Mi Perfil</Text>
           </TouchableOpacity>
           
           <Text style={styles.redirectMessage}>

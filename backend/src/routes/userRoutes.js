@@ -7,7 +7,9 @@ const {
   updateUserProfile,
   getUsers,
   changeUserRole,
-  refreshToken
+  refreshToken,
+  updateUserPremium,
+  getPremiumTypes
 } = require('../controllers/userController');
 const { supabaseAuth: protect, requireAdmin: admin } = require('../middlewares/supabaseAuthMiddleware');
 
@@ -17,6 +19,10 @@ router.post('/refresh-token', protect, refreshToken);
 
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
+
+// Rutas de premium
+router.get('/premium-types', protect, getPremiumTypes);
+router.put('/premium', protect, updateUserPremium);
 
 router.get('/', protect, admin, getUsers);
 router.put('/:id/role', protect, admin, changeUserRole);

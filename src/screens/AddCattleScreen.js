@@ -9,7 +9,8 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
-  Modal
+  Modal,
+  Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -19,6 +20,7 @@ import { useAuth } from '../components/AuthContext';
 import FarmSelector from '../components/FarmSelector';
 import api from '../services/api';
 import { supabase } from '../config/supabase';
+import { WEBPAY_URLS, fetchWithCORS } from '../config/api';
 
 const AddCattleScreen = (props) => {
   const router = useRouter();
@@ -35,6 +37,9 @@ const AddCattleScreen = (props) => {
   const [showCattleWarning, setShowCattleWarning] = useState(false);
   const [cattleCount, setCattleCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [priceDisplay, setPriceDisplay] = useState('$10.000');
+  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
 
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
@@ -61,144 +66,156 @@ const AddCattleScreen = (props) => {
   const [farms, setFarms] = useState([]);
   const [loadingFarms, setLoadingFarms] = useState(false);
   const [loadingCattle, setLoadingCattle] = useState(isEditMode);
-    // Datos de granja de prueba para asegurar que siempre haya al menos una granja disponible
-  const testFarms = [
-    { _id: 'test-farm-1', id_finca: 'test-farm-1', name: 'Granja de Prueba 1', nombre: 'Granja de Prueba 1' },
-    { _id: 'test-farm-2', id_finca: 'test-farm-2', name: 'Granja de Prueba 2', nombre: 'Granja de Prueba 2' }
-  ];
+
   // Función para cargar granjas de manera segura
   const loadFarms = async () => {
     try {
       setLoadingFarms(true);
       
-      // Asegurar que haya datos disponibles en caso de fallo
-      let defaultFarms = [
-        { _id: 'default-farm-1', id_finca: 'default-farm-1', name: 'Granja por defecto', nombre: 'Granja por defecto' }
-      ];
-      
       // Verificar si el usuario está autenticado
       if (!userInfo || !userInfo.uid) {
         console.warn('No hay información de usuario disponible');
-        setFarms(defaultFarms);
+        setFarms([]);
         return;
       }
       
       console.log('Cargando granjas para el usuario:', userInfo.uid);
       
       try {
-        // Intenta obtener las granjas a través de la API
-        const userFarms = await api.farms.getAll();
-        console.log('Respuesta de la API (farms.getAll):', userFarms);
-        
+        // Obtener el ID numérico del usuario
+        const { data: userNumericData, error: userNumericError } = await supabase
+          .from('usuario')
+          .select('id_usuario')
+          .eq('id_autentificar', userInfo.uid)
+          .single();
+
+        if (userNumericError) throw userNumericError;
+
+        // Obtener las granjas del usuario a través de la tabla usuario_finca
+        const { data: userFarms, error: farmsError } = await supabase
+          .from('usuario_finca')
+          .select(`
+            id_finca,
+            finca:finca(
+              id_finca,
+              nombre,
+              tamano
+            )
+          `)
+          .eq('id_usuario', userNumericData.id_usuario);
+
+        if (farmsError) throw farmsError;
+
         let finalFarms = [];
         
-        // Verificar y procesar los datos recibidos
-        if (userFarms && Array.isArray(userFarms)) {
-          // Filtrar para remover elementos nulos o indefinidos
-          const validFarms = userFarms.filter(farm => farm !== null && farm !== undefined);
-          
-          if (validFarms.length > 0) {
-            // Procesar y normalizar los datos de las granjas
-            finalFarms = validFarms.map((farm, index) => {
-              const farmId = farm._id || farm.id_finca || `api-farm-${index}`;
-              const farmName = farm.name || farm.nombre || `Granja ${index+1}`;
+        if (userFarms && userFarms.length > 0) {
+          // Procesar y normalizar los datos de las granjas
+          finalFarms = userFarms
+            .filter(userFarm => userFarm.finca) // Filtrar solo las que tienen datos de finca
+            .map((userFarm, index) => {
+              const farm = userFarm.finca;
+              const farmId = farm.id_finca;
+              const farmName = farm.nombre || `Granja ${index + 1}`;
               
               return {
-                ...farm,
                 _id: farmId,
                 id_finca: farmId,
                 name: farmName,
-                nombre: farmName
+                nombre: farmName,
+                tamano: farm.tamano || 0
               };
             });
-            
-            console.log(`Se procesaron ${finalFarms.length} granjas válidas`);
-          } else {
-            console.warn('La API devolvió un array vacío o sin elementos válidos');
-          }
-        } else if (userFarms && typeof userFarms === 'object') {
-          // Si es un objeto pero no un array, puede ser un objeto de datos
-          console.log('La API devolvió un objeto, intentando procesarlo...');
           
-          // Extraer propiedades que podrían contener un array de granjas
-          const possibleArrays = ['data', 'farms', 'items', 'results'];
-          
-          for (const key of possibleArrays) {
-            if (userFarms[key] && Array.isArray(userFarms[key])) {
-              console.log(`Encontrado array de granjas en propiedad: ${key}`);
-              finalFarms = userFarms[key].map((farm, index) => ({
-                ...farm,
-                _id: farm._id || farm.id_finca || `api-farm-${index}`,
-                name: farm.name || farm.nombre || `Granja ${index+1}`
-              }));
-              break;
-            }
-          }
-          
-          // Si no encontramos un array en ninguna propiedad común, tratar todo el objeto como una granja
-          if (finalFarms.length === 0 && (userFarms._id || userFarms.id_finca || userFarms.name || userFarms.nombre)) {
-            console.log('Procesando el objeto completo como una única granja');
-            finalFarms = [{
-              ...userFarms,
-              _id: userFarms._id || userFarms.id_finca || 'single-farm',
-              name: userFarms.name || userFarms.nombre || 'Granja Única'
-            }];
-          }
+          console.log(`Se procesaron ${finalFarms.length} granjas válidas`);
         } else {
-          console.warn('La API devolvió un formato de datos no reconocido:', userFarms);
+          console.log('El usuario no tiene granjas asignadas');
         }
         
-        // Si después de todo el procesamiento no tenemos granjas, usar las predeterminadas
-        if (!finalFarms || finalFarms.length === 0) {
-          console.log('No se pudieron procesar granjas válidas, usando granjas por defecto');
-          finalFarms = defaultFarms;
+        // Si no hay granjas, mostrar mensaje apropiado
+        if (finalFarms.length === 0) {
+          console.log('No se encontraron granjas para el usuario');
         }
         
-        // Agregar las granjas de prueba en entorno de desarrollo
-        if (process.env.NODE_ENV !== 'production' && Array.isArray(testFarms)) {
-          console.log('Agregando granjas de prueba en entorno de desarrollo');
-          finalFarms = [...finalFarms, ...testFarms];
-        }
-        
-        console.log(`Total granjas disponibles: ${finalFarms.length}`);
         setFarms(finalFarms);
         
         // Si hay granjas disponibles, establecer la primera como seleccionada
         if (finalFarms.length > 0 && !selectedFarmId) {
-          setSelectedFarmId(finalFarms[0]._id);
+          setSelectedFarmId(finalFarms[0].id_finca);
         }
         
       } catch (apiError) {
-        console.error('Error en la llamada API a getAll():', apiError);
-        setFarms(defaultFarms);
+        console.error('Error en la consulta de granjas:', apiError);
+        setFarms([]);
       }
     } catch (error) {
       console.error('Error general al cargar granjas:', error);
-      setFarms([
-        { _id: 'error-farm', id_finca: 'error-farm', name: 'Granja (error recuperado)', nombre: 'Granja (error recuperado)' }
-      ]);
+      setFarms([]);
     } finally {
       setLoadingFarms(false);
     }
   };
-  
-  // Cargar granjas cuando se inicia el componente  // Verificar el número de vacas del usuario
+
+  // Verificar el número de vacas del usuario
   const checkCattleCount = async () => {
     try {
-      const { data: cattle, error } = await supabase
+      // Primero verificar si el usuario es premium
+      const { data: userData, error: userError } = await supabase
+        .from('usuario')
+        .select('id_premium')
+        .eq('id_autentificar', userInfo?.uid)
+        .single();
+
+      if (userError) throw userError;
+
+      // Obtener el ID numérico del usuario
+      const { data: userNumericData, error: userNumericError } = await supabase
+        .from('usuario')
+        .select('id_usuario')
+        .eq('id_autentificar', userInfo?.uid)
+        .single();
+
+      if (userNumericError) throw userNumericError;
+
+      // Obtener las granjas del usuario a través de la tabla usuario_finca
+      const { data: userFarms, error: farmsError } = await supabase
+        .from('usuario_finca')
+        .select('id_finca')
+        .eq('id_usuario', userNumericData.id_usuario);
+
+      if (farmsError) throw farmsError;
+
+      if (!userFarms || userFarms.length === 0) {
+        // Si el usuario no tiene granjas, no tiene ganado
+        setCattleCount(0);
+        return true;
+      }
+
+      // Extraer los IDs de las granjas
+      const farmIds = userFarms.map(farm => farm.id_finca);
+
+      // Obtener el conteo de ganado en las granjas del usuario
+      const { data: cattle, error: cattleError } = await supabase
         .from('ganado')
-        .select('id_ganado');
+        .select('id_ganado')
+        .in('id_finca', farmIds);
       
-      if (error) throw error;
+      if (cattleError) throw cattleError;
       
       const count = cattle ? cattle.length : 0;
       setCattleCount(count);
       
-      if (count >= 2 && !isEditMode) {
+      // Si no es premium (id_premium !== 2) y ya tiene 2 o más cabezas de ganado, mostrar advertencia
+      if (userData?.id_premium !== 2 && count >= 2 && !isEditMode) {
         setShowCattleWarning(true);
+        // Retornar false para evitar que continúe con el registro
+        return false;
       }
+
+      return true;
     } catch (error) {
       console.error('Error al verificar el número de vacas:', error);
+      // En caso de error, permitir continuar para no bloquear al usuario
+      return true;
     }
   };
 
@@ -313,6 +330,43 @@ const AddCattleScreen = (props) => {
     loadCattleData();
   }, [cattleId, isEditMode]);
 
+  // Función para obtener la conversión de precio
+  const fetchPriceConversion = async () => {
+    try {
+      setIsLoadingPrice(true);
+      
+      // Llamar al endpoint de conversión de FastAPI
+      const response = await fetchWithCORS('https://ct-fastapi.vercel.app/currency/convert?amount=10000&from_currency=CLP&to_currency=USD');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.formatted && data.formatted.combined) {
+        setPriceDisplay(data.formatted.combined);
+        console.log('✅ Conversión de precio obtenida:', data.formatted.combined);
+      } else {
+        console.warn('⚠️ No se pudo obtener la conversión, usando precio por defecto');
+        setPriceDisplay('$10.000');
+      }
+    } catch (error) {
+      console.error('❌ Error al obtener conversión de precio:', error);
+      // En caso de error, mantener el precio por defecto
+      setPriceDisplay('$10.000');
+    } finally {
+      setIsLoadingPrice(false);
+    }
+  };
+
+  // Cargar la conversión cuando se muestra la advertencia
+  useEffect(() => {
+    if (showCattleWarning) {
+      fetchPriceConversion();
+    }
+  }, [showCattleWarning]);
+
   // Función para manejar errores de manera consistente
   const handleError = (error, customMessage = 'Se produjo un error') => {
     console.error(customMessage, error);
@@ -344,10 +398,16 @@ const AddCattleScreen = (props) => {
       } catch (e) {
         console.error('No se pudo navegar:', e);
       }
-    }
-  };
+    }  };
+
   const handleSave = async () => {
     try {
+      // Verificar límite de ganado antes de continuar
+      const canAddCattle = await checkCattleCount();
+      if (!canAddCattle) {
+        return;
+      }
+
       // Validaciones con mensajes específicos
       if (!identifier) {
         Alert.alert('Campo requerido', 'Por favor, ingresa un número de identificación para el ganado');
@@ -371,6 +431,9 @@ const AddCattleScreen = (props) => {
       }
 
       try {
+        // Convertir selectedFarmId a número si es necesario
+        const farmIdNumeric = parseInt(selectedFarmId) || selectedFarmId;
+
         // Primero crear la información veterinaria
         const { data: infoVetData, error: infoVetError } = await supabase
           .from('informacion_veterinaria')
@@ -391,12 +454,14 @@ const AddCattleScreen = (props) => {
           numero_identificacion: parseInt(identifier),
           precio_compra: parseFloat(purchasePrice) || 0,
           nota: notes || '',
-          id_finca: selectedFarmId,
+          id_finca: farmIdNumeric,
           id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
           id_genero: gender === 'Macho' ? 1 : 2,
           id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
           id_produccion: tipoProduccion === 'leche' ? 1 : 2
         };
+        
+        console.log('Datos del ganado a insertar:', cattleData);
         
         // Insertar en la tabla ganado
         const { data, error } = await supabase
@@ -404,18 +469,223 @@ const AddCattleScreen = (props) => {
           .insert([cattleData])
           .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error de Supabase al insertar ganado:', error);
+          throw error;
+        }
+
+        console.log('Ganado insertado exitosamente:', data);
 
         // Si la inserción fue exitosa, mostrar mensaje y navegar
         Alert.alert('Éxito', 'Ganado registrado correctamente');
         router.back();
       } catch (supabaseError) {
-        console.error('Error al registrar ganado:', supabaseError.message);
-        Alert.alert('Error', 'No se pudo registrar el ganado. Por favor, intente nuevamente.');
+        console.error('Error al registrar ganado:', supabaseError);
+        
+        // Proporcionar mensajes de error más específicos
+        let errorMessage = 'No se pudo registrar el ganado. ';
+        
+        if (supabaseError.code === '23503') {
+          errorMessage += 'La granja seleccionada no es válida.';
+        } else if (supabaseError.code === '23505') {
+          errorMessage += 'El número de identificación ya existe.';
+        } else if (supabaseError.message) {
+          errorMessage += supabaseError.message;
+        } else {
+          errorMessage += 'Por favor, intente nuevamente.';
+        }
+        
+        Alert.alert('Error', errorMessage);
       }
     } catch (error) {
       console.error('Error al guardar ganado:', error);
       Alert.alert('Error', 'No se pudo guardar el ganado. Inténtalo de nuevo.');
+    }
+  };
+
+  // Función para procesar el pago premium
+  const handlePremiumUpgrade = async () => {
+    try {
+      setIsProcessingPayment(true);
+      
+      // Generar un buy_order corto (máximo 26 caracteres)
+      const timestamp = Date.now().toString().slice(-8); // Últimos 8 dígitos del timestamp
+      const userIdShort = userInfo?.uid?.slice(-8) || 'user'; // Últimos 8 caracteres del UID
+      const buyOrder = `prem_${userIdShort}_${timestamp}`.slice(0, 26); // Máximo 26 caracteres
+      
+      // Configuración de la transacción
+      const paymentData = {
+        amount: 10000, // $10.000 pesos chilenos
+        buy_order: buyOrder,
+        session_id: `sess_${timestamp}`,
+        return_url: WEBPAY_URLS.return,
+        description: 'Actualización a CowTracker Premium'
+      };
+
+      console.log('Iniciando transacción Webpay con datos:', paymentData);
+
+      // Llamar a tu API de FastAPI en Vercel para crear la transacción usando fetchWithCORS
+      const response = await fetchWithCORS(WEBPAY_URLS.createTransaction, {
+        method: 'POST',
+        body: JSON.stringify(paymentData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Respuesta de la API:', result);
+
+      if (result.success && result.url && result.token) {
+        // Cerrar el modal antes de redirigir
+        setShowCattleWarning(false);
+        
+        console.log('✅ Transacción creada exitosamente');
+        console.log('🔗 URL de Webpay:', result.url);
+        console.log('🎫 Token:', result.token);
+        
+        // Crear la URL completa de Webpay con el token
+        const webpayUrl = `${result.url}?token_ws=${result.token}`;
+        console.log('🌐 URL completa de redirección:', webpayUrl);
+        
+        console.log('🚨 A punto de mostrar Alert...');
+        
+        // Detectar si estamos en web
+        const isWeb = Platform.OS === 'web' || typeof window !== 'undefined';
+        console.log('🌐 Plataforma detectada:', Platform.OS, 'Es web:', isWeb);
+        
+        // Si estamos en web, redirigir directamente sin Alert
+        if (isWeb) {
+          console.log('🌐 Redirección directa en web...');
+          try {
+            window.open(webpayUrl, '_blank', 'noopener,noreferrer');
+            console.log('✅ URL abierta exitosamente en web');
+            
+            // Mostrar mensaje de confirmación
+            Alert.alert(
+              'Redirección Exitosa',
+              'Se ha abierto Webpay en una nueva pestaña. Si no se abrió automáticamente, usa este enlace:\n\n' + webpayUrl,
+              [{ text: 'OK' }]
+            );
+          } catch (webError) {
+            console.error('❌ Error en redirección web:', webError);
+            // Mostrar la URL al usuario como fallback
+            Alert.alert(
+              'Abrir Webpay Manualmente',
+              `Copia y pega esta URL en tu navegador:\n\n${webpayUrl}`,
+              [
+                {
+                  text: 'Copiar URL',
+                  onPress: () => {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      navigator.clipboard.writeText(webpayUrl);
+                    }
+                  }
+                },
+                { text: 'OK' }
+              ]
+            );
+          }
+        } else {
+          // Para móvil, mostrar el Alert original
+          console.log('📱 Mostrando Alert para móvil...');
+          Alert.alert(
+            'Redirigiendo a Webpay',
+            'Serás redirigido al sistema de pagos de Transbank para completar tu compra.',
+            [
+              {
+                text: 'Continuar',
+                onPress: async () => {
+                  try {
+                    console.log('🚀 Intentando abrir URL en móvil:', webpayUrl);
+                    
+                    const supported = await Linking.canOpenURL(webpayUrl);
+                    console.log('🔍 URL soportada en móvil:', supported);
+                    
+                    if (supported) {
+                      console.log('✅ Abriendo URL en navegador móvil...');
+                      await Linking.openURL(webpayUrl);
+                      console.log('✅ URL abierta exitosamente en móvil');
+                    } else {
+                      throw new Error('URL no soportada en esta plataforma móvil');
+                    }
+                  } catch (linkingError) {
+                    console.error('❌ Error al abrir Webpay:', linkingError);
+                    
+                    Alert.alert(
+                      'Abrir Webpay Manualmente',
+                      `No se pudo abrir automáticamente. Por favor, copia y pega esta URL en tu navegador:\n\n${webpayUrl}`,
+                      [
+                        {
+                          text: 'Copiar URL',
+                          onPress: () => {
+                            if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                              navigator.clipboard.writeText(webpayUrl);
+                            }
+                          }
+                        },
+                        { text: 'OK' }
+                      ]
+                    );
+                  }
+                }
+              },
+              {
+                text: 'Cancelar',
+                style: 'cancel'
+              }
+            ]
+          );
+        }
+      } else {
+        console.error('❌ Respuesta inválida:', result);
+        throw new Error(result.message || 'Error al crear la transacción');
+      }
+    } catch (error) {
+      console.error('Error al procesar el pago premium:', error);
+      
+      let errorMessage = 'No se pudo procesar el pago. ';
+      
+      // Manejo específico de errores de CORS
+      if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+        errorMessage = 'Error de conectividad. La API está actualizándose. Por favor, intenta nuevamente en unos minutos.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage += 'Verifica tu conexión a internet.';
+      } else if (error.message.includes('HTTP error')) {
+        errorMessage += 'El servidor está temporalmente no disponible.';
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Por favor, intenta nuevamente.';
+      }
+      
+      Alert.alert(
+        'Error de Pago', 
+        errorMessage,
+        [
+          { 
+            text: 'Reintentar', 
+            onPress: () => {
+              // Permitir reintentar después de un breve delay
+              setTimeout(() => {
+                setIsProcessingPayment(false);
+              }, 1000);
+            }
+          },
+          { 
+            text: 'Cancelar', 
+            style: 'cancel',
+            onPress: () => setIsProcessingPayment(false)
+          }
+        ]
+      );
+      return; // No ejecutar el finally si estamos reintentando
+    } finally {
+      // Solo resetear si no estamos reintentando
+      if (!isProcessingPayment) {
+        setIsProcessingPayment(false);
+      }
     }
   };
 
@@ -704,45 +974,126 @@ const AddCattleScreen = (props) => {
             </View>
           </View>
         </Modal>
-
+        
         {/* Modal de advertencia de cantidad de ganado */}
         <Modal
-          animationType="fade"
+          animationType="slide"
           transparent={true}
           visible={showCattleWarning}
           onRequestClose={() => setShowCattleWarning(false)}
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>
-                Advertencia
-              </Text>
-              <Text style={styles.modalText}>
-                Ya tienes {cattleCount} cabezas de ganado registradas. ¿Deseas continuar con el registro?
-              </Text>
+          <View style={styles.modalOverlay}>
+            <View style={styles.premiumModalContent}>
+              {/* Header con gradiente */}
+              <View style={styles.premiumModalHeader}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="diamond" size={50} color="#fff" />
+                </View>
+                <Text style={styles.premiumModalTitle}>
+                  ¡Actualiza a Premium!
+                </Text>
+                <Text style={styles.premiumModalSubtitle}>
+                  Desbloquea todo el potencial de CowTracker
+                </Text>
+              </View>
               
-              <View style={styles.modalButtonsContainer}>
+              {/* Contenido principal */}
+              <View style={styles.premiumModalBody}>
+                <View style={styles.limitWarning}>
+                  <Ionicons name="warning-outline" size={24} color="#f39c12" />
+                  <Text style={styles.limitText}>
+                    Has alcanzado el límite de <Text style={styles.boldText}>2 cabezas de ganado</Text> de la versión gratuita
+                  </Text>
+                </View>
+
+                <Text style={styles.benefitsTitle}>
+                  Con Premium obtienes:
+                </Text>
+                
+                <View style={styles.benefitsList}>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Registro ilimitado de ganado</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Reportes avanzados y estadísticas</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Exportación de datos a Excel/PDF</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Soporte prioritario 24/7</Text>
+                  </View>
+                  <View style={styles.benefitItem}>
+                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
+                    <Text style={styles.benefitText}>Sincronización en la nube</Text>
+                  </View>
+                </View>
+
+                <View style={styles.priceContainer}>
+                  <Text style={styles.priceText}>{priceDisplay}</Text>
+                  <Text style={styles.priceSubtext}>Pago único - Acceso de por vida</Text>
+                </View>
+              </View>
+              
+              {/* Botones de acción */}
+              <View style={styles.premiumModalButtons}>
                 <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
+                  style={[
+                    styles.upgradeButton,
+                    isProcessingPayment && styles.disabledButton
+                  ]}
+                  onPress={handlePremiumUpgrade}
+                  disabled={isProcessingPayment}
+                >
+                  {isProcessingPayment ? (
+                    <>
+                      <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                      <Text style={styles.upgradeButtonText}>
+                        Procesando...
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Ionicons name="diamond" size={20} color="#fff" style={{ marginRight: 8 }} />
+                      <Text style={styles.upgradeButtonText}>
+                        Pagar {priceDisplay} - Actualizar a Premium
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[
+                    styles.laterButton,
+                    isProcessingPayment && styles.disabledButton
+                  ]}
                   onPress={() => {
                     setShowCattleWarning(false);
                     handleCancel();
                   }}
+                  disabled={isProcessingPayment}
                 >
-                  <Text style={styles.cancelButtonText}>
-                    Cancelar
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: '#27ae60' }]}
-                  onPress={() => setShowCattleWarning(false)}
-                >
-                  <Text style={styles.buttonText}>
-                    Continuar
+                  <Text style={styles.laterButtonText}>
+                    Tal vez más tarde
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Botón de cerrar */}
+              <TouchableOpacity
+                style={[
+                  styles.closeButton,
+                  isProcessingPayment && styles.disabledButton
+                ]}
+                onPress={() => setShowCattleWarning(false)}
+                disabled={isProcessingPayment}
+              >
+                <Ionicons name="close" size={24} color="#95a5a6" />
+              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -960,6 +1311,158 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#fff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  premiumModalContent: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...getShadowStyle(8),
+  },
+  premiumModalHeader: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  premiumModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  premiumModalSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  premiumModalBody: {
+    padding: 24,
+  },
+  limitWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#fff3cd',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#f39c12',
+  },
+  limitText: {
+    fontSize: 15,
+    marginLeft: 12,
+    color: '#856404',
+    flex: 1,
+    lineHeight: 22,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#e67e22',
+  },
+  benefitsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#2c3e50',
+    textAlign: 'center',
+  },
+  benefitsList: {
+    marginBottom: 20,
+  },
+  benefitItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingLeft: 8,
+  },
+  benefitText: {
+    fontSize: 15,
+    marginLeft: 12,
+    color: '#34495e',
+    flex: 1,
+  },
+  priceContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  priceText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    marginBottom: 4,
+  },
+  priceSubtext: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
+  premiumModalButtons: {
+    padding: 24,
+    paddingTop: 0,
+    gap: 12,
+  },
+  upgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: '#27ae60',
+    ...getShadowStyle(4),
+  },
+  upgradeButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  laterButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+    backgroundColor: '#fff',
+  },
+  laterButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#7f8c8d',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#bdc3c7',
   },
 });
 

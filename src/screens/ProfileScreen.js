@@ -6,19 +6,24 @@ import { getShadowStyle } from '../utils/styles';
 import { Ionicons } from '@expo/vector-icons';
 import { profileStyles } from '../styles/profileStyles';
 import api from '../services/api';
+import { supabase } from '../config/supabase';
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 
 const ProfileScreen = () => {
   const { currentUser, userInfo, updateProfile, logout } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userData, setUserData] = useState({
     email: '',
     role: '',
     primer_nombre: '',
     segundo_nombre: '',
     primer_apellido: '',
-    segundo_apellido: ''
+    segundo_apellido: '',
+    id_premium: 1,
+    premium_type: 'Free'
   });
   const [formData, setFormData] = useState({...userData});
 
@@ -38,8 +43,11 @@ const ProfileScreen = () => {
           primer_nombre: profileData.primer_nombre || '',
           segundo_nombre: profileData.segundo_nombre || '',
           primer_apellido: profileData.primer_apellido || '',
-          segundo_apellido: profileData.segundo_apellido || ''
+          segundo_apellido: profileData.segundo_apellido || '',
+          id_premium: parseInt(profileData.id_premium) || 1,
+          premium_type: profileData.premium_type || 'Free'
         };
+        console.log('Datos del perfil cargados:', formattedData);
         
         setUserData(formattedData);
         setFormData(formattedData);
@@ -55,7 +63,9 @@ const ProfileScreen = () => {
             primer_nombre: userInfo.primer_nombre || '',
             segundo_nombre: userInfo.segundo_nombre || '',
             primer_apellido: userInfo.primer_apellido || '',
-            segundo_apellido: userInfo.segundo_apellido || ''
+            segundo_apellido: userInfo.segundo_apellido || '',
+            id_premium: parseInt(userInfo.id_premium) || 1,
+            premium_type: userInfo.premium_type || 'Free'
           };
           setUserData(fallbackData);
           setFormData(fallbackData);
@@ -88,6 +98,7 @@ const ProfileScreen = () => {
         segundo_nombre: formData.segundo_nombre,
         primer_apellido: formData.primer_apellido,
         segundo_apellido: formData.segundo_apellido,
+        id_premium: formData.id_premium,
         ...(formData.password ? { password: formData.password } : {})
       };
 
@@ -102,7 +113,8 @@ const ProfileScreen = () => {
         primer_nombre: formData.primer_nombre,
         segundo_nombre: formData.segundo_nombre,
         primer_apellido: formData.primer_apellido,
-        segundo_apellido: formData.segundo_apellido
+        segundo_apellido: formData.segundo_apellido,
+        id_premium: formData.id_premium
       });
       
       Alert.alert('Éxito', 'Perfil actualizado correctamente');
@@ -210,7 +222,15 @@ const ProfileScreen = () => {
                   value={formData.segundo_apellido}
                   onChangeText={(text) => setFormData({...formData, segundo_apellido: text})}
                   placeholder="Segundo apellido (opcional)"
+                />    
+
+                <Text style={profileStyles.label}>Suscripción</Text>
+                <TextInput
+                  style={profileStyles.input}
+                  value={formData.premium_type || (formData.id_premium === 2 ? 'Premium' : 'Free')}
+                  editable={false}
                 />
+
               </>
             ) : (
               <>
@@ -225,6 +245,22 @@ const ProfileScreen = () => {
                 
                 <Text style={profileStyles.label}>Segundo apellido</Text>
                 <Text style={profileStyles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
+
+                <Text style={profileStyles.label}>Suscripción</Text>
+                <Text style={profileStyles.infoText}>
+                  {userData.premium_type || (userData.id_premium === 2 ? 'Premium' : 'Free')}
+                </Text>
+                
+                {userData.id_premium !== 2 && (
+                  <TouchableOpacity 
+                    style={[profileStyles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
+                    onPress={() => setShowPremiumModal(true)}
+                  >
+                    <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
+                      Actualizar a Premium
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </>
             )}
             
@@ -286,6 +322,12 @@ const ProfileScreen = () => {
           </View>
         </View>
       </ScrollView>
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="¡Actualiza tu cuenta a Premium!"
+        subtitle="Desbloquea todas las funcionalidades de CowTracker"
+      />
     </View>
   );
 };

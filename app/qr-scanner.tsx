@@ -12,13 +12,14 @@ export default function App() {
     // Camera permissions are still loading.
     return <View />;
   }
-
   if (!permission.granted) {
     // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
-        <Text style={styles.message}>Necesitamos tu permiso para mostrar la cámara</Text>
-        <Button onPress={requestPermission} title="Dar permiso" />
+        <View style={styles.permissionContainer}>
+          <Text style={styles.message}>Necesitamos tu permiso para mostrar la cámara</Text>
+          <Button onPress={requestPermission} title="Dar permiso" />
+        </View>
       </View>
     );
   }
@@ -101,10 +102,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
   message: {
     textAlign: 'center',
-    paddingBottom: 10,
+    paddingBottom: 20,
     color: 'white',
+    fontSize: 18,
   },
   camera: {
     flex: 1,

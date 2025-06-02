@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   ScrollView, 
   Alert,
-  Platform 
+  Platform,
+  Modal
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -14,25 +15,46 @@ import { cattleSaleStyles } from '../styles/cattleSaleStyles';
 import { Ionicons } from '@expo/vector-icons';
 
 const CattleSaleScreen = () => {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
+  const router = useRouter();  const [formData, setFormData] = useState({
     date: new Date(),
     customer: '',
     selectedCattle: [],
     totalAmount: '',
     notes: ''
-  });
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  });  const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // Estados para validación de campos numéricos
+  const [totalAmountError, setTotalAmountError] = useState(false);
+  const [validationModalVisible, setValidationModalVisible] = useState(false);
+
+  // Función de validación numérica
+  const validateNumericInput = (text) => {
+    // Permitir números enteros y decimales (con punto o coma)
+    return /^[0-9]*[.,]?[0-9]*$/.test(text);
+  };
+
+  const handleTotalAmountChange = (text) => {
+    // Validar entrada numérica
+    if (text.trim() !== '') {
+      setTotalAmountError(!validateNumericInput(text));
+    } else {
+      setTotalAmountError(false);
+    }
+    
+    setFormData({ ...formData, totalAmount: text });
+  };
 
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || formData.date;
     setShowDatePicker(Platform.OS === 'ios');
     setFormData({ ...formData, date: currentDate });
-  };
-
-  const handleSave = () => {
-    if (!formData.customer || !formData.selectedCattle.length || !formData.totalAmount) {
-      Alert.alert('Error', 'Por favor complete todos los campos requeridos');
+  };  const handleSave = () => {
+    // Verificar si hay errores de validación numérica O campos vacíos
+    const hasValidationErrors = totalAmountError;
+    const hasEmptyFields = !formData.customer || !formData.totalAmount;
+    
+    if (hasValidationErrors || hasEmptyFields) {
+      setValidationModalVisible(true);
       return;
     }
 
@@ -78,17 +100,20 @@ const CattleSaleScreen = () => {
             onChangeText={(text) => setFormData({ ...formData, customer: text })}
             placeholder="Nombre del comprador"
           />
-        </View>
-
-        <View style={cattleSaleStyles.inputContainer}>
+        </View>        <View style={cattleSaleStyles.inputContainer}>
           <Text style={cattleSaleStyles.label}>Monto total *</Text>
           <TextInput
-            style={cattleSaleStyles.input}
+            style={totalAmountError ? cattleSaleStyles.inputError : cattleSaleStyles.input}
             value={formData.totalAmount}
-            onChangeText={(text) => setFormData({ ...formData, totalAmount: text })}
+            onChangeText={handleTotalAmountChange}
             placeholder="Ingrese el monto total"
             keyboardType="numeric"
           />
+          {totalAmountError && (
+            <Text style={cattleSaleStyles.errorText}>
+              Solo se permiten números en este campo
+            </Text>
+          )}
         </View>
 
         <View style={cattleSaleStyles.inputContainer}>
@@ -119,6 +144,65 @@ const CattleSaleScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Modal de validación de errores */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={validationModalVisible}
+        onRequestClose={() => setValidationModalVisible(false)}
+      >
+        <View style={cattleSaleStyles.modalOverlay}>
+          <View style={cattleSaleStyles.validationModalContent}>
+            <View style={cattleSaleStyles.validationModalHeader}>
+              <Ionicons name="warning" size={50} color="#e74c3c" />
+              <Text style={cattleSaleStyles.validationModalTitle}>
+                Formulario Incompleto
+              </Text>
+            </View>
+              <View style={cattleSaleStyles.validationModalBody}>
+              <Text style={cattleSaleStyles.validationModalText}>
+                Por favor, corrige los siguientes errores antes de guardar:
+              </Text>
+              <View style={cattleSaleStyles.errorsList}>
+                {totalAmountError && (
+                  <View style={cattleSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={cattleSaleStyles.errorItemText}>
+                      El monto total debe contener solo números
+                    </Text>
+                  </View>
+                )}
+                {!formData.customer && (
+                  <View style={cattleSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={cattleSaleStyles.errorItemText}>
+                      El campo comprador es requerido
+                    </Text>
+                  </View>
+                )}
+                {!formData.totalAmount && (
+                  <View style={cattleSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={cattleSaleStyles.errorItemText}>
+                      El campo monto total es requerido
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            
+            <View style={cattleSaleStyles.validationModalButtons}>
+              <TouchableOpacity
+                style={cattleSaleStyles.validationModalButton}
+                onPress={() => setValidationModalVisible(false)}
+              >
+                <Text style={cattleSaleStyles.validationModalButtonText}>Entendido</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };

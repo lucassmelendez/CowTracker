@@ -28,6 +28,12 @@ const AdminScreen = () => {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   
+  // Estados para el modal de código de vinculación
+  const [codeModalVisible, setCodeModalVisible] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [codeExpiration, setCodeExpiration] = useState('');
+  const [codeType, setCodeType] = useState('');
+  
   useEffect(() => {
     if (selectedFarm) {
       const fincaId = selectedFarm.id_finca || selectedFarm._id;
@@ -163,25 +169,12 @@ const AdminScreen = () => {
           minute: '2-digit'
         });
         
-        Alert.alert(
-          tipoUsuario === 'trabajador' ? "Invitar Trabajador" : "Invitar Veterinario",
-          `Comparte este código con la persona que quieres invitar:\n\n${codigo}\n\nEste código expira el ${formatoFecha}.`,
-          [
-            { 
-              text: "Copiar Código", 
-              onPress: async () => {
-                try {
-                  await Clipboard.setString(codigo);
-                  Alert.alert("Código copiado", "Compártelo con el colaborador");
-                } catch (error) {
-                  console.error("Error al copiar al portapapeles:", error);
-                  Alert.alert("Error", "No se pudo copiar el código");
-                }
-              } 
-            },
-            { text: "Cerrar" }
-          ]
-        );
+        // Establecer los datos del modal
+        setGeneratedCode(codigo);
+        setCodeExpiration(formatoFecha);
+        setCodeType(tipoUsuario);
+        setCodeModalVisible(true);
+        
       } else if (response && response.success) {
         // Formato alternativo de respuesta
         const codigo = response.data.codigo;
@@ -196,25 +189,12 @@ const AdminScreen = () => {
           minute: '2-digit'
         });
         
-        Alert.alert(
-          tipoUsuario === 'trabajador' ? "Invitar Trabajador" : "Invitar Veterinario",
-          `Comparte este código con la persona que quieres invitar:\n\n${codigo}\n\nEste código expira el ${formatoFecha}.`,
-          [
-            { 
-              text: "Copiar Código", 
-              onPress: async () => {
-                try {
-                  await Clipboard.setString(codigo);
-                  Alert.alert("Código copiado", "Compártelo con el colaborador");
-                } catch (error) {
-                  console.error("Error al copiar al portapapeles:", error);
-                  Alert.alert("Error", "No se pudo copiar el código");
-                }
-              } 
-            },
-            { text: "Cerrar" }
-          ]
-        );
+        // Establecer los datos del modal
+        setGeneratedCode(codigo);
+        setCodeExpiration(formatoFecha);
+        setCodeType(tipoUsuario);
+        setCodeModalVisible(true);
+        
       } else {
         console.error("Respuesta inesperada:", response);
         throw new Error(`Respuesta inválida del servidor: ${JSON.stringify(response)}`);
@@ -227,6 +207,17 @@ const AdminScreen = () => {
       );
     } finally {
       setGeneratingCode(false);
+    }
+  };
+  
+  // Función para copiar el código al portapapeles
+  const handleCopyCode = async () => {
+    try {
+      await Clipboard.setString(generatedCode);
+      Alert.alert("¡Código copiado!", "El código se ha copiado al portapapeles. Compártelo con el colaborador.");
+    } catch (error) {
+      console.error("Error al copiar al portapapeles:", error);
+      Alert.alert("Error", "No se pudo copiar el código");
     }
   };
   
@@ -332,6 +323,116 @@ const AdminScreen = () => {
                 <Text style={styles.deleteConfirmButtonText}>Eliminar</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Modal de código de vinculación */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={codeModalVisible}
+        onRequestClose={() => setCodeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.codeModalContent}>
+            {/* Header con gradiente */}
+            <View style={styles.codeModalHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons 
+                  name={codeType === 'trabajador' ? "people" : "medical"} 
+                  size={50} 
+                  color="#fff" 
+                />
+              </View>
+              <Text style={styles.codeModalTitle}>
+                ¡Código Generado!
+              </Text>
+              <Text style={styles.codeModalSubtitle}>
+                Invitar {codeType === 'trabajador' ? 'Trabajador' : 'Veterinario'}
+              </Text>
+            </View>
+            
+            {/* Contenido principal */}
+            <View style={styles.codeModalBody}>
+              <Text style={styles.instructionText}>
+                Comparte este código con la persona que quieres invitar:
+              </Text>
+              
+              {/* Código destacado */}
+              <View style={styles.codeContainer}>
+                <Text style={styles.codeText}>{generatedCode}</Text>
+                <TouchableOpacity 
+                  style={styles.copyIconButton}
+                  onPress={handleCopyCode}
+                >
+                  <Ionicons name="copy-outline" size={24} color="#27ae60" />
+                </TouchableOpacity>
+              </View>
+              
+              {/* Información de expiración */}
+              <View style={styles.expirationContainer}>
+                <Ionicons name="time-outline" size={20} color="#f39c12" />
+                <Text style={styles.expirationText}>
+                  Este código expira el {codeExpiration}
+                </Text>
+              </View>
+              
+              {/* Instrucciones adicionales */}
+              <View style={styles.instructionsContainer}>
+                <Text style={styles.instructionsTitle}>
+                  Instrucciones para el {codeType}:
+                </Text>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionNumber}>1.</Text>
+                  <Text style={styles.instructionDetail}>
+                    Descargar la aplicación CowTracker
+                  </Text>
+                </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionNumber}>2.</Text>
+                  <Text style={styles.instructionDetail}>
+                    Crear una cuenta o iniciar sesión
+                  </Text>
+                </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionNumber}>3.</Text>
+                  <Text style={styles.instructionDetail}>
+                    Usar este código para vincularse a la finca
+                  </Text>
+                </View>
+              </View>
+            </View>
+            
+            {/* Botones de acción */}
+            <View style={styles.codeModalButtons}>
+              <TouchableOpacity
+                style={styles.copyButton}
+                onPress={handleCopyCode}
+              >
+                <Ionicons name="copy" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.copyButtonText}>
+                  Copiar Código
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.closeModalButton}
+                onPress={() => setCodeModalVisible(false)}
+              >
+                <Text style={styles.closeModalButtonText}>
+                  Cerrar
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Botón de cerrar */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setCodeModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#95a5a6" />
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -474,7 +575,166 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '500',
-  }
+  },
+  // Estilos para el modal de código de vinculación
+  codeModalContent: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...getShadowStyle(8),
+  },
+  codeModalHeader: {
+    backgroundColor: colors.primary,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  codeModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  codeModalSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  codeModalBody: {
+    padding: 24,
+  },
+  instructionText: {
+    fontSize: 16,
+    color: '#2c3e50',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  codeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+  },
+  codeText: {
+    flex: 1,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.primary,
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
+  copyIconButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#e8f5e8',
+  },
+  expirationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  expirationText: {
+    fontSize: 14,
+    color: '#856404',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  instructionsContainer: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+  },
+  instructionsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 12,
+  },
+  instructionItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  instructionNumber: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginRight: 8,
+    minWidth: 20,
+  },
+  instructionDetail: {
+    fontSize: 14,
+    color: '#34495e',
+    flex: 1,
+    lineHeight: 20,
+  },
+  codeModalButtons: {
+    padding: 24,
+    paddingTop: 0,
+    gap: 12,
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    ...getShadowStyle(4),
+  },
+  copyButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  closeModalButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+    backgroundColor: '#fff',
+  },
+  closeModalButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#7f8c8d',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default AdminScreen; 

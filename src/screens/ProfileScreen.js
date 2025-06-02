@@ -7,12 +7,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { profileStyles } from '../styles/profileStyles';
 import api from '../services/api';
 import { supabase } from '../config/supabase';
+import PremiumUpgradeModal from '../components/PremiumUpgradeModal';
 
 const ProfileScreen = () => {
   const { currentUser, userInfo, updateProfile, logout } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userData, setUserData] = useState({
     email: '',
     role: '',
@@ -252,21 +254,7 @@ const ProfileScreen = () => {
                 {userData.id_premium !== 2 && (
                   <TouchableOpacity 
                     style={[profileStyles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
-                    onPress={async () => {
-                      try {
-                        // Usar la nueva API para actualizar premium
-                        const response = await api.users.updatePremium(2); // 2 = Premium
-                        
-                        if (response.success) {
-                          setUserData({ ...userData, id_premium: 2, premium_type: 'Premium' });
-                          setFormData({ ...formData, id_premium: 2, premium_type: 'Premium' });
-                          Alert.alert('Éxito', '¡Felicidades! Ahora eres usuario Premium');
-                        }
-                      } catch (error) {
-                        console.error('Error al actualizar a premium:', error);
-                        Alert.alert('Error', 'No se pudo actualizar a premium. Por favor, intenta de nuevo.');
-                      }
-                    }}
+                    onPress={() => setShowPremiumModal(true)}
                   >
                     <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
                       Actualizar a Premium
@@ -334,6 +322,12 @@ const ProfileScreen = () => {
           </View>
         </View>
       </ScrollView>
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="¡Actualiza tu cuenta a Premium!"
+        subtitle="Desbloquea todas las funcionalidades de CowTracker"
+      />
     </View>
   );
 };

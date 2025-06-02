@@ -35,7 +35,6 @@ const AddCattleScreen = (props) => {
   const [showCattleWarning, setShowCattleWarning] = useState(false);
   const [cattleCount, setCattleCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
   const [name, setName] = useState('');
@@ -46,6 +45,10 @@ const AddCattleScreen = (props) => {
   const [purchasePrice, setPurchasePrice] = useState('');
   const [selectedFarmId, setSelectedFarmId] = useState('');
   const [healthStatus, setHealthStatus] = useState('saludable');
+    // Estados para validación de campos numéricos
+  const [identifierError, setIdentifierError] = useState(false);
+  const [purchasePriceError, setPurchasePriceError] = useState(false);
+  const [validationModalVisible, setValidationModalVisible] = useState(false);
   const [status, setStatus] = useState('activo');
   const [tipoProduccion, setTipoProduccion] = useState('leche');
   
@@ -59,8 +62,33 @@ const AddCattleScreen = (props) => {
   
   // Estados para carga
   const [farms, setFarms] = useState([]);
-  const [loadingFarms, setLoadingFarms] = useState(false);
-  const [loadingCattle, setLoadingCattle] = useState(isEditMode);
+  const [loadingFarms, setLoadingFarms] = useState(false);  const [loadingCattle, setLoadingCattle] = useState(isEditMode);
+
+  // Funciones de validación numérica
+  const validateNumericInput = (text) => {
+    // Permitir números enteros y decimales (con punto o coma)
+    return /^[0-9]*[.,]?[0-9]*$/.test(text);
+  };
+
+  const handleIdentifierChange = (text) => {
+    setIdentifier(text);
+    // Validar solo si hay texto
+    if (text.trim() !== '') {
+      setIdentifierError(!validateNumericInput(text));
+    } else {
+      setIdentifierError(false);
+    }
+  };
+
+  const handlePurchasePriceChange = (text) => {
+    setPurchasePrice(text);
+    // Validar solo si hay texto
+    if (text.trim() !== '') {
+      setPurchasePriceError(!validateNumericInput(text));
+    } else {
+      setPurchasePriceError(false);
+    }
+  };
 
   // Función para cargar granjas de manera segura
   const loadFarms = async () => {
@@ -357,9 +385,14 @@ const AddCattleScreen = (props) => {
         console.error('No se pudo navegar:', e);
       }
     }  };
-
   const handleSave = async () => {
     try {
+      // Verificar si hay errores de validación numérica
+      if (identifierError || purchasePriceError) {
+        setValidationModalVisible(true);
+        return;
+      }
+
       // Verificar límite de ganado antes de continuar
       const canAddCattle = await checkCattleCount();
       if (!canAddCattle) {
@@ -527,16 +560,19 @@ const AddCattleScreen = (props) => {
       </View>
 
       <View style={styles.formContainer}>
-        <Text style={styles.sectionTitle}>Información básica</Text>
-
-        <Text style={styles.label}>Número de Identificación *</Text>
+        <Text style={styles.sectionTitle}>Información básica</Text>        <Text style={styles.label}>Número de Identificación *</Text>
         <TextInput
-          style={styles.input}
+          style={identifierError ? styles.inputError : styles.input}
           value={identifier}
-          onChangeText={setIdentifier}
+          onChangeText={handleIdentifierChange}
           placeholder="Número de identificación"
           keyboardType="numeric"
         />
+        {identifierError && (
+          <Text style={styles.errorText}>
+            Solo se permiten números en este campo
+          </Text>
+        )}
 
         <Text style={styles.label}>Nombre *</Text>
         <TextInput
@@ -574,16 +610,19 @@ const AddCattleScreen = (props) => {
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
-
-        <Text style={styles.label}>Precio de compra</Text>
+        </View>        <Text style={styles.label}>Precio de compra</Text>
         <TextInput
-          style={styles.input}
+          style={purchasePriceError ? styles.inputError : styles.input}
           value={purchasePrice}
-          onChangeText={setPurchasePrice}
+          onChangeText={handlePurchasePriceChange}
           placeholder="Precio de compra"
           keyboardType="numeric"
         />
+        {purchasePriceError && (
+          <Text style={styles.errorText}>
+            Solo se permiten números en este campo
+          </Text>
+        )}
 
         <Text style={styles.label}>Tipo de Producción</Text>
         <View style={styles.optionsContainer}>
@@ -850,6 +889,58 @@ const AddCattleScreen = (props) => {
                 <Ionicons name="close" size={24} color="#95a5a6" />
               </TouchableOpacity>
             </View>
+          </View>        </Modal>
+
+        {/* Modal de validación de errores */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={validationModalVisible}
+          onRequestClose={() => setValidationModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.validationModalContent}>
+              <View style={styles.validationModalHeader}>
+                <Ionicons name="warning" size={50} color="#e74c3c" />
+                <Text style={styles.validationModalTitle}>
+                  Formulario Incompleto
+                </Text>
+              </View>
+              
+              <View style={styles.validationModalBody}>
+                <Text style={styles.validationModalText}>
+                  Por favor, corrige los siguientes errores antes de guardar:
+                </Text>
+                
+                <View style={styles.errorsList}>
+                  {identifierError && (
+                    <View style={styles.errorItem}>
+                      <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                      <Text style={styles.errorItemText}>
+                        El número de identificación debe contener solo números
+                      </Text>
+                    </View>
+                  )}
+                  {purchasePriceError && (
+                    <View style={styles.errorItem}>
+                      <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                      <Text style={styles.errorItemText}>
+                        El precio de compra debe contener solo números
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+              
+              <View style={styles.validationModalButtons}>
+                <TouchableOpacity
+                  style={styles.validationModalButton}
+                  onPress={() => setValidationModalVisible(false)}
+                >
+                  <Text style={styles.validationModalButtonText}>Entendido</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </Modal>
       </View>
@@ -895,8 +986,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
     color: '#333',
-  },
-  input: {
+  },  input: {
     height: 40,
     borderColor: '#ddd',
     borderWidth: 1,
@@ -905,6 +995,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontSize: 16,
     color: '#333',
+  },
+  inputError: {
+    height: 40,
+    borderColor: '#e74c3c',
+    borderWidth: 2,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 4,
+    fontSize: 16,
+    color: '#333',
+    backgroundColor: '#fdf2f2',
+  },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 12,
+    marginBottom: 12,
+    marginTop: -4,
   },
   textArea: {
     minHeight: 80,
@@ -1204,8 +1311,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#7f8c8d',
-  },
-  closeButton: {
+  },  closeButton: {
     position: 'absolute',
     top: 16,
     right: 16,
@@ -1215,6 +1321,73 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  // Estilos para modal de validación
+  validationModalContent: {
+    width: '85%',
+    maxWidth: 350,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    ...getShadowStyle(8),
+  },
+  validationModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  validationModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  validationModalBody: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  validationModalText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  errorsList: {
+    width: '100%',
+  },
+  errorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fdf2f2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#e74c3c',
+  },
+  errorItemText: {
+    fontSize: 13,
+    color: '#e74c3c',
+    marginLeft: 8,
+    flex: 1,
+  },
+  validationModalButtons: {
+    width: '100%',
+  },
+  validationModalButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    ...getShadowStyle(2),
+  },
+  validationModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   ScrollView, 
   Alert,
-  Platform 
+  Platform,
+  Modal
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -14,8 +15,7 @@ import { milkSaleStyles } from '../styles/milkSaleStyles';
 import { Ionicons } from '@expo/vector-icons';
 
 const MilkSaleScreen = () => {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
+  const router = useRouter();  const [formData, setFormData] = useState({
     date: new Date(),
     customer: '',
     liters: '',
@@ -24,6 +24,16 @@ const MilkSaleScreen = () => {
     notes: ''
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  // Estados para validación de campos numéricos
+  const [litersError, setLitersError] = useState(false);
+  const [priceError, setPriceError] = useState(false);
+  const [validationModalVisible, setValidationModalVisible] = useState(false);
+
+  // Función de validación numérica
+  const validateNumericInput = (text) => {
+    // Permitir números enteros y decimales (con punto o coma)
+    return /^[0-9]*[.,]?[0-9]*$/.test(text);
+  };
 
   const handleDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || formData.date;
@@ -35,8 +45,14 @@ const MilkSaleScreen = () => {
     const total = parseFloat(liters) * parseFloat(price);
     return isNaN(total) ? '' : total.toString();
   };
-
   const handleLitersChange = (text) => {
+    // Validar entrada numérica
+    if (text.trim() !== '') {
+      setLitersError(!validateNumericInput(text));
+    } else {
+      setLitersError(false);
+    }
+    
     const newTotal = calculateTotal(text, formData.pricePerLiter);
     setFormData({ 
       ...formData, 
@@ -46,17 +62,26 @@ const MilkSaleScreen = () => {
   };
 
   const handlePriceChange = (text) => {
+    // Validar entrada numérica
+    if (text.trim() !== '') {
+      setPriceError(!validateNumericInput(text));
+    } else {
+      setPriceError(false);
+    }
+    
     const newTotal = calculateTotal(formData.liters, text);
     setFormData({ 
-      ...formData, 
+      ...formData,
       pricePerLiter: text,
       totalAmount: newTotal
     });
-  };
-
-  const handleSave = () => {
-    if (!formData.customer || !formData.liters || !formData.pricePerLiter) {
-      Alert.alert('Error', 'Por favor complete todos los campos requeridos');
+  };  const handleSave = () => {
+    // Verificar si hay errores de validación numérica O campos vacíos
+    const hasValidationErrors = litersError || priceError;
+    const hasEmptyFields = !formData.customer || !formData.liters || !formData.pricePerLiter;
+    
+    if (hasValidationErrors || hasEmptyFields) {
+      setValidationModalVisible(true);
       return;
     }
 
@@ -102,28 +127,34 @@ const MilkSaleScreen = () => {
             onChangeText={(text) => setFormData({ ...formData, customer: text })}
             placeholder="Nombre del comprador"
           />
-        </View>
-
-        <View style={milkSaleStyles.inputContainer}>
+        </View>        <View style={milkSaleStyles.inputContainer}>
           <Text style={milkSaleStyles.label}>Cantidad de litros *</Text>
           <TextInput
-            style={milkSaleStyles.input}
+            style={litersError ? milkSaleStyles.inputError : milkSaleStyles.input}
             value={formData.liters}
             onChangeText={handleLitersChange}
             placeholder="Cantidad en litros"
             keyboardType="numeric"
           />
-        </View>
-
-        <View style={milkSaleStyles.inputContainer}>
+          {litersError && (
+            <Text style={milkSaleStyles.errorText}>
+              Solo se permiten números en este campo
+            </Text>
+          )}
+        </View>        <View style={milkSaleStyles.inputContainer}>
           <Text style={milkSaleStyles.label}>Precio por litro *</Text>
           <TextInput
-            style={milkSaleStyles.input}
+            style={priceError ? milkSaleStyles.inputError : milkSaleStyles.input}
             value={formData.pricePerLiter}
             onChangeText={handlePriceChange}
             placeholder="Precio por litro"
             keyboardType="numeric"
           />
+          {priceError && (
+            <Text style={milkSaleStyles.errorText}>
+              Solo se permiten números en este campo
+            </Text>
+          )}
         </View>
 
         <View style={milkSaleStyles.inputContainer}>
@@ -164,6 +195,81 @@ const MilkSaleScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Modal de validación de errores */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={validationModalVisible}
+        onRequestClose={() => setValidationModalVisible(false)}
+      >
+        <View style={milkSaleStyles.modalOverlay}>
+          <View style={milkSaleStyles.validationModalContent}>
+            <View style={milkSaleStyles.validationModalHeader}>
+              <Ionicons name="warning" size={50} color="#e74c3c" />
+              <Text style={milkSaleStyles.validationModalTitle}>
+                Formulario Incompleto
+              </Text>
+            </View>
+              <View style={milkSaleStyles.validationModalBody}>
+              <Text style={milkSaleStyles.validationModalText}>
+                Por favor, corrige los siguientes errores antes de guardar:
+              </Text>
+              <View style={milkSaleStyles.errorsList}>
+                {litersError && (
+                  <View style={milkSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={milkSaleStyles.errorItemText}>
+                      La cantidad de litros debe contener solo números
+                    </Text>
+                  </View>
+                )}
+                {priceError && (
+                  <View style={milkSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={milkSaleStyles.errorItemText}>
+                      El precio por litro debe contener solo números
+                    </Text>
+                  </View>
+                )}
+                {!formData.customer && (
+                  <View style={milkSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={milkSaleStyles.errorItemText}>
+                      El campo comprador es requerido
+                    </Text>
+                  </View>
+                )}
+                {!formData.liters && (
+                  <View style={milkSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={milkSaleStyles.errorItemText}>
+                      El campo cantidad de litros es requerido
+                    </Text>
+                  </View>
+                )}
+                {!formData.pricePerLiter && (
+                  <View style={milkSaleStyles.errorItem}>
+                    <Ionicons name="close-circle" size={16} color="#e74c3c" />
+                    <Text style={milkSaleStyles.errorItemText}>
+                      El campo precio por litro es requerido
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            
+            <View style={milkSaleStyles.validationModalButtons}>
+              <TouchableOpacity
+                style={milkSaleStyles.validationModalButton}
+                onPress={() => setValidationModalVisible(false)}
+              >
+                <Text style={milkSaleStyles.validationModalButtonText}>Entendido</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };

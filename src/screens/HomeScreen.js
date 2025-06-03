@@ -71,6 +71,13 @@ const HomeScreenAdmin = () => {
 
   return (
     <View style={homeStyles.container}>
+      <View style={homeStyles.header}>
+        <Text style={homeStyles.welcomeText}>
+          Bienvenido, {userInfo?.primer_nombre || 'Ganadero'}
+        </Text>
+        <Text style={homeStyles.roleText}>Panel de Administrador</Text>
+      </View>
+      
       <ScrollView style={homeStyles.menuContainer}>
         <View style={homeStyles.menuGrid}>
           {adminMenuItems.map((item) => (

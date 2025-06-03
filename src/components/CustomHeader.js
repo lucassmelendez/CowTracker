@@ -6,7 +6,7 @@ import { useFarm } from './FarmContext';
 import { useAuth } from './AuthContext';
 import { useRouter } from 'expo-router';
 
-function CustomHeader({ title }: { title: string }) {
+function CustomHeader({ title }) {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
   const router = useRouter();
@@ -48,7 +48,7 @@ function CustomHeader({ title }: { title: string }) {
           onPress={() => setProfileMenuVisible(true)}
           activeOpacity={0.7}
         >
-          <Ionicons name="person-circle" size={28} color="#ffffff" />
+          <Ionicons name="person" size={20} color="#ffffff" />
         </TouchableOpacity>
 
         <Modal
@@ -77,7 +77,7 @@ function CustomHeader({ title }: { title: string }) {
                 onPress={handleNavigateToProfile}
                 activeOpacity={0.7}
               >
-                <Ionicons name="person" size={18} color="#333" />
+                <Ionicons name="person-outline" size={18} color="#333" />
                 <Text style={styles.menuItemText}>Mi Perfil</Text>
               </TouchableOpacity>
               
@@ -86,7 +86,7 @@ function CustomHeader({ title }: { title: string }) {
                 onPress={handleNavigateToFarms}
                 activeOpacity={0.7}
               >
-                <Ionicons name="business" size={18} color="#333" />
+                <Ionicons name="home-outline" size={18} color="#333" />
                 <Text style={styles.menuItemText}>Mis Granjas</Text>
               </TouchableOpacity>
               
@@ -97,7 +97,7 @@ function CustomHeader({ title }: { title: string }) {
                 onPress={handleLogout}
                 activeOpacity={0.7}
               >
-                <Ionicons name="log-out" size={18} color="#e74c3c" />
+                <Ionicons name="exit-outline" size={18} color="#e74c3c" />
                 <Text style={[styles.menuItemText, styles.logoutText]}>Cerrar sesión</Text>
               </TouchableOpacity>
             </View>
@@ -132,16 +132,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   farmSelectorWrapper: {
-    marginRight: 12,
+    marginRight: 8,
     maxWidth: 180,
     minWidth: 120,
   },
   profileButton: {
     padding: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 20,
-    width: 44,
-    height: 44,
+    borderRadius: 8,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
     ...Platform.select({

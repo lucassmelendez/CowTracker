@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
-import { Stack } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
-import FarmSelector from '../../src/components/FarmSelector';
-import { useFarm } from '../../src/components/FarmContext';
-import { useAuth } from '../../src/components/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
+import FarmSelector from './FarmSelector';
+import { useFarm } from './FarmContext';
+import { useAuth } from './AuthContext';
 import { useRouter } from 'expo-router';
+import { colors } from '../styles/commonStyles';
 
-function CustomHeader({ title }: { title: string }) {
+interface CustomHomeHeaderProps {
+  title: string;
+  userName: string;
+  userRole: string;
+}
+
+const CustomHomeHeader = ({ title, userName, userRole }: CustomHomeHeaderProps) => {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
   const router = useRouter();
@@ -29,9 +35,17 @@ function CustomHeader({ title }: { title: string }) {
 
   return (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>{title}</Text>
+      {/* Sección izquierda: Título y bienvenida */}
+      <View style={styles.leftSection}>
+        <Text style={styles.appTitle}>{title}</Text>
+        <Text style={styles.welcomeText}>
+          Bienvenido, {userName}
+        </Text>
+        <Text style={styles.roleText}>{userRole}</Text>
+      </View>
       
-      <View style={styles.headerRightContainer}>
+      {/* Sección derecha: Farm selector y perfil */}
+      <View style={styles.rightSection}>
         <FarmSelector 
           selectedFarm={selectedFarm} 
           onSelectFarm={selectFarm} 
@@ -41,7 +55,7 @@ function CustomHeader({ title }: { title: string }) {
           style={styles.profileButton}
           onPress={() => setProfileMenuVisible(true)}
         >
-          <Ionicons name="person-circle" size={24} color="#ffffff" />
+          <Ionicons name="person-circle" size={28} color="#ffffff" />
         </TouchableOpacity>
 
         <Modal
@@ -99,94 +113,45 @@ function CustomHeader({ title }: { title: string }) {
       </View>
     </View>
   );
-}
-
-export default function TabLayout() {
-  return (
-    <Stack 
-      screenOptions={{
-        headerShown: true,
-        headerStyle: {
-          backgroundColor: '#27ae60',
-          elevation: 1,
-          shadowOpacity: 0,
-          borderBottomWidth: 0,
-        },
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          color: '#ffffff'
-        },
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="explore"
-        options={{
-          headerTitle: () => <CustomHeader title="Mi Ganado" />,
-        }}
-      />
-      <Stack.Screen
-        name="admin"
-        options={{
-          headerTitle: () => <CustomHeader title="Administración" />,
-        }}
-      />
-      <Stack.Screen
-        name="production"
-        options={{
-          headerTitle: () => <CustomHeader title="Producción" />,
-        }}
-      />
-      <Stack.Screen
-        name="veterinary-data"
-        options={{
-          headerTitle: () => <CustomHeader title="Datos Veterinarios" />,
-        }}
-      />
-      <Stack.Screen
-        name="report"
-        options={{
-          headerTitle: () => <CustomHeader title="Informes" />,
-        }}
-      />
-      <Stack.Screen
-        name="sales"
-        options={{
-          headerTitle: () => <CustomHeader title="Ventas" />,
-        }}
-      />
-    </Stack>
-  );
-}
+};
 
 const styles = StyleSheet.create({
   headerContainer: {
+    backgroundColor: colors.primary,
+    paddingTop: 40,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    width: '100%',
-    paddingRight: 5,
+    alignItems: 'flex-start',
   },
-  headerTitle: {
-    fontWeight: 'bold',
-    fontSize: 18,
-    color: '#ffffff',
-    marginLeft: 5,
+  leftSection: {
     flex: 1,
+    alignItems: 'flex-start',
   },
-  headerRightContainer: {
+  rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 2,
     justifyContent: 'flex-end',
   },
+  appTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: colors.white,
+    marginBottom: 5,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: colors.white,
+    marginBottom: 2,
+  },
+  roleText: {
+    fontSize: 12,
+    color: colors.white,
+    opacity: 0.9,
+  },
   profileButton: {
-    marginLeft: 10,
+    marginLeft: 15,
     padding: 5,
   },
   modalOverlay: {
@@ -247,3 +212,5 @@ const styles = StyleSheet.create({
     color: '#e74c3c',
   },
 });
+
+export default CustomHomeHeader; 

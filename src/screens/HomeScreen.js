@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { homeStyles } from '../styles/homeStyles';
+import CustomHomeHeader from '../components/CustomHomeHeader';
 
 const HomeScreenAdmin = () => {
   const { userInfo, isAdmin } = useAuth();
@@ -71,12 +72,11 @@ const HomeScreenAdmin = () => {
 
   return (
     <View style={homeStyles.container}>
-      <View style={homeStyles.header}>
-        <Text style={homeStyles.welcomeText}>
-          Bienvenido, {userInfo?.primer_nombre || 'Ganadero'}
-        </Text>
-        <Text style={homeStyles.roleText}>Panel de Administrador</Text>
-      </View>
+      <CustomHomeHeader 
+        title="AgroControl"
+        userName={userInfo?.primer_nombre || 'Ganadero'}
+        userRole="Panel de Administrador"
+      />
       
       <ScrollView style={homeStyles.menuContainer}>
         <View style={homeStyles.menuGrid}>

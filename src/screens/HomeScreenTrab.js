@@ -15,10 +15,10 @@ const HomeScreenTrabajador = () => {
   const trabajadorMenuItems = [
     {
       id: 'cattle',
-      title: 'Mi Ganado',
+      title: 'Ganado',
       icon: '🐄',
       route: '/(tabs)/explore',
-      description: 'Gestiona todo tu ganado'
+      description: 'Gestiona todo el ganado'
     },
     {
       id: 'informe',
@@ -33,6 +33,13 @@ const HomeScreenTrabajador = () => {
       icon: '🥩',
       route: '/(tabs)/production',
       description: 'Gestionar producción'
+    },
+    {
+      id: 'vincular',
+      title: 'Vincular a Finca',
+      icon: '🔗',
+      route: '/vinculacion',
+      description: 'Vincular con código de finca'
     },
     {
       id: 'qr',

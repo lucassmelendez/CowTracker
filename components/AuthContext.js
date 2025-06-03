@@ -1,8 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import api from '../services/api';
-import { supabase } from '../config/supabase';
+import api from '../src/services/api';
+import { supabase } from '../src/config/supabase';
 
 const AuthContext = createContext();
 
@@ -316,4 +316,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export default AuthContext;
+export default AuthContext; 

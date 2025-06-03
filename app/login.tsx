@@ -5,11 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../src/components/AuthContext';
+import { useAuth } from '../components/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();

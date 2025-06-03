@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   FlatList, 
   TouchableOpacity, 
   ActivityIndicator,
-  Alert,
   RefreshControl,
   StyleSheet
 } from 'react-native';
 import api from '../../src/services/api';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { useFarm } from '../../src/components/FarmContext';
-import { useAuth } from '../../src/components/AuthContext';
+import { useFarm } from '../../components/FarmContext';
 
 interface CattleItem {
   id_ganado?: string | number;
@@ -51,7 +49,6 @@ interface CattleItem {
 export default function CattleTab() {
   const router = useRouter();
   const { selectedFarm } = useFarm();
-  const { userInfo } = useAuth();
   const [cattle, setCattle] = useState<CattleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

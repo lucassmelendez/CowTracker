@@ -10,7 +10,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../src/components/AuthContext';
+import { useAuth } from '../components/AuthContext';
 
 interface Role {
   id: string;

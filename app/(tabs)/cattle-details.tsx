@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '../../src/components/AuthContext';
+import { useAuth } from '../../components/AuthContext';
 import { supabase } from '../../src/config/supabase';
 import QRCode from 'react-native-qrcode-svg';
 

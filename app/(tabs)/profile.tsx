@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useAuth } from '../../src/components/AuthContext';
+import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import { supabase } from '../../src/config/supabase';
-import PremiumUpgradeModal from '../../src/components/PremiumUpgradeModal';
+import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 
 interface UserData {
   email: string;

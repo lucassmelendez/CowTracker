@@ -10,8 +10,8 @@ import {
   Clipboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/components/AuthContext';
-import { useFarm } from '../../src/components/FarmContext';
+import { useAuth } from '../../components/AuthContext';
+import { useFarm } from '../../components/FarmContext';
 import api from '../../src/services/api';
 
 export default function Admin() {

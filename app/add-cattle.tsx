@@ -7,14 +7,12 @@ import {
   TouchableOpacity, 
   ScrollView, 
   Alert,
-  Platform,
   ActivityIndicator,
-  Modal,
-  Linking
+  Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '../src/components/AuthContext';
+import { useAuth } from '../components/AuthContext';
 import api from '../src/services/api';
 import { supabase } from '../src/config/supabase';
 
@@ -51,24 +49,24 @@ export default function AddCattlePage() {
   const { userInfo } = useAuth();
   
   // Estado para el manejo de errores y advertencias
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [setErrorMessage] = useState<string | null>(null);
   const [showCattleWarning, setShowCattleWarning] = useState(false);
   const [cattleCount, setCattleCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [priceDisplay, setPriceDisplay] = useState('$10.000');
+  const [priceDisplay] = useState('$10.000');
 
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
-  const [location, setLocation] = useState('');
+  const [setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
   const [selectedFarmId, setSelectedFarmId] = useState('');
   const [healthStatus, setHealthStatus] = useState('Saludable');
-  const [status, setStatus] = useState('activo');
+  const [setStatus] = useState('activo');
   const [tipoProduccion, setTipoProduccion] = useState('leche');
   
   // Estados para carga

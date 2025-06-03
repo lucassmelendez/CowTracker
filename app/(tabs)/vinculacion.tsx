@@ -10,14 +10,10 @@ import {
   ScrollView,
   FlatList
 } from 'react-native';
-import { useAuth } from '../../src/components/AuthContext';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 
 export default function VinculacionTab() {
-  const { userInfo } = useAuth();
-  const router = useRouter();
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
   const [fincasVinculadas, setFincasVinculadas] = useState<any[]>([]);

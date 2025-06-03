@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -14,7 +14,7 @@ import {
   StyleSheet
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { useAuth } from '../../src/components/AuthContext';
+import { useAuth } from '../../components/AuthContext';
 
 // Importar de forma segura, con manejo de errores
 let Device: any = null;

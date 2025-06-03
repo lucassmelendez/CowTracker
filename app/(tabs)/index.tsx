@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { useAuth } from '../../src/components/AuthContext';
+import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function TabOneScreen() {
   const { isAdmin, isTrabajador, isVeterinario, userInfo } = useAuth();

@@ -10,9 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
-import api from '../services/api';
+import api from '../src/services/api';
 import { useRouter } from 'expo-router';
-import { colors } from '../styles/commonStyles';
 
 const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
@@ -109,7 +108,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         onPress={() => handleSelectFarm(item)}
       >
         <View style={styles.farmIconContainer}>
-          <Ionicons name="business" size={24} color={colors.secondary} />
+          <Ionicons name="business" size={24} color="#27ae60" />
         </View>
         <View style={styles.farmInfoContainer}>
           <Text style={[
@@ -123,7 +122,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
           )}
         </View>
         {isSelected && (
-          <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
+          <Ionicons name="checkmark-circle" size={24} color="#27ae60" />
         )}
       </TouchableOpacity>
     );
@@ -271,7 +270,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
   },
   farmList: {
     flexGrow: 1,
@@ -288,7 +287,7 @@ const styles = StyleSheet.create({
   selectedFarmItem: {
     backgroundColor: '#f0f8ff',
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: '#27ae60',
   },
   farmIconContainer: {
     width: 40,
@@ -305,21 +304,21 @@ const styles = StyleSheet.create({
   farmName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 2,
   },
   selectedFarmName: {
-    color: colors.primary,
+    color: '#27ae60',
   },
   farmLocation: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#7f8c8d',
   },
   addFarmButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 15,
@@ -332,4 +331,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FarmSelector;
+export default FarmSelector; 

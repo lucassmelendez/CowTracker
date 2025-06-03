@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
-import FarmSelector from '../../src/components/FarmSelector';
-import { useFarm } from '../../src/components/FarmContext';
-import { useAuth } from '../../src/components/AuthContext';
+import FarmSelector from '../../components/FarmSelector';
+import { useFarm } from '../../components/FarmContext';
+import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 
 function CustomHeader({ title }: { title: string }) {

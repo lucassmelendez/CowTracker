@@ -11,7 +11,7 @@ import {
   Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { WEBPAY_URLS, fetchWithCORS } from '../config/api';
+import { WEBPAY_URLS, fetchWithCORS } from '../src/config/api';
 import { useAuth } from './AuthContext';
 
 const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!", subtitle = "Desbloquea todo el potencial de CowTracker" }) => {

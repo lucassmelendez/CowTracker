@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { Stack, Redirect, useRouter } from 'expo-router';
-import { AuthProvider, useAuth } from '../src/components/AuthContext';
-import { FarmProvider } from '../src/components/FarmContext';
+import { Stack, useRouter } from 'expo-router';
+import { AuthProvider, useAuth } from '../components/AuthContext';
+import { FarmProvider } from '../components/FarmContext';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, ActivityIndicator } from 'react-native';
-import CustomHeader from '../src/components/CustomHeader.js';
+import CustomHeader from '../components/CustomHeader.js';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useAuth } from '../../src/components/AuthContext';
+import { useAuth } from '../../components/AuthContext';
 
 export default function PremiumActivateScreen() {
   const { order, amount, auth } = useLocalSearchParams();

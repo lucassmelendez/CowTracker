@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
-import { useAuth } from '../../src/components/AuthContext';
-import { useFarm } from '../../src/components/FarmContext';
+import { useAuth } from '../../components/AuthContext';
+import { useFarm } from '../../components/FarmContext';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function VeterinaryDataPage() {

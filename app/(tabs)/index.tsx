@@ -175,14 +175,7 @@ export default function TabOneScreen() {
     ];
 
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.welcomeText}>
-            Bienvenido, {userInfo?.primer_nombre || 'Ganadero'}
-          </Text>
-          <Text style={styles.roleText}>Panel de Administrador</Text>
-        </View>
-        
+      <View style={styles.container}>     
         <ScrollView style={styles.menuContainer}>
           <View style={styles.menuGrid}>
             {adminMenuItems.map((item) => (
@@ -261,14 +254,7 @@ export default function TabOneScreen() {
     ];
 
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.welcomeText}>
-            Bienvenido, {userInfo?.primer_nombre || 'Trabajador'}
-          </Text>
-          <Text style={styles.roleText}>Panel de Trabajador</Text>
-        </View>
-        
+      <View style={styles.container}>      
         <ScrollView style={styles.menuContainer}>
           <View style={styles.menuGrid}>
             {trabajadorMenuItems.map((item) => (
@@ -333,14 +319,7 @@ export default function TabOneScreen() {
     ];
 
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.welcomeText}>
-            Bienvenido, {userInfo?.primer_nombre || 'Veterinario'}
-          </Text>
-          <Text style={styles.roleText}>Panel de Veterinario</Text>
-        </View>
-        
+      <View style={styles.container}>       
         <ScrollView style={styles.menuContainer}>
           <View style={styles.menuGrid}>
             {veterinarioMenuItems.map((item) => (

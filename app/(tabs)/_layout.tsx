@@ -121,7 +121,7 @@ export default function TabLayout() {
       <Stack.Screen
         name="index"
         options={{
-          headerShown: false,
+          headerTitle: () => <CustomHeader title="AgroControl" />,
         }}
       />
       <Stack.Screen

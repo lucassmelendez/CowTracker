@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { homeStyles } from '../styles/homeStyles';
-import CustomHomeHeader from '../components/CustomHomeHeader';
 
 const HomeScreenTrabajador = () => {
   const { userInfo, isTrabajador } = useAuth();
@@ -65,11 +64,12 @@ const HomeScreenTrabajador = () => {
 
   return (
     <View style={homeStyles.container}>
-      <CustomHomeHeader 
-        title="AgroControl"
-        userName={userInfo?.primer_nombre || 'Trabajador'}
-        userRole="Panel de Trabajador"
-      />
+      <View style={homeStyles.header}>
+        <Text style={homeStyles.welcomeText}>
+          Bienvenido, {userInfo?.primer_nombre || 'Trabajador'}
+        </Text>
+        <Text style={homeStyles.roleText}>Panel de Trabajador</Text>
+      </View>
       
       <ScrollView style={homeStyles.menuContainer}>
         <View style={homeStyles.menuGrid}>

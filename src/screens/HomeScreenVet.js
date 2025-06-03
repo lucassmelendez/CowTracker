@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { homeStyles } from '../styles/homeStyles';
-import CustomHomeHeader from '../components/CustomHomeHeader';
 
 const HomeScreenVeterinario = () => {
   const { userInfo, isVeterinario } = useAuth();
@@ -58,11 +57,12 @@ const HomeScreenVeterinario = () => {
 
   return (
     <View style={homeStyles.container}>
-      <CustomHomeHeader 
-        title="AgroControl"
-        userName={userInfo?.primer_nombre || 'Veterinario'}
-        userRole="Panel de Veterinario"
-      />
+      <View style={homeStyles.header}>
+        <Text style={homeStyles.welcomeText}>
+          Bienvenido, {userInfo?.primer_nombre || 'Veterinario'}
+        </Text>
+        <Text style={homeStyles.roleText}>Panel de Veterinario</Text>
+      </View>
       
       <ScrollView style={homeStyles.menuContainer}>
         <View style={homeStyles.menuGrid}>

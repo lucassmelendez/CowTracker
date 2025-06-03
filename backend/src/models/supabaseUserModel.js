@@ -570,6 +570,7 @@ const changeUserRole = async (uid, role) => {
     let roleStr = 'user';
     if (data.rol && data.rol.id_rol) {
       if (data.rol.id_rol === 1) roleStr = 'admin';
+      else if (data.rol.id_rol === 2) roleStr = 'user';
       else if (data.rol.id_rol === 3) roleStr = 'veterinario';
     }
     

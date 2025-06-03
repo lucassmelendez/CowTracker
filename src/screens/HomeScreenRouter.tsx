@@ -19,6 +19,23 @@ const HomeScreenRouter = () => {
   console.log('isVeterinario():', isVeterinario());
   console.log('=== FIN DEBUG ===');
 
+  // Función para extraer el rol del token JWT
+  const getRoleFromToken = () => {
+    try {
+      if (!userInfo?.token) return null;
+      
+      // Decodificar el JWT (solo la parte del payload)
+      const payload = userInfo.token.split('.')[1];
+      const decodedPayload = JSON.parse(atob(payload));
+      
+      console.log('🔍 Rol extraído del token JWT:', decodedPayload.user_metadata?.role);
+      return decodedPayload.user_metadata?.role;
+    } catch (error) {
+      console.error('Error al decodificar token:', error);
+      return null;
+    }
+  };
+
   // Lógica más robusta para determinar el rol
   const determineRole = () => {
     if (!userInfo) {
@@ -26,7 +43,22 @@ const HomeScreenRouter = () => {
       return 'admin'; // default
     }
 
-    // NUEVO: Verificar por el campo 'role' que sí está presente
+    // NUEVO: Verificar por el rol en el token JWT
+    const tokenRole = getRoleFromToken();
+    if (tokenRole === 'veterinario') {
+      console.log('✅ Detectado veterinario por token JWT');
+      return 'veterinario';
+    }
+    if (tokenRole === 'trabajador') {
+      console.log('✅ Detectado trabajador por token JWT');
+      return 'trabajador';
+    }
+    if (tokenRole === 'admin') {
+      console.log('✅ Detectado admin por token JWT');
+      return 'admin';
+    }
+
+    // Verificar por el campo 'role' que está presente en userInfo
     if (userInfo.role === 'veterinario') {
       console.log('✅ Detectado veterinario por userInfo.role === "veterinario"');
       return 'veterinario';

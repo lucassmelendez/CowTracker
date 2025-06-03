@@ -7,6 +7,23 @@ export const homeStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  header: {
+    backgroundColor: colors.primary,
+    padding: 20,
+    paddingTop: 40,
+    alignItems: 'center',
+  },
+  welcomeText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.white,
+    marginBottom: 5,
+  },
+  roleText: {
+    fontSize: 14,
+    color: colors.white,
+    opacity: 0.9,
+  },
   menuContainer: {
     flex: 1,
     padding: 15,

@@ -4,28 +4,21 @@ import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { homeStyles } from '../styles/homeStyles';
 
-const HomeScreenAdmin = () => {
-  const { userInfo, isAdmin } = useAuth();
+const HomeScreenTrabajador = () => {
+  const { userInfo, isTrabajador } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    console.log('HomeScreenAdmin montado - Mostrando menús para administrador');
+    console.log('HomeScreenTrabajador montado - Mostrando menús para trabajador');
   }, []);
 
-  const adminMenuItems = [
-    {
-      id: 'admin',
-      title: 'Administrador',
-      icon: '👨‍💼',
-      route: '/(tabs)/admin',
-      description: 'Gestionar trabajadores y veterinarios'
-    },
+  const trabajadorMenuItems = [
     {
       id: 'cattle',
-      title: 'Mi Ganado',
+      title: 'Ganado',
       icon: '🐄',
       route: '/(tabs)/explore',
-      description: 'Gestiona todo tu ganado'
+      description: 'Gestiona todo el ganado'
     },
     {
       id: 'informe',
@@ -40,6 +33,13 @@ const HomeScreenAdmin = () => {
       icon: '🥩',
       route: '/(tabs)/production',
       description: 'Gestionar producción'
+    },
+    {
+      id: 'vincular',
+      title: 'Vincular a Finca',
+      icon: '🔗',
+      route: '/vinculacion',
+      description: 'Vincular con código de finca'
     },
     {
       id: 'qr',
@@ -73,14 +73,14 @@ const HomeScreenAdmin = () => {
     <View style={homeStyles.container}>
       <View style={homeStyles.header}>
         <Text style={homeStyles.welcomeText}>
-          Bienvenido, {userInfo?.primer_nombre || 'Ganadero'}
+          Bienvenido, {userInfo?.primer_nombre || 'Trabajador'}
         </Text>
-        <Text style={homeStyles.roleText}>Panel de Administrador</Text>
+        <Text style={homeStyles.roleText}>Panel de Trabajador</Text>
       </View>
       
       <ScrollView style={homeStyles.menuContainer}>
         <View style={homeStyles.menuGrid}>
-          {adminMenuItems.map((item) => (
+          {trabajadorMenuItems.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={homeStyles.menuItem}
@@ -97,4 +97,4 @@ const HomeScreenAdmin = () => {
   );
 };
 
-export default HomeScreenAdmin;
+export default HomeScreenTrabajador;

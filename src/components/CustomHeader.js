@@ -6,7 +6,7 @@ import { useFarm } from './FarmContext';
 import { useAuth } from './AuthContext';
 import { useRouter } from 'expo-router';
 
-function CustomHeader({ title }: { title: string }) {
+function CustomHeader({ title }) {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
   const router = useRouter();
@@ -23,7 +23,12 @@ function CustomHeader({ title }: { title: string }) {
 
   const handleNavigateToProfile = () => {
     setProfileMenuVisible(false);
-    console.log('Navegando a perfil');
+    router.push('/profile');
+  };
+
+  const handleNavigateToFarms = () => {
+    setProfileMenuVisible(false);
+    router.push('/farms');
   };
 
   return (
@@ -76,10 +81,7 @@ function CustomHeader({ title }: { title: string }) {
               
               <TouchableOpacity 
                 style={styles.menuItem}
-                onPress={() => {
-                  console.log('Navegando a granjas');
-                  setProfileMenuVisible(false);
-                }}
+                onPress={handleNavigateToFarms}
               >
                 <Ionicons name="business" size={18} color="#333" />
                 <Text style={styles.menuItemText}>Mis Granjas</Text>
@@ -129,7 +131,6 @@ const styles = StyleSheet.create({
     padding: 2,
     borderRadius: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    elevation: 3,
   },
   profileButton: {
     marginLeft: 10,
@@ -140,7 +141,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
   },
   modalOverlay: {
     flex: 1,

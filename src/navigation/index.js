@@ -6,7 +6,7 @@ import { useRouter, useNavigation } from 'expo-router';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
-import HomeScreen from '../screens/HomeScreen';
+import HomeScreenRouter from '../screens/HomeScreenRouter';
 import ProfileScreen from '../screens/ProfileScreen';
 import CattleListScreen from '../screens/CattleListScreen';
 import CattleDetailScreen from '../screens/CattleDetailScreen';
@@ -64,7 +64,7 @@ const AppStack = () => {
     >
       <Stack.Screen 
         name="Home" 
-        component={HomeScreen} 
+        component={HomeScreenRouter} 
         options={{ title: 'GanadoApp' }}
       />
       <Stack.Screen 

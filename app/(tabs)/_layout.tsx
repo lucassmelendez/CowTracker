@@ -108,9 +108,6 @@ export default function TabLayout() {
         headerShown: true,
         headerStyle: {
           backgroundColor: '#27ae60',
-          elevation: 1,
-          shadowOpacity: 0,
-          borderBottomWidth: 0,
         },
         headerTitleStyle: {
           fontWeight: 'bold',

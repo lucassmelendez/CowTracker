@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from '../src/components/AuthContext';
 import { FarmProvider } from '../src/components/FarmContext';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, ActivityIndicator } from 'react-native';
-import CustomHeader from '../src/components/CustomHeader';
+import CustomHeader from '../src/components/CustomHeader.js';
 
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();
@@ -39,10 +39,6 @@ function RootLayoutNav() {
           headerShown: false, 
           headerStyle: {
             backgroundColor: '#27ae60',
-            elevation: 0,
-            shadowOpacity: 0,
-            borderBottomWidth: 0,
-            height: 70
           },
           headerTitleStyle: {
             fontWeight: 'bold',

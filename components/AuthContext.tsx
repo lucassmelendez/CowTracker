@@ -99,7 +99,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         api.setAuthToken(token);
         
         try {
-          const profile = await api.users.getProfile();
+          const profileResponse = await api.users.getProfile();
+          const profile = profileResponse.data; // Extraer los datos de la respuesta de Axios
           // Asegurarse de que el token esté incluido en userInfo
           const userInfoWithToken: UserInfo = {
             ...profile,
@@ -142,7 +143,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = session.access_token;
             api.setAuthToken(token);
             try {
-              const profile = await api.users.getProfile();
+              const profileResponse = await api.users.getProfile();
+              const profile = profileResponse.data; // Extraer los datos de la respuesta de Axios
               // Asegurarse de que el token esté incluido en userInfo
               const userInfoWithToken: UserInfo = {
                 ...profile,
@@ -258,7 +260,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       api.setAuthToken(token);
       
       // Obtener el perfil completo del usuario desde nuestra API
-      const response = await api.users.login({ email, password });
+      const loginResponse = await api.users.login({ email, password });
+      const response = loginResponse.data; // Extraer los datos de la respuesta de Axios
       
       // Asegurarse de que el token esté incluido en userInfo
       const userInfoWithToken: UserInfo = {
@@ -325,7 +328,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const updatedUser = await api.users.updateProfile(data);
+      const updateResponse = await api.users.updateProfile(data);
+      const updatedUser = updateResponse.data; // Extraer los datos de la respuesta de Axios
       
       setUserInfo(updatedUser);
       setCurrentUser(updatedUser);

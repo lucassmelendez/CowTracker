@@ -72,13 +72,15 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
       
       console.log('FarmSelector - Iniciando carga de granjas para usuario:', userInfo?.uid);
       
-      const farmsData = await api.farms.getUserFarms();
+      const farmsResponse = await api.farms.getUserFarms();
+      const farmsData = farmsResponse.data;
       
       console.log('FarmSelector - Granjas recibidas:', farmsData ? farmsData.length : 0);
       
       if (!farmsData || farmsData.length === 0) {
         console.log('FarmSelector - No hay granjas, intentando con getAll');
-        const allFarmsData = await api.farms.getAll();
+        const allFarmsResponse = await api.farms.getAll();
+        const allFarmsData = allFarmsResponse.data;
         setFarms(allFarmsData || []);
         
         if (!selectedFarm && allFarmsData && allFarmsData.length > 0) {

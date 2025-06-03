@@ -82,17 +82,17 @@ const clearAuthToken = (): void => {
 const users = {
   register: (userData: RegisterData): Promise<any> => {
     console.log('API - Registrando usuario:', userData.email);
-    return instance.post('auth/register', userData);
+    return instance.post('users/register', userData);
   },
 
   login: (credentials: LoginCredentials): Promise<UserInfo> => {
     console.log('API - Iniciando sesión para:', credentials.email);
-    return instance.post('auth/login', credentials);
+    return instance.post('users/login', credentials);
   },
 
   logout: (): Promise<void> => {
     console.log('API - Cerrando sesión');
-    return instance.post('auth/logout');
+    return instance.post('users/logout');
   },
 
   getProfile: (): Promise<UserInfo> => {
@@ -112,7 +112,7 @@ const users = {
 
   getToken: (): Promise<string> => {
     console.log('API - Solicitando token de autenticación');
-    return instance.get('auth/token');
+    return instance.get('users/refresh-token');
   },
 
   getPremiumTypes: (): Promise<any[]> => {

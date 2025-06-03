@@ -13,14 +13,29 @@ import { useAuth } from './AuthContext';
 import api from '../src/services/api';
 import { useRouter } from 'expo-router';
 
-const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
+interface Farm {
+  _id: string;
+  name: string;
+  location?: string;
+}
+
+interface FarmSelectorProps {
+  onSelectFarm: (farm: Farm) => void;
+  selectedFarm: Farm | null;
+}
+
+interface RenderFarmItemProps {
+  item: Farm;
+}
+
+const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
   const router = useRouter();
-  const [farms, setFarms] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [farms, setFarms] = useState<Farm[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
 
   useEffect(() => {
     console.log('FarmSelector - userInfo actualizado:', 
@@ -50,7 +65,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
     }
   }, [modalVisible]);
 
-  const loadFarms = async () => {
+  const loadFarms = async (): Promise<void> => {
     try {
       if (!loading) setLoading(true);
       setError(null);
@@ -86,17 +101,17 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
     }
   };
 
-  const handleSelectFarm = (farm) => {
+  const handleSelectFarm = (farm: Farm): void => {
     onSelectFarm(farm);
     setModalVisible(false);
   };
 
-  const handleAddFarm = () => {
+  const handleAddFarm = (): void => {
     setModalVisible(false);
     router.push('/farms');
   };
 
-  const renderFarmItem = ({ item }) => {
+  const renderFarmItem = ({ item }: RenderFarmItemProps) => {
     const isSelected = selectedFarm && selectedFarm._id === item._id;
     
     return (

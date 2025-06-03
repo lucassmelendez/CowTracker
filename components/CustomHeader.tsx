@@ -6,13 +6,17 @@ import { useFarm } from './FarmContext';
 import { useAuth } from './AuthContext';
 import { useRouter } from 'expo-router';
 
-function CustomHeader({ title }) {
+interface CustomHeaderProps {
+  title: string;
+}
+
+const CustomHeader: React.FC<CustomHeaderProps> = ({ title }) => {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
   const router = useRouter();
-  const [profileMenuVisible, setProfileMenuVisible] = useState(false);
+  const [profileMenuVisible, setProfileMenuVisible] = useState<boolean>(false);
 
-  const handleLogout = async () => {
+  const handleLogout = async (): Promise<void> => {
     try {
       await logout();
       setProfileMenuVisible(false);
@@ -21,12 +25,12 @@ function CustomHeader({ title }) {
     }
   };
 
-  const handleNavigateToProfile = () => {
+  const handleNavigateToProfile = (): void => {
     setProfileMenuVisible(false);
     router.push('/profile');
   };
 
-  const handleNavigateToFarms = () => {
+  const handleNavigateToFarms = (): void => {
     setProfileMenuVisible(false);
     router.push('/farms');
   };
@@ -102,7 +106,7 @@ function CustomHeader({ title }) {
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   headerContainer: {

@@ -14,14 +14,48 @@ import { Ionicons } from '@expo/vector-icons';
 import { WEBPAY_URLS, fetchWithCORS } from '../src/config/api';
 import { useAuth } from './AuthContext';
 
-const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!", subtitle = "Desbloquea todo el potencial de CowTracker" }) => {
+interface PremiumUpgradeModalProps {
+  visible: boolean;
+  onClose: () => void;
+  title?: string;
+  subtitle?: string;
+}
+
+interface PaymentData {
+  amount: number;
+  buy_order: string;
+  session_id: string;
+  return_url: string;
+  description: string;
+}
+
+interface PaymentResponse {
+  success: boolean;
+  url?: string;
+  token?: string;
+  message?: string;
+}
+
+interface CurrencyConversionResponse {
+  success: boolean;
+  formatted?: {
+    combined?: string;
+  };
+}
+
+const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({ 
+  visible, 
+  onClose, 
+  title = "¡Actualiza a Premium!", 
+  subtitle = "Desbloquea todo el potencial de CowTracker" 
+}) => {
   const { userInfo } = useAuth();
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [priceDisplay, setPriceDisplay] = useState('$10.000');
-  const [setIsLoadingPrice] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [priceDisplay, setPriceDisplay] = useState<string>('$10.000');
+  const [setIsLoadingPrice] = useState<(loading: boolean) => void>(() => {});
 
   // Función para obtener la conversión de precio
-  const fetchPriceConversion = async () => {
+  const fetchPriceConversion = async (): Promise<void> => {
     try {
       setIsLoadingPrice(true);
       
@@ -32,7 +66,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
+      const data: CurrencyConversionResponse = await response.json();
       
       if (data.success && data.formatted && data.formatted.combined) {
         setPriceDisplay(data.formatted.combined);
@@ -58,7 +92,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
   }, [visible]);
 
   // Función para procesar el pago premium
-  const handlePremiumUpgrade = async () => {
+  const handlePremiumUpgrade = async (): Promise<void> => {
     try {
       setIsProcessingPayment(true);
       
@@ -68,7 +102,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
       const buyOrder = `prem_${userIdShort}_${timestamp}`.slice(0, 26); // Máximo 26 caracteres
       
       // Configuración de la transacción
-      const paymentData = {
+      const paymentData: PaymentData = {
         amount: 10000, // $10.000 pesos chilenos
         buy_order: buyOrder,
         session_id: `sess_${timestamp}`,
@@ -88,7 +122,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
+      const result: PaymentResponse = await response.json();
       console.log('Respuesta de la API:', result);
 
       if (result.success && result.url && result.token) {
@@ -113,7 +147,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
         if (isWeb) {
           console.log('🌐 Redirección directa en web...');
           try {
-            window.open(webpayUrl, '_blank', 'noopener,noreferrer');
+            (window as any).open(webpayUrl, '_blank', 'noopener,noreferrer');
             console.log('✅ URL abierta exitosamente en web');
             
             // Mostrar mensaje de confirmación
@@ -196,7 +230,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
         console.error('❌ Respuesta inválida:', result);
         throw new Error(result.message || 'Error al crear la transacción');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al procesar el pago premium:', error);
       
       let errorMessage = 'No se pudo procesar el pago. ';

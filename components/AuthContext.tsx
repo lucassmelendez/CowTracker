@@ -1,23 +1,87 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { Alert, Platform } from 'react-native';
+import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../src/services/api';
 import { supabase } from '../src/config/supabase';
 
-const AuthContext = createContext();
+interface UserRole {
+  id_rol: number;
+  nombre_rol: string;
+}
 
-export const useAuth = () => useContext(AuthContext);
+interface UserInfo {
+  uid?: string;
+  id?: number;
+  id_rol?: number;
+  primer_nombre?: string;
+  primer_apellido?: string;
+  segundo_nombre?: string;
+  segundo_apellido?: string;
+  email: string;
+  name?: string;
+  displayName?: string;
+  token?: string;
+  rol?: UserRole;
+}
 
-export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+interface RegisterData {
+  primer_nombre: string;
+  primer_apellido: string;
+  segundo_nombre?: string;
+  segundo_apellido?: string;
+  email: string;
+  password: string;
+  role?: string;
+}
+
+interface UpdateProfileData {
+  primer_nombre?: string;
+  primer_apellido?: string;
+  segundo_nombre?: string;
+  segundo_apellido?: string;
+  email?: string;
+  password?: string;
+}
+
+interface AuthContextType {
+  currentUser: UserInfo | null;
+  userInfo: UserInfo | null;
+  loading: boolean;
+  error: string | null;
+  register: (userData: RegisterData) => Promise<any>;
+  login: (email: string, password: string) => Promise<UserInfo>;
+  logout: () => Promise<void>;
+  updateProfile: (data: UpdateProfileData) => Promise<UserInfo>;
+  hasRole: (role: string) => boolean;
+  isAdmin: () => boolean;
+  isTrabajador: () => boolean;
+  isVeterinario: () => boolean;
+}
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
 
   // Función segura para verificar y cargar la sesión de usuario
-  const loadUserSession = async () => {
+  const loadUserSession = async (): Promise<void> => {
     try {
       setLoading(true);
 
@@ -37,7 +101,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const profile = await api.users.getProfile();
           // Asegurarse de que el token esté incluido en userInfo
-          const userInfoWithToken = {
+          const userInfoWithToken: UserInfo = {
             ...profile,
             token: token
           };
@@ -70,7 +134,7 @@ export const AuthProvider = ({ children }) => {
     loadUserSession();
 
     // Suscribirse a cambios en la sesión de autenticación de manera segura
-    let authSubscription = null;
+    let authSubscription: any = null;
     try {
       const { data } = supabase.auth.onAuthStateChange(
         async (event, session) => {
@@ -80,7 +144,7 @@ export const AuthProvider = ({ children }) => {
             try {
               const profile = await api.users.getProfile();
               // Asegurarse de que el token esté incluido en userInfo
-              const userInfoWithToken = {
+              const userInfoWithToken: UserInfo = {
                 ...profile,
                 token: token
               };
@@ -113,7 +177,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const register = async (userData) => {
+  const register = async (userData: RegisterData): Promise<any> => {
     try {
       setLoading(true);
       setError(null);
@@ -159,7 +223,7 @@ export const AuthProvider = ({ children }) => {
       }, 500);
       
       return response;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al registrar usuario:', error);
       
       if (error.message) {
@@ -174,7 +238,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email: string, password: string): Promise<UserInfo> => {
     try {
       setLoading(true);
       setError(null);
@@ -197,7 +261,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.users.login({ email, password });
       
       // Asegurarse de que el token esté incluido en userInfo
-      const userInfoWithToken = {
+      const userInfoWithToken: UserInfo = {
         ...response,
         token: token // Añadir explícitamente el token
       };
@@ -208,7 +272,7 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(userInfoWithToken);
       
       return userInfoWithToken;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error de inicio de sesión:', error);
       
       if (error.message) {
@@ -223,7 +287,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
       setLoading(true);
       
@@ -237,7 +301,7 @@ export const AuthProvider = ({ children }) => {
       
       // Limpiar el token de la API
       api.clearAuthToken();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al cerrar sesión:', error);
       setError(error.message || 'Error al cerrar sesión');
       throw error;
@@ -246,7 +310,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const hasRole = (role) => {
+  const hasRole = (role: string): boolean => {
     if (!userInfo || !userInfo.rol) return false;
     
     // Manejar admin: el admin puede hacer todo
@@ -256,7 +320,7 @@ export const AuthProvider = ({ children }) => {
     return userInfo.rol.nombre_rol === role;
   };
 
-  const updateUserProfile = async (data) => {
+  const updateUserProfile = async (data: UpdateProfileData): Promise<UserInfo> => {
     try {
       setLoading(true);
       setError(null);
@@ -267,7 +331,7 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(updatedUser);
       
       // Si se actualiza el email, actualizarlo también en Supabase
-      if (data.email && data.email !== userInfo.email) {
+      if (data.email && data.email !== userInfo?.email) {
         const { error } = await supabase.auth.updateUser({
           email: data.email
         });
@@ -285,7 +349,7 @@ export const AuthProvider = ({ children }) => {
       }
       
       return updatedUser;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al actualizar perfil:', error);
       setError(error.message || 'Error al actualizar perfil');
       throw error;
@@ -294,7 +358,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     currentUser,
     userInfo,
     loading,

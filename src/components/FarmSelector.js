@@ -7,8 +7,7 @@ import {
   Modal, 
   FlatList, 
   ActivityIndicator,
-  Platform,
-  Dimensions
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
@@ -16,8 +15,6 @@ import api from '../services/api';
 import { useRouter } from 'expo-router';
 import { colors } from '../styles/commonStyles';
 import { getShadowStyle } from '../utils/styles';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
@@ -102,7 +99,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
     router.push('/farms');
   };
 
-  const renderFarmItem = ({ item, index }) => {
+  const renderFarmItem = ({ item }) => {
     const isSelected = selectedFarm && selectedFarm._id === item._id;
     
     return (
@@ -112,19 +109,10 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
           isSelected && styles.selectedFarmItem
         ]} 
         onPress={() => handleSelectFarm(item)}
-        activeOpacity={0.8}
       >
-        <View style={[
-          styles.farmIconContainer,
-          isSelected && styles.selectedFarmIconContainer
-        ]}>
-          <Ionicons 
-            name="home" 
-            size={24} 
-            color={isSelected ? colors.primary : colors.secondary} 
-          />
+        <View style={styles.farmIconContainer}>
+          <Ionicons name="home" size={24} color={colors.secondary} />
         </View>
-        
         <View style={styles.farmInfoContainer}>
           <Text style={[
             styles.farmName, 
@@ -135,15 +123,9 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
           {item.location && (
             <Text style={styles.farmLocation}>{item.location}</Text>
           )}
-          {item.size && (
-            <Text style={styles.farmSize}>{item.size} hectáreas</Text>
-          )}
         </View>
-        
         {isSelected && (
-          <View style={styles.selectedIndicator}>
-            <Ionicons name="checkmark-circle" size={28} color={colors.primary} />
-          </View>
+          <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
         )}
       </TouchableOpacity>
     );
@@ -194,7 +176,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
       </TouchableOpacity>
 
       <Modal
-        animationType="fade"
+        animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
@@ -205,60 +187,44 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
             activeOpacity={1}
             onPress={() => setModalVisible(false)}
           />
-          
           <View style={styles.modalContent}>
-            {/* Header del modal */}
             <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderTop}>
-                <View style={styles.iconContainer}>
-                  <Ionicons name="home" size={32} color={colors.primary} />
-                </View>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setModalVisible(false)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="close" size={24} color={colors.textSecondary} />
-                </TouchableOpacity>
+              <View style={styles.iconContainer}>
+                <Ionicons name="home" size={50} color="#fff" />
               </View>
-              
               <Text style={styles.modalTitle}>Seleccionar Granja</Text>
               <Text style={styles.modalSubtitle}>
                 Elige la granja con la que quieres trabajar
               </Text>
             </View>
             
-            {/* Cuerpo del modal */}
             <View style={styles.modalBody}>
-              {farms.length > 0 ? (
-                <FlatList
-                  data={farms}
-                  renderItem={renderFarmItem}
-                  keyExtractor={(item) => item._id}
-                  contentContainerStyle={styles.farmList}
-                  showsVerticalScrollIndicator={false}
-                  style={styles.flatList}
-                />
-              ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons name="home-outline" size={64} color={colors.textTertiary} />
-                  <Text style={styles.emptyStateTitle}>No hay granjas</Text>
-                  <Text style={styles.emptyStateSubtitle}>
-                    Añade tu primera granja para comenzar
-                  </Text>
-                </View>
-              )}
+              <FlatList
+                data={farms}
+                renderItem={renderFarmItem}
+                keyExtractor={(item) => item._id}
+                contentContainerStyle={styles.farmList}
+                showsVerticalScrollIndicator={false}
+                style={styles.flatList}
+              />
               
-              {/* Botón para añadir granja */}
               <TouchableOpacity 
                 style={styles.addFarmButton}
                 onPress={handleAddFarm}
                 activeOpacity={0.8}
               >
-                <Ionicons name="add" size={20} color="#fff" />
+                <Ionicons name="add" size={20} color="#fff" style={{ marginRight: 8 }} />
                 <Text style={styles.addFarmButtonText}>Añadir nueva granja</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={24} color="#95a5a6" />
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -282,16 +248,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: 8,
     minWidth: 140,
     maxWidth: 180,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    ...getShadowStyle({ 
-      height: 2, 
-      elevation: 4, 
-      opacity: 0.2, 
-      radius: 4 
+    ...Platform.select({
+      android: {
+        elevation: 2,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+      },
     }),
   },
   selectorText: {
@@ -309,84 +278,56 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: 20,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
   },
   modalContent: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    width: screenWidth - 40,
-    maxWidth: 400,
-    height: Math.min(screenHeight * 0.7, 600),
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
     overflow: 'hidden',
-    ...getShadowStyle({ 
-      height: 8, 
-      elevation: 16, 
-      opacity: 0.3, 
-      radius: 20 
+    ...Platform.select({
+      android: {
+        elevation: 10,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+      },
     }),
   },
   modalHeader: {
-    backgroundColor: colors.surfaceLight,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-  },
-  modalHeaderTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: colors.primary,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    marginBottom: 12,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.borderLight,
-    ...getShadowStyle({ 
-      height: 2, 
-      elevation: 4, 
-      opacity: 0.1, 
-      radius: 8 
-    }),
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 6,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
     textAlign: 'center',
-    letterSpacing: 0.3,
   },
   modalSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    lineHeight: 20,
   },
   modalBody: {
     flex: 1,
@@ -394,119 +335,119 @@ const styles = StyleSheet.create({
   },
   flatList: {
     flex: 1,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   farmList: {
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   farmItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    backgroundColor: colors.surfaceLight,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f8f9fa',
     borderWidth: 2,
-    borderColor: colors.borderLight,
-    marginBottom: 10,
-    ...getShadowStyle({ 
-      height: 2, 
-      elevation: 4, 
-      opacity: 0.08, 
-      radius: 8 
+    borderColor: 'transparent',
+    ...Platform.select({
+      android: {
+        elevation: 2,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
     }),
   },
   selectedFarmItem: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#e8f5e8',
     borderColor: colors.primary,
-    ...getShadowStyle({ 
-      height: 4, 
-      elevation: 8, 
-      opacity: 0.15, 
-      radius: 12 
+    ...Platform.select({
+      android: {
+        elevation: 4,
+      },
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
     }),
   },
   farmIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  selectedFarmIconContainer: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    marginRight: 16,
+    ...Platform.select({
+      android: {
+        elevation: 3,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+      },
+    }),
   },
   farmInfoContainer: {
     flex: 1,
   },
   farmName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.text,
-    marginBottom: 3,
-    letterSpacing: 0.3,
+    marginBottom: 4,
   },
   selectedFarmName: {
     color: colors.primary,
   },
   farmLocation: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  farmSize: {
-    fontSize: 11,
-    color: colors.textTertiary,
-    fontStyle: 'italic',
-  },
-  selectedIndicator: {
-    marginLeft: 10,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 30,
-  },
-  emptyStateTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
-    marginTop: 14,
-    marginBottom: 6,
-  },
-  emptyStateSubtitle: {
     fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
+    color: colors.textLight,
+    fontStyle: 'italic',
   },
   addFarmButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    ...getShadowStyle({ 
-      height: 3, 
-      elevation: 6, 
-      opacity: 0.2, 
-      radius: 8 
+    paddingVertical: 16,
+    borderRadius: 12,
+    ...Platform.select({
+      android: {
+        elevation: 3,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
     }),
   },
   addFarmButtonText: {
-    color: colors.textInverse,
+    color: '#fff',
     fontWeight: '700',
-    fontSize: 15,
-    marginLeft: 6,
-    letterSpacing: 0.3,
+    fontSize: 16,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

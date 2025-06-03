@@ -25,19 +25,9 @@ function RootLayoutNav() {
 
   if (loading) {
     return (
-      <View style={{ 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        backgroundColor: '#F7FAFC'
-      }}>
-        <ActivityIndicator size="large" color="#2E8B57" />
-        <Text style={{ 
-          marginTop: 16, 
-          fontSize: 16,
-          color: '#4A5568',
-          fontWeight: '500'
-        }}>Cargando...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#27ae60" />
+        <Text style={{ marginTop: 10 }}>Cargando...</Text>
       </View>
     );
   }
@@ -48,14 +38,12 @@ function RootLayoutNav() {
         screenOptions={{
           headerShown: false, 
           headerStyle: {
-            backgroundColor: '#2E8B57',
+            backgroundColor: '#27ae60',
           },
           headerTitleStyle: {
-            fontWeight: '700',
-            color: '#ffffff',
-            fontSize: 18,
+            fontWeight: 'bold',
+            color: '#ffffff'
           },
-          headerTintColor: '#ffffff',
         }}
       >
         {currentUser ? (
@@ -66,89 +54,61 @@ function RootLayoutNav() {
               name="cattle-detail" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Detalles del Ganado" />,
-                presentation: 'card',
-                animation: 'slide_from_right',
+                headerTitle: () => <CustomHeader title="Detalles del Ganado" /> 
               }} 
             />
             <Stack.Screen 
               name="add-cattle" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Gestionar Ganado" />,
-                presentation: 'card',
-                animation: 'slide_from_right',
+                headerTitle: () => <CustomHeader title="Gestionar Ganado" /> 
               }} 
             />
             <Stack.Screen 
               name="profile" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Mi Perfil" />,
-                presentation: 'card',
-                animation: 'slide_from_right',
+                headerTitle: () => <CustomHeader title="Mi Perfil" /> 
               }} 
             />
             <Stack.Screen 
               name="farms" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Mis Granjas" />,
-                presentation: 'card',
-                animation: 'slide_from_right',
+                headerTitle: () => <CustomHeader title="Mis Granjas" /> 
               }} 
             />
             <Stack.Screen 
               name="sales" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Ventas" />,
-                presentation: 'card',
-                animation: 'slide_from_right',
+                headerTitle: () => <CustomHeader title="Ventas" /> 
               }} 
             />
             <Stack.Screen 
               name="report" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Informe" />,
-                presentation: 'card',
-                animation: 'slide_from_right',
+                headerTitle: () => <CustomHeader title="Informe" /> 
               }} 
             />
             <Stack.Screen 
               name="vinculacion" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Vincular a Finca" />,
-                presentation: 'card',
-                animation: 'slide_from_right',
+                headerTitle: () => <CustomHeader title="Vincular a Finca" /> 
               }} 
             />
           </>
         ) : (
           <>
             <Stack.Screen name="index" redirect={true} />
-            <Stack.Screen 
-              name="login" 
-              options={{ 
-                headerShown: false,
-                presentation: 'card',
-                animation: 'fade',
-              }} 
-            />
-            <Stack.Screen 
-              name="register" 
-              options={{ 
-                headerShown: false,
-                presentation: 'card',
-                animation: 'slide_from_right',
-              }} 
-            />
+            <Stack.Screen name="login" options={{ headerShown: false }} />
+            <Stack.Screen name="register" options={{ headerShown: false }} />
           </>
         )}
       </Stack>
-      <StatusBar style="light" backgroundColor="#2E8B57" />
+      <StatusBar style="dark" />
     </>
   );
 }

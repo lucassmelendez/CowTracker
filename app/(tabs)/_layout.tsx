@@ -8,14 +8,12 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: true,
         headerStyle: {
-          backgroundColor: '#2E8B57',
+          backgroundColor: '#27ae60',
         },
         headerTitleStyle: {
-          fontWeight: '700',
-          color: '#ffffff',
-          fontSize: 18,
+          fontWeight: 'bold',
+          color: '#ffffff'
         },
-        headerTintColor: '#ffffff',
       }}
     >
       <Stack.Screen

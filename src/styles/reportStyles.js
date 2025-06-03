@@ -103,10 +103,44 @@ export const reportStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
     ...getShadowStyle(),
-  },
-  sendButtonText: {
+  },  sendButtonText: {
     color: colors.white,
     fontSize: 18,
     fontWeight: 'bold',
   },
-}); 
+  reportTypeContainer: {
+    marginBottom: 20,
+  },
+  reportTypeButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 10,
+  },
+  reportTypeButton: {
+    backgroundColor: colors.white,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    minWidth: '40%',
+    alignItems: 'center',
+    ...getShadowStyle(),
+  },
+  reportTypeButtonSelected: {
+    backgroundColor: colors.primary,
+  },
+  reportTypeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  reportTypeTextSelected: {
+    color: colors.white,
+  },
+  infoText: {
+    fontSize: 12,
+    color: colors.textLight,
+    marginTop: 8,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+});

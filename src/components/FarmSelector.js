@@ -111,7 +111,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         onPress={() => handleSelectFarm(item)}
       >
         <View style={styles.farmIconContainer}>
-          <Ionicons name="home" size={24} color={colors.secondary} />
+          <Ionicons name="business" size={24} color={colors.secondary} />
         </View>
         <View style={styles.farmInfoContainer}>
           <Text style={[
@@ -155,7 +155,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         style={styles.selectorButton}
         onPress={handleAddFarm}
       >
-        <Ionicons name="add" size={18} color="#ffffff" />
+        <Ionicons name="add-circle" size={18} color="#ffffff" />
         <Text style={styles.selectorText}>Añadir granja</Text>
       </TouchableOpacity>
     );
@@ -168,7 +168,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
         onPress={() => setModalVisible(true)}
         activeOpacity={0.8}
       >
-        <Ionicons name="home" size={16} color="#ffffff" />
+        <Ionicons name="business" size={16} color="#ffffff" />
         <Text style={styles.selectorText} numberOfLines={1}>
           {selectedFarm ? selectedFarm.name : 'Seleccionar granja'}
         </Text>
@@ -214,7 +214,7 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
               activeOpacity={0.8}
             >
               <Text style={styles.addFarmButtonText}>Añadir nueva granja</Text>
-              <Ionicons name="add" size={18} color="#fff" />
+              <Ionicons name="add-circle" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 20,
     minWidth: 140,
     maxWidth: 180,
     ...Platform.select({
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 4,
-    borderRadius: 8,
+    borderRadius: 20,
     backgroundColor: '#f5f5f5',
   },
   flatList: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 8,
     backgroundColor: '#f9f9f9',
     ...Platform.select({
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   farmIconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 8,
+    borderRadius: 20,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.primary,
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     marginHorizontal: 20,
     marginTop: 10,
     ...Platform.select({

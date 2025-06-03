@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import CustomHeader from '../../src/components/CustomHeader.js';
+import CustomHeader from '../../src/components/CustomHeader';
 
 export default function TabLayout() {
   return (

@@ -11,7 +11,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
-import { useAuth } from '../../components/AuthContext';
 import { useFarm } from '../../components/FarmContext';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -22,7 +21,6 @@ export default function VeterinaryDataPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const router = useRouter();
-  const { user } = useAuth();
   const { selectedFarm } = useFarm();
 
   useFocusEffect(
@@ -121,7 +119,7 @@ export default function VeterinaryDataPage() {
       if (item.farmName) return item.farmName;
       
       // Si estamos en modo "granja específica", podemos usar el nombre de la granja seleccionada
-      if (selectedFarm && !selectedFarm.isSpecialOption && selectedFarm._id === item.farmId) {
+      if (selectedFarm && selectedFarm._id === item.farmId) {
         return selectedFarm.name;
       }
       

@@ -12,7 +12,7 @@ import { useAuth } from '../components/AuthContext';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login, isLoading, error } = useAuth();
+  const { login, loading, error } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,13 +27,11 @@ export default function LoginScreen() {
     setLocalError('');
     
     try {
-      const result = await login({ email, password });
+      const result = await login(email, password);
       
-      if (result.success) {
+      if (result) {
         // La navegación se maneja automáticamente en AuthContext
         console.log('Login exitoso');
-      } else {
-        setLocalError(result.message || 'Error en el login');
       }
     } catch (err: any) {
       console.error('Error en login:', err);
@@ -81,10 +79,10 @@ export default function LoginScreen() {
           <TouchableOpacity 
             style={styles.loginButton} 
             onPress={handleLogin}
-            disabled={isLoading}
+            disabled={loading}
           >
             <Text style={styles.loginButtonText}>
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Text>
           </TouchableOpacity>
 

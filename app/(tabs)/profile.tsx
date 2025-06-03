@@ -73,16 +73,16 @@ export default function ProfilePage() {
         if (userInfo) {
           const fallbackData: UserData = {
             email: userInfo.email || currentUser?.email || '',
-            role: userInfo.role || '',
-            roleDisplay: userInfo.role === 'admin' ? 'Administrador' : 
-                  userInfo.role === 'veterinario' ? 'Veterinario' :
-                  userInfo.role === 'trabajador' ? 'Trabajador' : 'Usuario',
+            role: userInfo.rol?.nombre_rol || '',
+            roleDisplay: userInfo.rol?.nombre_rol === 'admin' ? 'Administrador' : 
+                  userInfo.rol?.nombre_rol === 'veterinario' ? 'Veterinario' :
+                  userInfo.rol?.nombre_rol === 'user' || userInfo.rol?.nombre_rol === 'trabajador' ? 'Trabajador' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
             segundo_nombre: userInfo.segundo_nombre || '',
             primer_apellido: userInfo.primer_apellido || '',
             segundo_apellido: userInfo.segundo_apellido || '',
-            id_premium: parseInt(userInfo.id_premium) || 1,
-            premium_type: userInfo.premium_type || 'Free'
+            id_premium: userInfo.id_rol || 1,
+            premium_type: userInfo.id_rol === 2 ? 'Premium' : 'Free'
           };
           setUserData(fallbackData);
           setFormData(fallbackData);

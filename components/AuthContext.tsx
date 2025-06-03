@@ -22,6 +22,8 @@ interface UserInfo {
   displayName?: string;
   token?: string;
   rol?: UserRole;
+  id_premium?: number;
+  premium_type?: string;
 }
 
 interface RegisterData {
@@ -41,6 +43,8 @@ interface UpdateProfileData {
   segundo_apellido?: string;
   email?: string;
   password?: string;
+  id_premium?: number;
+  is_premium?: boolean;
 }
 
 interface AuthContextType {

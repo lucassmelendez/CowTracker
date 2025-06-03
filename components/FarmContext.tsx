@@ -5,6 +5,7 @@ interface Farm {
   _id: string;
   name: string;
   location?: string;
+  id_finca?: string;
 }
 
 interface FarmContextType {

@@ -250,12 +250,12 @@ export default function CattleTab() {
             // Si no tiene la información anidada, la añadimos
             return {
               ...animal,
-              farmName: selectedFarm.name || selectedFarm.nombre || `Granja ${selectedFarm._id}`,
+              farmName: selectedFarm.name || `Granja ${selectedFarm._id}`,
               farmId: selectedFarm._id 
             };
           });
           
-          console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name || selectedFarm.nombre || selectedFarm._id})${usedFallbackData ? ' - DATOS LOCALES' : ''}`);
+          console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name || selectedFarm._id})${usedFallbackData ? ' - DATOS LOCALES' : ''}`);
         } catch (farmCattleError) {
           console.error(`Error al cargar ganado para la granja ${selectedFarm._id}:`, farmCattleError);
           // Sin datos de respaldo disponibles

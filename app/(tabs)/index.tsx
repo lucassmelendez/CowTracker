@@ -11,7 +11,6 @@ export default function TabOneScreen() {
   console.log('userInfo completo:', JSON.stringify(userInfo, null, 2));
   console.log('userInfo.id_rol:', userInfo?.id_rol);
   console.log('userInfo.rol:', userInfo?.rol);
-  console.log('userInfo.role:', userInfo?.role);
   console.log('userInfo.rol?.nombre_rol:', userInfo?.rol?.nombre_rol);
   console.log('userInfo.rol?.id_rol:', userInfo?.rol?.id_rol);
   console.log('isAdmin():', isAdmin());
@@ -58,17 +57,17 @@ export default function TabOneScreen() {
       return 'admin';
     }
 
-    // Verificar por el campo 'role' que está presente en userInfo
-    if (userInfo.role === 'veterinario') {
-      console.log('✅ Detectado veterinario por userInfo.role === "veterinario"');
+    // Verificar por el campo 'rol.nombre_rol' que está presente en userInfo
+    if (userInfo.rol?.nombre_rol === 'veterinario') {
+      console.log('✅ Detectado veterinario por userInfo.rol?.nombre_rol === "veterinario"');
       return 'veterinario';
     }
-    if (userInfo.role === 'trabajador') {
-      console.log('✅ Detectado trabajador por userInfo.role === "trabajador"');
+    if (userInfo.rol?.nombre_rol === 'trabajador' || userInfo.rol?.nombre_rol === 'user') {
+      console.log('✅ Detectado trabajador por userInfo.rol?.nombre_rol === "trabajador" o "user"');
       return 'trabajador';
     }
-    if (userInfo.role === 'admin') {
-      console.log('✅ Detectado admin por userInfo.role === "admin"');
+    if (userInfo.rol?.nombre_rol === 'admin') {
+      console.log('✅ Detectado admin por userInfo.rol?.nombre_rol === "admin"');
       return 'admin';
     }
 
@@ -86,20 +85,6 @@ export default function TabOneScreen() {
       return 'admin';
     }
 
-    // Verificar por nombre_rol en el objeto rol
-    if (userInfo.rol?.nombre_rol === 'veterinario') {
-      console.log('✅ Detectado veterinario por rol.nombre_rol');
-      return 'veterinario';
-    }
-    if (userInfo.rol?.nombre_rol === 'user' || userInfo.rol?.nombre_rol === 'trabajador') {
-      console.log('✅ Detectado trabajador por rol.nombre_rol');
-      return 'trabajador';
-    }
-    if (userInfo.rol?.nombre_rol === 'admin') {
-      console.log('✅ Detectado admin por rol.nombre_rol');
-      return 'admin';
-    }
-
     // Verificar usando las funciones del contexto
     if (isVeterinario()) {
       console.log('✅ Detectado veterinario por función isVeterinario()');
@@ -114,10 +99,10 @@ export default function TabOneScreen() {
       return 'admin';
     }
 
-    // Si el role es "user" pero no se detectó como trabajador, podría ser admin por defecto
-    if (userInfo.role === 'user') {
-      console.log('⚠️ userInfo.role es "user", asumiendo admin por defecto');
-      return 'admin';
+    // Si el rol es "user" pero no se detectó como trabajador, podría ser admin por defecto
+    if (userInfo.rol?.nombre_rol === 'user') {
+      console.log('⚠️ userInfo.rol?.nombre_rol es "user", asumiendo trabajador por defecto');
+      return 'trabajador';
     }
 
     console.log('⚠️ No se pudo determinar el rol, usando admin por defecto');

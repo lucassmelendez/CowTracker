@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 import { colors } from './commonStyles';
 
 export const salesStyles = StyleSheet.create({
@@ -30,7 +29,6 @@ export const salesStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 10,
     marginBottom: 15,
-    ...getShadowStyle(),
   },
   cardHeader: {
     flexDirection: 'row',
@@ -141,7 +139,6 @@ export const salesStyles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    ...getShadowStyle(),
   },
   modalContainer: {
     flex: 1,
@@ -153,7 +150,6 @@ export const salesStyles = StyleSheet.create({
     width: '90%',
     backgroundColor: colors.white,
     borderRadius: 10,
-    ...getShadowStyle(),
     maxHeight: '80%',
   },
   modalHeader: {

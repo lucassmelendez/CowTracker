@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 import { colors } from './commonStyles';
 
 export const profileStyles = StyleSheet.create({
@@ -28,7 +27,6 @@ export const profileStyles = StyleSheet.create({
     borderRadius: 10,
     margin: 20,
     padding: 20,
-    ...getShadowStyle(),
   },
   avatarContainer: {
     alignItems: 'center',

@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 
 export const loginStyles = StyleSheet.create({
   container: {
@@ -33,7 +32,6 @@ export const loginStyles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 20,
-    ...getShadowStyle(),
   },
   label: {
     fontSize: 16,

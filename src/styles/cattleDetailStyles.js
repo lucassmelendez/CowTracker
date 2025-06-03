@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 import { colors } from './commonStyles';
 
 export const cattleDetailStyles = StyleSheet.create({
@@ -50,7 +49,6 @@ export const cattleDetailStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     margin: 10,
-    ...getShadowStyle({ height: 2, elevation: 3, opacity: 0.1, radius: 4 }),
   },
   sectionTitle: {
     fontSize: 18,
@@ -96,7 +94,6 @@ export const cattleDetailStyles = StyleSheet.create({
     borderRadius: 8,
     flex: 1,
     marginRight: 5,
-    ...getShadowStyle({ height: 2, elevation: 2, opacity: 0.1, radius: 4 }),
   },
   deleteButton: {
     backgroundColor: colors.error,
@@ -107,7 +104,6 @@ export const cattleDetailStyles = StyleSheet.create({
     borderRadius: 8,
     flex: 1,
     marginLeft: 5,
-    ...getShadowStyle({ height: 2, elevation: 2, opacity: 0.1, radius: 4 }),
   },
   buttonText: {
     color: colors.white,
@@ -136,7 +132,6 @@ export const cattleDetailStyles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     width: '85%',
-    ...getShadowStyle({ height: 4, elevation: 5, opacity: 0.2, radius: 8 }),
   },
   modalTitle: {
     fontSize: 20,
@@ -181,7 +176,6 @@ export const cattleDetailStyles = StyleSheet.create({
     margin: 20,
     borderRadius: 8,
     alignItems: 'center',
-    ...getShadowStyle({ height: 2, elevation: 2, opacity: 0.1, radius: 4 }),
   },
   qrButtonContainer: {
     padding: 10,
@@ -194,7 +188,6 @@ export const cattleDetailStyles = StyleSheet.create({
     justifyContent: 'center',
     padding: 15,
     borderRadius: 8,
-    ...getShadowStyle({ height: 2, elevation: 2, opacity: 0.1, radius: 4 }),
   },
   qrModalContent: {
     backgroundColor: colors.white,
@@ -202,14 +195,12 @@ export const cattleDetailStyles = StyleSheet.create({
     padding: 20,
     width: '90%',
     alignItems: 'center',
-    ...getShadowStyle({ height: 4, elevation: 5, opacity: 0.2, radius: 8 }),
   },
   qrContainer: {
     padding: 20,
     backgroundColor: colors.white,
     borderRadius: 8,
     marginVertical: 20,
-    ...getShadowStyle({ height: 2, elevation: 2, opacity: 0.1, radius: 4 }),
   },
   qrInfo: {
     fontSize: 16,
@@ -242,10 +233,8 @@ export const cattleDetailStyles = StyleSheet.create({
   },
   shareButton: {
     backgroundColor: colors.secondary,
-    ...getShadowStyle({ height: 2, elevation: 2, opacity: 0.1, radius: 4 }),
   },
   closeButton: {
     backgroundColor: colors.border,
-    ...getShadowStyle({ height: 2, elevation: 2, opacity: 0.1, radius: 4 }),
   },
 }); 

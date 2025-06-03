@@ -72,6 +72,13 @@ function RootLayoutNav() {
               }} 
             />
             <Stack.Screen 
+              name="qr-scanner" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Escáner QR" /> 
+              }} 
+            />
+            <Stack.Screen 
               name="farms" 
               options={{ 
                 headerShown: true,

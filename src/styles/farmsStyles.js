@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 import { colors } from './commonStyles';
 
 export const farmsStyles = StyleSheet.create({
@@ -60,7 +59,6 @@ export const farmsStyles = StyleSheet.create({
     marginHorizontal: 10,
     marginVertical: 6,
     padding: 15,
-    ...getShadowStyle({ elevation: 3, height: 2, opacity: 0.15, radius: 4 }),
   },
   cardHeader: {
     flexDirection: 'row',
@@ -104,7 +102,6 @@ export const farmsStyles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    ...getShadowStyle({ elevation: 5, height: 3, opacity: 0.25, radius: 6 }),
   },
   modalContainer: {
     flex: 1,
@@ -116,7 +113,6 @@ export const farmsStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 10,
     padding: 20,
-    ...getShadowStyle({ elevation: 4, height: 2, opacity: 0.2, radius: 5 }),
   },
   modalTitle: {
     fontSize: 20,
@@ -237,7 +233,6 @@ export const farmsStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 15,
-    ...getShadowStyle({ elevation: 2, height: 1, opacity: 0.1, radius: 3 }),
   },
   sectionTitle: {
     fontSize: 16,

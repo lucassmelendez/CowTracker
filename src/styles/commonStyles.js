@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 
 // Colores para la aplicación
 export const colors = {
@@ -31,7 +30,6 @@ export const formStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 10,
     padding: 20,
-    ...getShadowStyle(),
     marginBottom: 20,
   },
   label: {
@@ -76,7 +74,6 @@ export const cardStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
-    ...getShadowStyle(),
   },
   title: {
     fontSize: 18,

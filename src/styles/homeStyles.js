@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 import { colors } from './commonStyles';
 
 export const homeStyles = StyleSheet.create({
@@ -40,7 +39,6 @@ export const homeStyles = StyleSheet.create({
     padding: 20,
     borderRadius: 10,
     marginBottom: 15,
-    ...getShadowStyle(),
     alignItems: 'center',
   },
   menuIcon: {
@@ -63,7 +61,6 @@ export const homeStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 20,
-    ...getShadowStyle(),
   },
   statsTitle: {
     fontSize: 18,

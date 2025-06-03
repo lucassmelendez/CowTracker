@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 
 export const addCattleStyles = StyleSheet.create({
   container: {
@@ -32,7 +31,6 @@ export const addCattleStyles = StyleSheet.create({
     borderRadius: 10,
     margin: 15,
     padding: 20,
-    ...getShadowStyle(),
   },
   sectionTitle: {
     fontSize: 18,

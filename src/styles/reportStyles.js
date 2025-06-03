@@ -1,6 +1,5 @@
 import { StyleSheet } from 'react-native';
 import { colors } from './commonStyles';
-import { getShadowStyle } from '../utils/styles';
 
 export const reportStyles = StyleSheet.create({
   container: {
@@ -36,7 +35,6 @@ export const reportStyles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 8,
     marginBottom: 10,
-    ...getShadowStyle(),
   },
   reportName: {
     fontSize: 18,
@@ -52,7 +50,6 @@ export const reportStyles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    ...getShadowStyle(),
   },
   buttonText: {
     color: colors.white,
@@ -65,7 +62,6 @@ export const reportStyles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 24,
-    ...getShadowStyle(),
   },
   problemButtonText: {
     color: colors.white,
@@ -77,7 +73,6 @@ export const reportStyles = StyleSheet.create({
     borderRadius: 10,
     padding: 16,
     marginBottom: 24,
-    ...getShadowStyle(),
   },
   inputLabel: {
     fontSize: 18,
@@ -102,7 +97,6 @@ export const reportStyles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 20,
-    ...getShadowStyle(),
   },  sendButtonText: {
     color: colors.white,
     fontSize: 18,
@@ -123,7 +117,6 @@ export const reportStyles = StyleSheet.create({
     borderRadius: 8,
     minWidth: '40%',
     alignItems: 'center',
-    ...getShadowStyle(),
   },
   reportTypeButtonSelected: {
     backgroundColor: colors.primary,

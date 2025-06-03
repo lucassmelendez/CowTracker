@@ -1,5 +1,4 @@
 import { StyleSheet } from 'react-native';
-import { getShadowStyle } from '../utils/styles';
 
 export const registerStyles = StyleSheet.create({
   container: {
@@ -27,7 +26,6 @@ export const registerStyles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 20,
-    ...getShadowStyle(),
     marginBottom: 20,
   },
   label: {
@@ -99,7 +97,6 @@ export const registerStyles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    ...getShadowStyle(),
   },
   modalTitle: {
     fontSize: 18,

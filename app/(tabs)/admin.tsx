@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  FlatList, 
   TouchableOpacity, 
   StyleSheet, 
   Alert, 
@@ -10,10 +9,8 @@ import {
   ActivityIndicator,
   Clipboard
 } from 'react-native';
-import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/styles/commonStyles';
-import { getShadowStyle } from '../../src/utils/styles';
 import { useAuth } from '../../src/components/AuthContext';
 import { useFarm } from '../../src/components/FarmContext';
 import api from '../../src/services/api';
@@ -473,7 +470,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 20,
-    ...getShadowStyle(),
   },
   emptyText: {
     textAlign: 'center',
@@ -512,7 +508,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    ...getShadowStyle(),
     minHeight: 50,
   },
   disabledButton: {
@@ -535,7 +530,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: 10,
     padding: 20,
-    ...getShadowStyle(),
   },
   modalTitle: {
     fontSize: 18,
@@ -586,7 +580,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
-    ...getShadowStyle(8),
   },
   codeModalHeader: {
     backgroundColor: colors.primary,
@@ -706,7 +699,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     backgroundColor: colors.primary,
-    ...getShadowStyle(4),
   },
   copyButtonText: {
     fontSize: 16,

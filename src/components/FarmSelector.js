@@ -13,7 +13,6 @@ import { useAuth } from './AuthContext';
 import api from '../services/api';
 import { useRouter } from 'expo-router';
 import { colors } from '../styles/commonStyles';
-import { getShadowStyle } from '../utils/styles';
 
 const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
@@ -233,7 +232,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     minWidth: 180,
     maxWidth: 220,
-    ...getShadowStyle({ height: 1, elevation: 3, opacity: 0.2, radius: 2 }),
   },
   selectorText: {
     color: '#ffffff',
@@ -260,7 +258,6 @@ const styles = StyleSheet.create({
     width: '85%',
     maxHeight: '70%',
     padding: 20,
-    ...getShadowStyle({ height: 5, elevation: 5, opacity: 0.25, radius: 10 }),
   },
   modalHeader: {
     flexDirection: 'row',
@@ -301,7 +298,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    ...getShadowStyle({ height: 1, elevation: 2, opacity: 0.15, radius: 2 }),
   },
   farmInfoContainer: {
     flex: 1,
@@ -327,7 +323,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 15,
-    ...getShadowStyle({ height: 2, elevation: 3, opacity: 0.2, radius: 4 }),
   },
   addFarmButtonText: {
     color: '#fff',

@@ -11,7 +11,6 @@ import {
   Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getShadowStyle } from '../utils/styles';
 import { WEBPAY_URLS, fetchWithCORS } from '../config/api';
 import { useAuth } from './AuthContext';
 
@@ -19,7 +18,7 @@ const PremiumUpgradeModal = ({ visible, onClose, title = "¡Actualiza a Premium!
   const { userInfo } = useAuth();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [priceDisplay, setPriceDisplay] = useState('$10.000');
-  const [isLoadingPrice, setIsLoadingPrice] = useState(false);
+  const [setIsLoadingPrice] = useState(false);
 
   // Función para obtener la conversión de precio
   const fetchPriceConversion = async () => {
@@ -372,7 +371,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 20,
     overflow: 'hidden',
-    ...getShadowStyle(8),
   },
   premiumModalHeader: {
     backgroundColor: '#27ae60',
@@ -456,7 +454,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     backgroundColor: '#27ae60',
-    ...getShadowStyle(4),
   },
   upgradeButtonText: {
     fontSize: 16,

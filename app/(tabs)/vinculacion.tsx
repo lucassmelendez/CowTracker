@@ -13,7 +13,6 @@ import {
 import { useAuth } from '../../src/components/AuthContext';
 import { useRouter } from 'expo-router';
 import { colors } from '../../src/styles/commonStyles';
-import { getShadowStyle } from '../../src/utils/styles';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 
@@ -189,7 +188,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 20,
     marginBottom: 20,
-    ...getShadowStyle()
   },
   fincasCard: {
     padding: 15

@@ -14,7 +14,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import api from '../../src/services/api';
+import api from '../../lib/services/api';
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();
@@ -35,61 +35,53 @@ export default function AddVeterinaryRecordPage() {
   
   // Cargar datos del ganado
   useEffect(() => {
-    const fetchCattleData = async () => {
-      if (!cattleId) {
-        setError('ID de ganado no proporcionado');
-        setLoading(false);
-        return;
-      }
+    const loadCattleData = async () => {
+      if (!cattleId) return;
       
       try {
-        const data = await api.cattle.getById(cattleId);
+        setLoading(true);
+        // Convertir cattleId a string si es un array
+        const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
+        const data = await api.cattle.getById(id);
         setCattle(data);
-      } catch (err) {
-        console.error('Error al cargar datos del ganado:', err);
-        setError('No se pudo cargar la información del ganado');
+      } catch (error) {
+        console.error('Error loading cattle data:', error);
+        Alert.alert('Error', 'No se pudo cargar la información del ganado');
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchCattleData();
+
+    loadCattleData();
   }, [cattleId]);
   
   const handleSubmit = async () => {
-    if (!diagnosis.trim()) {
-      Alert.alert('Error', 'Por favor, ingrese un diagnóstico');
-      return;
-    }
+    if (!cattleId) return;
     
     try {
       setSubmitting(true);
       
       const recordData = {
         date: date.toISOString(),
-        diagnosis: diagnosis.trim(),
-        treatment: treatment.trim() || null,
-        notes: notes.trim() || null,
+        treatment: treatment.trim() || '',
+        veterinarian: 'Dr. Veterinario', // Placeholder
+        notes: notes.trim() || '',
+        medication: '',
+        dosage: ''
       };
       
-      await api.cattle.addMedicalRecord(cattleId, recordData);
+      // Convertir cattleId a string si es un array
+      const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
+      await api.cattle.addMedicalRecord(id, recordData);
       
       Alert.alert(
         'Éxito',
         'Registro veterinario agregado correctamente',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => router.back() 
-          }
-        ]
+        [{ text: 'OK', onPress: () => router.back() }]
       );
-    } catch (err) {
-      console.error('Error al guardar registro veterinario:', err);
-      Alert.alert(
-        'Error',
-        'No se pudo guardar el registro. Intente de nuevo.'
-      );
+    } catch (error) {
+      console.error('Error adding medical record:', error);
+      Alert.alert('Error', 'No se pudo agregar el registro veterinario');
     } finally {
       setSubmitting(false);
     }

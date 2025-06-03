@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../src/services/api';
+import api from '../../lib/services/api';
 import { useFarm } from '../../components/FarmContext';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -43,7 +43,7 @@ export default function VeterinaryDataPage() {
         
         // Primero obtenemos todas las granjas
         const farmsResponse = await api.farms.getAll();
-        const farmsData = Array.isArray(farmsResponse) ? farmsResponse : farmsResponse?.data || [];
+        const farmsData = Array.isArray(farmsResponse) ? farmsResponse : [];
         console.log(`Se encontraron ${farmsData.length} granjas`);
         
         // Para cada granja, cargamos su ganado
@@ -74,7 +74,7 @@ export default function VeterinaryDataPage() {
       else if (selectedFarm?._id) {
         // Cargamos ganado de esa granja específica
         const cattleResponse = await api.farms.getCattle(selectedFarm._id);
-        const rawCattleData = Array.isArray(cattleResponse) ? cattleResponse : cattleResponse?.data || [];
+        const rawCattleData = Array.isArray(cattleResponse) ? cattleResponse : (cattleResponse as any)?.data || [];
         // Añadimos el nombre de la granja a cada animal
         cattleData = rawCattleData.map((animal: any) => ({
           ...animal,

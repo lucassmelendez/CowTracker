@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert,
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../src/services/api';
-import { supabase } from '../../src/config/supabase';
+import api from '../../lib/services/api';
+import { supabase } from '../../lib/config/supabase';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 
 interface UserData {
@@ -47,15 +47,15 @@ export default function ProfilePage() {
         setIsLoading(true);
         // Obtener datos del usuario desde la API
         const userResponse = await api.users.getProfile();
-        const userData = userResponse?.data || userResponse;
+        const userData = userResponse || userResponse;
         
         if (userData) {
           const processedData: UserData = {
             email: userData.email || '',
-            role: userData.role || '',
-            roleDisplay: userData.role === 'admin' ? 'Ganadero' : 
-                       userData.role === 'trabajador' ? 'Trabajador' : 
-                       userData.role === 'veterinario' ? 'Veterinario' : userData.role,
+            role: userData.rol?.nombre_rol || '',
+            roleDisplay: userData.rol?.nombre_rol === 'admin' ? 'Ganadero' : 
+                       userData.rol?.nombre_rol === 'trabajador' ? 'Trabajador' : 
+                       userData.rol?.nombre_rol === 'veterinario' ? 'Veterinario' : userData.rol?.nombre_rol || '',
             primer_nombre: userData.primer_nombre || '',
             segundo_nombre: userData.segundo_nombre || '',
             primer_apellido: userData.primer_apellido || '',

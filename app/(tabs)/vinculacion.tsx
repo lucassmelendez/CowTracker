@@ -11,7 +11,7 @@ import {
   FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../src/services/api';
+import api from '../../lib/services/api';
 
 export default function VinculacionTab() {
   const [codigo, setCodigo] = useState('');
@@ -27,7 +27,7 @@ export default function VinculacionTab() {
     try {
       setLoadingFincas(true);
       const response = await api.farms.getAll();
-      const fincasData = Array.isArray(response) ? response : response?.data || [];
+      const fincasData = Array.isArray(response) ? response : [];
       setFincasVinculadas(fincasData);
     } catch (error) {
       console.error('Error al cargar fincas vinculadas:', error);

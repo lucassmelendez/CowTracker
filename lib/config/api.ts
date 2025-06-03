@@ -1,9 +1,10 @@
-import axios from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
 import { PROD_API_URL, isProd, LOCAL_IP } from './env';
+import { ApiConfig } from '../types';
 
-let API_URL;
+let API_URL: string;
 
 // Si estamos en modo producción, siempre usamos la URL de Vercel
 if (isProd) {
@@ -18,7 +19,7 @@ if (isProd) {
   } else if (Platform.OS === 'android') {
     // Para emulador de Android usamos 10.0.2.2 (apunta al localhost del host)
     // Para dispositivos físicos Android, usamos la IP local
-    const isEmulator = false; // Cambia a true si estás usando el emulador
+    const isEmulator: boolean = false; // Cambia a true si estás usando el emulador
     API_URL = isEmulator ? 'http://10.0.2.2:5000/api' : `http://${LOCAL_IP}:5000/api`;
   } else {
     API_URL = `http://${LOCAL_IP}:5000/api`;
@@ -28,7 +29,7 @@ if (isProd) {
 // Para debugging
 console.log('API URL configurada como:', API_URL);
 
-const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -36,7 +37,7 @@ const api = axios.create({
 });
 
 // Función segura para obtener el token de Supabase
-const getSupabaseToken = async () => {
+const getSupabaseToken = async (): Promise<string | null> => {
   try {
     const { data } = await supabase.auth.getSession();
     return data?.session?.access_token || null;
@@ -48,10 +49,10 @@ const getSupabaseToken = async () => {
 
 // Interceptor que agrega el token de forma segura
 api.interceptors.request.use(
-  async (config) => {
+  async (config: InternalAxiosRequestConfig): Promise<InternalAxiosRequestConfig> => {
     try {
       const token = await getSupabaseToken();
-      if (token) {
+      if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
@@ -59,13 +60,13 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
+  (error: any) => {
     return Promise.reject(error);
   }
 );
 
 // Configuración de la API
-export const API_CONFIG = {
+export const API_CONFIG: ApiConfig = {
   // URL base de tu API desplegada en Vercel
   // Reemplaza esta URL con la URL real de tu despliegue
   BASE_URL: 'https://ct-fastapi.vercel.app',
@@ -82,19 +83,19 @@ export const API_CONFIG = {
 };
 
 // Función helper para construir URLs completas
-export const buildApiUrl = (endpoint) => {
+export const buildApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.BASE_URL}${endpoint}`;
 };
 
 // Función para hacer fetch con configuración CORS mejorada
-export const fetchWithCORS = async (url, options = {}) => {
-  const defaultOptions = {
+export const fetchWithCORS = async (url: string, options: RequestInit = {}): Promise<Response> => {
+  const defaultOptions: RequestInit = {
     mode: 'cors',
     credentials: 'omit', // Cambiar de 'include' a 'omit' para evitar problemas de CORS
     headers: {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Origin': window.location.origin,
+      'Origin': typeof window !== 'undefined' ? window.location.origin : '',
       ...options.headers
     },
     ...options
@@ -113,9 +114,9 @@ export const fetchWithCORS = async (url, options = {}) => {
 export const WEBPAY_URLS = {
   createTransaction: buildApiUrl(API_CONFIG.ENDPOINTS.WEBPAY.CREATE_TRANSACTION),
   return: buildApiUrl(API_CONFIG.ENDPOINTS.WEBPAY.RETURN),
-  status: (token) => buildApiUrl(`${API_CONFIG.ENDPOINTS.WEBPAY.STATUS}/${token}`),
+  status: (token: string): string => buildApiUrl(`${API_CONFIG.ENDPOINTS.WEBPAY.STATUS}/${token}`),
   confirm: buildApiUrl(API_CONFIG.ENDPOINTS.WEBPAY.CONFIRM)
 };
 
 export { API_URL };
-export default api;
+export default api; 

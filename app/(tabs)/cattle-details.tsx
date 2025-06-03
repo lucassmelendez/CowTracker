@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../components/AuthContext';
-import { supabase } from '../../src/config/supabase';
+import { supabase } from '../../lib/config/supabase';
 import QRCode from 'react-native-qrcode-svg';
 
 export default function CattleDetailPage() {

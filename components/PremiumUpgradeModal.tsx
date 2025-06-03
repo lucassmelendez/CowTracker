@@ -11,7 +11,7 @@ import {
   Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { WEBPAY_URLS, fetchWithCORS } from '../src/config/api';
+import { WEBPAY_URLS, fetchWithCORS } from '../lib/config/api';
 import { useAuth } from './AuthContext';
 
 interface PremiumUpgradeModalProps {

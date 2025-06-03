@@ -8,7 +8,7 @@ import {
   RefreshControl,
   StyleSheet
 } from 'react-native';
-import api from '../../src/services/api';
+import api from '../../lib/services/api';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFarm } from '../../components/FarmContext';
@@ -101,8 +101,8 @@ export default function CattleTab() {
                 
                 if (Array.isArray(response)) {
                   cattleItems = response;
-                } else if (response && Array.isArray(response.data)) {
-                  cattleItems = response.data;
+                } else if (response && Array.isArray((response as any).data)) {
+                  cattleItems = (response as any).data;
                 } else if (response && typeof response === 'object') {
                   // Intentar extraer datos si es un objeto
                   const possibleArrays = ['data', 'cattle', 'items', 'results'];
@@ -116,7 +116,7 @@ export default function CattleTab() {
                 
                 // Si no hay elementos o no se pudo extraer un array, devolver array vacío
                 if (!cattleItems || !Array.isArray(cattleItems)) {
-                  console.warn(`No se encontraron datos de ganado para la granja ${farm.name || farm.nombre || farmId}`);
+                  console.warn(`No se encontraron datos de ganado para la granja ${farm.name || farmId}`);
                   return [];
                 }
                 
@@ -132,13 +132,13 @@ export default function CattleTab() {
                   // Si no tiene la información anidada, la añadimos
                   return {
                     ...animal,
-                    farmName: farm.name || farm.nombre || `Granja ${farmId}`,
+                    farmName: farm.name || `Granja ${farmId}`,
                     farmId: farmId
                   };
                 }).filter(animal => animal !== null); // Eliminar elementos nulos
               })
               .catch(err => {
-                console.error(`Error al cargar ganado de granja ${farm.name || farm.nombre || farmId}:`, err);
+                console.error(`Error al cargar ganado de granja ${farm.name || farmId}:`, err);
                 return [];
               });
           });
@@ -161,7 +161,7 @@ export default function CattleTab() {
               // Generar datos de respaldo para cada granja
               farmsData.forEach((farm, index) => {
                 const farmId = farm?._id || farm?.id_finca || `farm-${index}`;
-                const farmName = farm?.name || farm?.nombre || `Granja ${index+1}`;
+                const farmName = farm?.name || `Granja ${index+1}`;
                 
                 // Sin datos de respaldo disponibles
                 console.warn(`No se pudieron cargar datos para ${farmName}`);
@@ -181,7 +181,7 @@ export default function CattleTab() {
             cattleData = [];
             farmsData.forEach((farm, index) => {
               const farmId = farm?._id || farm?.id_finca || `farm-${index}`;
-              const farmName = farm?.name || farm?.nombre || `Granja ${index+1}`;
+              const farmName = farm?.name || `Granja ${index+1}`;
               
               // Sin datos de respaldo disponibles
               console.warn(`No se pudieron cargar datos para ${farmName}`);
@@ -216,8 +216,8 @@ export default function CattleTab() {
           
           if (Array.isArray(response)) {
             receivedData = response;
-          } else if (response && Array.isArray(response.data)) {
-            receivedData = response.data;
+          } else if (response && Array.isArray((response as any).data)) {
+            receivedData = (response as any).data;
           } else if (response && typeof response === 'object') {
             // Intentar extraer datos si es un objeto
             const possibleArrays = ['data', 'cattle', 'items', 'results'];

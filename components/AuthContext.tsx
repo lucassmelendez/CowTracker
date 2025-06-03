@@ -1,8 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import api from '../src/services/api';
-import { supabase } from '../src/config/supabase';
+import api from '../lib/services/api';
+import { supabase } from '../lib/config/supabase';
 
 interface UserRole {
   id_rol: number;
@@ -103,8 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         api.setAuthToken(token);
         
         try {
-          const profileResponse = await api.users.getProfile();
-          const profile = profileResponse.data; // Extraer los datos de la respuesta de Axios
+          const profile = await api.users.getProfile(); // Ya no necesita .data
           // Asegurarse de que el token esté incluido en userInfo
           const userInfoWithToken: UserInfo = {
             ...profile,
@@ -147,8 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const token = session.access_token;
             api.setAuthToken(token);
             try {
-              const profileResponse = await api.users.getProfile();
-              const profile = profileResponse.data; // Extraer los datos de la respuesta de Axios
+              const profile = await api.users.getProfile(); // Ya no necesita .data
               // Asegurarse de que el token esté incluido en userInfo
               const userInfoWithToken: UserInfo = {
                 ...profile,
@@ -264,8 +262,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       api.setAuthToken(token);
       
       // Obtener el perfil completo del usuario desde nuestra API
-      const loginResponse = await api.users.login({ email, password });
-      const response = loginResponse.data; // Extraer los datos de la respuesta de Axios
+      const response = await api.users.login({ email, password }); // Ya no necesita .data
       
       // Asegurarse de que el token esté incluido en userInfo
       const userInfoWithToken: UserInfo = {
@@ -332,8 +329,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      const updateResponse = await api.users.updateProfile(data);
-      const updatedUser = updateResponse.data; // Extraer los datos de la respuesta de Axios
+      const updatedUser = await api.users.updateProfile(data); // Ya no necesita .data
       
       setUserInfo(updatedUser);
       setCurrentUser(updatedUser);

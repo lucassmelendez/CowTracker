@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../components/AuthContext';
 import { useFarm } from '../../components/FarmContext';
-import api from '../../src/services/api';
+import api from '../../lib/services/api';
 
 export default function Admin() {
   const { userInfo } = useAuth();
@@ -22,6 +22,7 @@ export default function Admin() {
   const [generatingCode, setGeneratingCode] = useState(false);
   const [workers, setWorkers] = useState<any[]>([]);
   const [vets, setVets] = useState<any[]>([]);
+  const [cattle, setCattle] = useState<any[]>([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   
@@ -40,28 +41,20 @@ export default function Admin() {
   }, [selectedFarm]);
   
   const loadPersonnel = async () => {
+    if (!selectedFarm) return;
+    
     setLoading(true);
     try {
-      if (!selectedFarm) {
-        console.log('No hay finca seleccionada');
-        setWorkers([]);
-        setVets([]);
-        return;
-      }
-
-      // Usar id_finca en lugar de _id
       const fincaId = selectedFarm.id_finca || selectedFarm._id;
-      console.log('Cargando personal para la finca:', fincaId);
       
       // Cargar trabajadores
       const workersResponse = await api.farms.getWorkers(fincaId);
       console.log('Respuesta de trabajadores:', workersResponse);
       
-      // Asegurarse de que workersResponse sea un array
-      const workersData = Array.isArray(workersResponse) ? workersResponse : 
-                         Array.isArray(workersResponse.data) ? workersResponse.data : [];
+      // Asegurarse de que workersResponse sea un array (ya no necesita .data)
+      const workersData = Array.isArray(workersResponse) ? workersResponse : [];
       
-      setWorkers(workersData.map(worker => ({
+      setWorkers(workersData.map((worker: any) => ({
         _id: worker.id_usuario || worker._id,
         name: worker.nombre_completo || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim(),
         email: worker.correo || 'Sin correo',
@@ -72,11 +65,10 @@ export default function Admin() {
       const vetsResponse = await api.farms.getVeterinarians(fincaId);
       console.log('Respuesta de veterinarios:', vetsResponse);
       
-      // Asegurarse de que vetsResponse sea un array
-      const vetsData = Array.isArray(vetsResponse) ? vetsResponse : 
-                      Array.isArray(vetsResponse.data) ? vetsResponse.data : [];
+      // Asegurarse de que vetsResponse sea un array (ya no necesita .data)
+      const vetsData = Array.isArray(vetsResponse) ? vetsResponse : [];
       
-      setVets(vetsData.map(vet => ({
+      setVets(vetsData.map((vet: any) => ({
         _id: vet.id_usuario || vet._id,
         name: vet.nombre_completo || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim(),
         email: vet.correo || 'Sin correo',
@@ -97,7 +89,7 @@ export default function Admin() {
   };
   
   const confirmDelete = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser || !selectedFarm) return;
     
     setLoading(true);
     try {
@@ -238,6 +230,22 @@ export default function Admin() {
       </TouchableOpacity>
     </View>
   );
+  
+  const loadCattle = async () => {
+    if (!selectedFarm) return;
+    
+    try {
+      setLoading(true);
+      const response = await api.farms.getCattle(selectedFarm._id);
+      // Los datos ya están extraídos por el interceptor
+      const cattleData = Array.isArray(response) ? response : [];
+      setCattle(cattleData);
+    } catch (error) {
+      console.error('Error loading cattle:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   if (loading && workers.length === 0 && vets.length === 0) {
     return (

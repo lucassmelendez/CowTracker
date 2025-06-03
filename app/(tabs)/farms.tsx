@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import api from '../../src/services/api';
+import api from '../../lib/services/api';
 
 interface Farm {
   _id: string;
@@ -228,38 +228,56 @@ export default function FarmsPage() {
 
   const handleManageStaff = async (farm: Farm) => {
     setSelectedFarm(farm);
-    setManagingStaff(true);
     setLoadingStaff(true);
     
     try {
-      // Cargar trabajadores de la granja
+      // Cargar trabajadores y veterinarios de la granja
       const workers = await api.farms.getWorkers(farm._id);
-      setFarmWorkers(Array.isArray(workers) ? workers : []);
-      
-      // Cargar veterinarios de la granja
       const vets = await api.farms.getVeterinarians(farm._id);
-      setFarmVeterinarians(Array.isArray(vets) ? vets : []);
       
-      // Cargar ganado de la granja
-      const cattleResponse = await api.farms.getCattle(farm._id);
-      const cattle = cattleResponse?.data || [];
-      setFarmCattle(cattle);
+      // Mapear UserInfo a Worker/Veterinarian con _id
+      setFarmWorkers(Array.isArray(workers) ? workers.map((worker: any) => ({
+        _id: worker.id || worker._id || worker.uid || `worker-${Math.random()}`,
+        name: worker.name || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim() || 'Sin nombre',
+        email: worker.email || 'Sin email'
+      })) : []);
       
-      // Cargar todos los trabajadores disponibles
+      setFarmVeterinarians(Array.isArray(vets) ? vets.map((vet: any) => ({
+        _id: vet.id || vet._id || vet.uid || `vet-${Math.random()}`,
+        name: vet.name || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim() || 'Sin nombre',
+        email: vet.email || 'Sin email'
+      })) : []);
+      
+      // Cargar todos los usuarios y filtrar por rol
       const allUsers = await api.users.getAll();
-      const allWorkers = Array.isArray(allUsers) ? allUsers.filter((user: any) => user.role === 'trabajador') : [];
-      setAvailableWorkers(allWorkers.filter((worker: any) => 
-        !Array.isArray(workers) || !workers.some((w: any) => w._id === worker._id)
-      ));
+      const allWorkers = Array.isArray(allUsers) ? allUsers.filter((user: any) => 
+        user.rol?.nombre_rol === 'trabajador' || user.role === 'trabajador'
+      ) : [];
+      const allVets = Array.isArray(allUsers) ? allUsers.filter((user: any) => 
+        user.rol?.nombre_rol === 'veterinario' || user.role === 'veterinario'
+      ) : [];
       
-      // Cargar todos los veterinarios disponibles
-      const allVets = Array.isArray(allUsers) ? allUsers.filter((user: any) => user.role === 'veterinario') : [];
-      setAvailableVeterinarians(allVets.filter((vet: any) => 
-        !Array.isArray(vets) || !vets.some((v: any) => v._id === vet._id)
-      ));
-    } catch (error: any) {
-      console.error('Error al cargar personal de la granja:', error);
-      showModal('Error: No se pudo cargar el personal de la granja');
+      // Filtrar los que no están ya asignados a esta granja
+      setAvailableWorkers(allWorkers.filter((worker: any) =>
+        !Array.isArray(workers) || !workers.some((w: any) => (w.id || w._id || w.uid) === (worker.id || worker._id || worker.uid))
+      ).map((worker: any) => ({
+        _id: worker.id || worker._id || worker.uid || `worker-${Math.random()}`,
+        name: worker.name || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim() || 'Sin nombre',
+        email: worker.email || 'Sin email'
+      })));
+      
+      setAvailableVeterinarians(allVets.filter((vet: any) =>
+        !Array.isArray(vets) || !vets.some((v: any) => (v.id || v._id || v.uid) === (vet.id || vet._id || vet.uid))
+      ).map((vet: any) => ({
+        _id: vet.id || vet._id || vet.uid || `vet-${Math.random()}`,
+        name: vet.name || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim() || 'Sin nombre',
+        email: vet.email || 'Sin email'
+      })));
+      
+      setManagingStaff(true);
+    } catch (error) {
+      console.error('Error loading staff:', error);
+      Alert.alert('Error', 'No se pudo cargar el personal');
     } finally {
       setLoadingStaff(false);
     }

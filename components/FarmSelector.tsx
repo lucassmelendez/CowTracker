@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
-import api from '../src/services/api';
+import api from '../lib/services/api';
 import { useRouter } from 'expo-router';
 
 interface Farm {
@@ -73,15 +73,13 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
       
       console.log('FarmSelector - Iniciando carga de granjas para usuario:', userInfo?.uid);
       
-      const farmsResponse = await api.farms.getUserFarms();
-      const farmsData = farmsResponse.data;
+      const farmsData = await api.farms.getUserFarms();
       
       console.log('FarmSelector - Granjas recibidas:', farmsData ? farmsData.length : 0);
       
       if (!farmsData || farmsData.length === 0) {
         console.log('FarmSelector - No hay granjas, intentando con getAll');
-        const allFarmsResponse = await api.farms.getAll();
-        const allFarmsData = allFarmsResponse.data;
+        const allFarmsData = await api.farms.getAll();
         setFarms(allFarmsData || []);
         
         if (!selectedFarm && allFarmsData && allFarmsData.length > 0) {

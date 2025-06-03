@@ -13,8 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
-import api from '../src/services/api';
-import { supabase } from '../src/config/supabase';
+import api from '../lib/services/api';
+import { supabase } from '../lib/config/supabase';
 
 interface Farm {
   _id: string;
@@ -49,7 +49,6 @@ export default function AddCattlePage() {
   const { userInfo } = useAuth();
   
   // Estado para el manejo de errores y advertencias
-  const [setErrorMessage] = useState<string | null>(null);
   const [showCattleWarning, setShowCattleWarning] = useState(false);
   const [cattleCount, setCattleCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -61,18 +60,19 @@ export default function AddCattlePage() {
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
   const [weight, setWeight] = useState('');
-  const [setLocation] = useState('');
+  const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
   const [selectedFarmId, setSelectedFarmId] = useState('');
   const [healthStatus, setHealthStatus] = useState('Saludable');
-  const [setStatus] = useState('activo');
+  const [status, setStatus] = useState('activo');
   const [tipoProduccion, setTipoProduccion] = useState('leche');
   
   // Estados para carga
   const [farms, setFarms] = useState<Farm[]>([]);
   const [loadingFarms, setLoadingFarms] = useState(false);
   const [loadingCattle, setLoadingCattle] = useState(isEditMode);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Función para cargar granjas de manera segura
   const loadFarms = async () => {
@@ -120,16 +120,18 @@ export default function AddCattlePage() {
           finalFarms = userFarms
             .filter(userFarm => userFarm.finca) // Filtrar solo las que tienen datos de finca
             .map((userFarm, index) => {
-              const farm = userFarm.finca;
-              const farmId = farm.id_finca;
-              const farmName = farm.nombre || `Granja ${index + 1}`;
+              const farmArray = userFarm.finca;
+              // Si finca es un array, tomar el primer elemento
+              const farm = Array.isArray(farmArray) ? farmArray[0] : farmArray;
+              const farmId = farm?.id_finca;
+              const farmName = farm?.nombre || `Granja ${index + 1}`;
               
               return {
-                _id: farmId.toString(),
-                id_finca: farmId,
+                _id: farmId?.toString() || '',
+                id_finca: farmId || 0,
                 name: farmName,
                 nombre: farmName,
-                tamano: farm.tamano || 0
+                tamano: farm?.tamano || 0
               };
             });
           
@@ -358,7 +360,7 @@ export default function AddCattlePage() {
             purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
             healthStatus: healthStatus,
             tipoProduccion: tipoProduccion,
-            farmId: farmIdNumeric
+            farmId: farmIdNumeric.toString()
           };
 
           await api.cattle.update(cattleId!, updateData);

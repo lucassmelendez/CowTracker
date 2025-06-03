@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
-import HomeScreen from '../../src/screens/HomeScreen';
+import HomeScreenRouter from '../../src/screens/HomeScreenRouter';
 
 export default function TabOneScreen() {
   return (
     <View style={styles.container}>
-      <HomeScreen />
+      <HomeScreenRouter />
     </View>
   );
 }

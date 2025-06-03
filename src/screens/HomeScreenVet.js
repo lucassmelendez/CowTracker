@@ -4,42 +4,28 @@ import { useAuth } from '../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { homeStyles } from '../styles/homeStyles';
 
-const HomeScreenAdmin = () => {
-  const { userInfo, isAdmin } = useAuth();
+const HomeScreenVeterinario = () => {
+  const { userInfo, isVeterinario } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    console.log('HomeScreenAdmin montado - Mostrando menús para administrador');
+    console.log('HomeScreenVeterinario montado - Mostrando menús para veterinario');
   }, []);
 
-  const adminMenuItems = [
+  const veterinarioMenuItems = [
     {
-      id: 'admin',
-      title: 'Administrador',
-      icon: '👨‍💼',
-      route: '/(tabs)/admin',
-      description: 'Gestionar trabajadores y veterinarios'
+      id: 'vet',
+      title: 'Datos Veterinarios',
+      icon: '💊',
+      route: '/(tabs)/veterinary-data',
+      description: 'Datos veterinarios y medicamentos'
     },
     {
-      id: 'cattle',
-      title: 'Mi Ganado',
-      icon: '🐄',
-      route: '/(tabs)/explore',
-      description: 'Gestiona todo tu ganado'
-    },
-    {
-      id: 'informe',
-      title: 'Informes',
-      icon: '📊',
-      route: '/(tabs)/report',
-      description: 'Generar informes de ganado'
-    },
-    {
-      id: 'production',
-      title: 'Producción',
-      icon: '🥩',
-      route: '/(tabs)/production',
-      description: 'Gestionar producción'
+      id: 'vincular',
+      title: 'Vincular a Finca',
+      icon: '🔗',
+      route: '/vinculacion',
+      description: 'Vincular con código de finca'
     },
     {
       id: 'qr',
@@ -73,14 +59,14 @@ const HomeScreenAdmin = () => {
     <View style={homeStyles.container}>
       <View style={homeStyles.header}>
         <Text style={homeStyles.welcomeText}>
-          Bienvenido, {userInfo?.primer_nombre || 'Ganadero'}
+          Bienvenido, {userInfo?.primer_nombre || 'Veterinario'}
         </Text>
-        <Text style={homeStyles.roleText}>Panel de Administrador</Text>
+        <Text style={homeStyles.roleText}>Panel de Veterinario</Text>
       </View>
       
       <ScrollView style={homeStyles.menuContainer}>
         <View style={homeStyles.menuGrid}>
-          {adminMenuItems.map((item) => (
+          {veterinarioMenuItems.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={homeStyles.menuItem}
@@ -97,4 +83,4 @@ const HomeScreenAdmin = () => {
   );
 };
 
-export default HomeScreenAdmin;
+export default HomeScreenVeterinario;

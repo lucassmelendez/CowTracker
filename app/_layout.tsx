@@ -39,6 +39,10 @@ function RootLayoutNav() {
           headerShown: false, 
           headerStyle: {
             backgroundColor: '#27ae60',
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+            height: 70
           },
           headerTitleStyle: {
             fontWeight: 'bold',

@@ -33,7 +33,7 @@ function RootLayoutNav() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <Stack 
         screenOptions={{
           headerShown: false, 
@@ -51,7 +51,7 @@ function RootLayoutNav() {
             <Stack.Screen name="index" redirect={true} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen 
-              name="cattle-detail" 
+              name="cattle-details" 
               options={{ 
                 headerShown: true,
                 headerTitle: () => <CustomHeader title="Detalles del Ganado" /> 
@@ -116,7 +116,7 @@ function RootLayoutNav() {
         )}
       </Stack>
       <StatusBar style="dark" />
-    </>
+    </View>
   );
 }
 

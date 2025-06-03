@@ -16,17 +16,6 @@ import {
 import { Stack } from 'expo-router';
 import { useAuth } from '../../components/AuthContext';
 
-// Importar de forma segura, con manejo de errores
-let Device: any = null;
-let Constants: any = null;
-
-try {
-  Device = require('expo-device');
-  Constants = require('expo-constants');
-} catch (error) {
-  console.warn('No se pudieron cargar expo-device o expo-constants:', error);
-}
-
 export default function IssueReport() {
   const [reportText, setReportText] = useState('');
   const [reportType, setReportType] = useState('problema'); // 'problema' o 'sugerencia'
@@ -40,8 +29,8 @@ export default function IssueReport() {
       const info = {
         platform: Platform.OS || 'Desconocido',
         osVersion: Platform.Version?.toString() || 'Desconocido',
-        device: 'Dispositivo móvil',
-        deviceName: 'Desconocido',
+        device: Platform.OS === 'ios' ? 'Dispositivo iOS' : Platform.OS === 'android' ? 'Dispositivo Android' : 'Dispositivo Web',
+        deviceName: 'Dispositivo móvil',
         screenWidth: 'Desconocido',
         screenHeight: 'Desconocido',
         appVersion: '1.0.0',
@@ -54,52 +43,6 @@ export default function IssueReport() {
         info.screenHeight = height.toString();
       } catch (e) {
         console.warn('Error al obtener dimensiones:', e);
-      }
-      
-      // Intentar obtener información del dispositivo con expo-device si está disponible
-      if (Device) {
-        try {
-          let deviceType = 'Desconocido';
-          
-          if (Device.DeviceType) {
-            deviceType = Device.deviceType === Device.DeviceType.PHONE ? 'Smartphone' : 
-                          Device.deviceType === Device.DeviceType.TABLET ? 'Tablet' : 'Desconocido';
-          }
-          
-          info.deviceName = await Device.getDeviceNameAsync?.() || Device.deviceName || 'Desconocido';
-          
-          let deviceModel = 'Desconocido';
-          let deviceBrand = 'Desconocido';
-          
-          if (Device.getModelAsync) {
-            deviceModel = await Device.getModelAsync() || 'Desconocido';
-          }
-          
-          if (Device.getBrandAsync) {
-            deviceBrand = await Device.getBrandAsync() || 'Desconocido';
-          }
-          
-          info.device = `${deviceBrand} ${deviceModel} (${deviceType})`;
-        } catch (e) {
-          console.warn('Error con expo-device:', e);
-        }
-      }
-      
-      // Intentar obtener versión de la aplicación si Constants está disponible
-      if (Constants) {
-        try {
-          const appVersion = Constants.expoConfig?.version || 
-                            Constants.manifest?.version || '1.0.0';
-          
-          const buildNumber = Constants.expoConfig?.ios?.buildNumber || 
-                             Constants.expoConfig?.android?.versionCode || 
-                             Constants.manifest?.ios?.buildNumber ||
-                             Constants.manifest?.android?.versionCode || '1';
-          
-          info.appVersion = `${appVersion} (build ${buildNumber})`;
-        } catch (e) {
-          console.warn('Error con expo-constants:', e);
-        }
       }
       
       return info;

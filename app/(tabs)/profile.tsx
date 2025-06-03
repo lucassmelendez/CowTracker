@@ -4,7 +4,6 @@ import { useAuth } from '../../src/components/AuthContext';
 import { useRouter } from 'expo-router';
 import { getShadowStyle } from '../../src/utils/styles';
 import { Ionicons } from '@expo/vector-icons';
-import { profileStyles } from '../../src/styles/profileStyles';
 import api from '../../src/services/api';
 import { supabase } from '../../src/config/supabase';
 import PremiumUpgradeModal from '../../src/components/PremiumUpgradeModal';
@@ -18,6 +17,7 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState({
     email: '',
     role: '',
+    roleDisplay: '',
     primer_nombre: '',
     segundo_nombre: '',
     primer_apellido: '',
@@ -32,25 +32,36 @@ export default function ProfilePage() {
     const loadUserProfile = async () => {
       try {
         setIsLoading(true);
-        // Intentar obtener el perfil actualizado del servidor
-        const profileData = await api.users.getProfile();
+        // Obtener datos del usuario desde la API
+        const userResponse = await api.users.getProfile();
+        const userData = userResponse?.data || userResponse;
         
-        const formattedData = {
-          email: profileData.email || '',
-          role: profileData.role === 'admin' ? 'Administrador' : 
-                profileData.role === 'veterinario' ? 'Veterinario' :
-                profileData.role === 'trabajador' ? 'Trabajador' : 'Usuario',
-          primer_nombre: profileData.primer_nombre || '',
-          segundo_nombre: profileData.segundo_nombre || '',
-          primer_apellido: profileData.primer_apellido || '',
-          segundo_apellido: profileData.segundo_apellido || '',
-          id_premium: parseInt(profileData.id_premium) || 1,
-          premium_type: profileData.premium_type || 'Free'
-        };
-        console.log('Datos del perfil cargados:', formattedData);
-        
-        setUserData(formattedData);
-        setFormData(formattedData);
+        if (userData) {
+          setUserData({
+            email: userData.email || '',
+            role: userData.role || '',
+            roleDisplay: userData.role === 'admin' ? 'Ganadero' : 
+                       userData.role === 'trabajador' ? 'Trabajador' : 
+                       userData.role === 'veterinario' ? 'Veterinario' : userData.role,
+            primer_nombre: userData.primer_nombre || '',
+            segundo_nombre: userData.segundo_nombre || '',
+            primer_apellido: userData.primer_apellido || '',
+            segundo_apellido: userData.segundo_apellido || '',
+            id_premium: userData.id_premium || 1
+          });
+          setFormData({
+            email: userData.email || '',
+            role: userData.role || '',
+            roleDisplay: userData.role === 'admin' ? 'Ganadero' : 
+                       userData.role === 'trabajador' ? 'Trabajador' : 
+                       userData.role === 'veterinario' ? 'Veterinario' : userData.role,
+            primer_nombre: userData.primer_nombre || '',
+            segundo_nombre: userData.segundo_nombre || '',
+            primer_apellido: userData.primer_apellido || '',
+            segundo_apellido: userData.segundo_apellido || '',
+            id_premium: userData.id_premium || 1
+          });
+        }
       } catch (error) {
         console.error('Error al cargar perfil:', error);
         // Si falla, usar datos del contexto
@@ -166,7 +177,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <View style={[profileStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color="#0066CC" />
         <Text style={{ marginTop: 10 }}>Cargando perfil...</Text>
       </View>
@@ -174,59 +185,59 @@ export default function ProfilePage() {
   }
 
   return (
-    <View style={profileStyles.container}>
-      <View style={profileStyles.header}>
-        <Text style={profileStyles.title}>Mi Perfil</Text>
-        <Text style={profileStyles.subtitle}>Gestiona tu información personal</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Mi Perfil</Text>
+        <Text style={styles.subtitle}>Gestiona tu información personal</Text>
       </View>
       
       <ScrollView>
-        <View style={profileStyles.card}>
-          <View style={profileStyles.avatarContainer}>
-            <View style={profileStyles.avatar}>
-              <Text style={profileStyles.avatarText}>{getInitials()}</Text>
+        <View style={styles.card}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{getInitials()}</Text>
             </View>
-            <Text style={profileStyles.role}>{userData.role}</Text>
+            <Text style={styles.role}>{userData.roleDisplay}</Text>
           </View>
           
-          <View style={profileStyles.infoContainer}>
+          <View style={styles.infoContainer}>
             {isEditing ? (
               <>
-                <Text style={profileStyles.label}>Primer nombre</Text>
+                <Text style={styles.label}>Primer nombre</Text>
                 <TextInput
-                  style={profileStyles.input}
+                  style={styles.input}
                   value={formData.primer_nombre}
                   onChangeText={(text) => setFormData({...formData, primer_nombre: text})}
                   placeholder="Primer nombre"
                 />
                 
-                <Text style={profileStyles.label}>Segundo nombre</Text>
+                <Text style={styles.label}>Segundo nombre</Text>
                 <TextInput
-                  style={profileStyles.input}
+                  style={styles.input}
                   value={formData.segundo_nombre}
                   onChangeText={(text) => setFormData({...formData, segundo_nombre: text})}
                   placeholder="Segundo nombre (opcional)"
                 />
                 
-                <Text style={profileStyles.label}>Primer apellido</Text>
+                <Text style={styles.label}>Primer apellido</Text>
                 <TextInput
-                  style={profileStyles.input}
+                  style={styles.input}
                   value={formData.primer_apellido}
                   onChangeText={(text) => setFormData({...formData, primer_apellido: text})}
                   placeholder="Primer apellido"
                 />
                 
-                <Text style={profileStyles.label}>Segundo apellido</Text>
+                <Text style={styles.label}>Segundo apellido</Text>
                 <TextInput
-                  style={profileStyles.input}
+                  style={styles.input}
                   value={formData.segundo_apellido}
                   onChangeText={(text) => setFormData({...formData, segundo_apellido: text})}
                   placeholder="Segundo apellido (opcional)"
                 />    
 
-                <Text style={profileStyles.label}>Suscripción</Text>
+                <Text style={styles.label}>Suscripción</Text>
                 <TextInput
-                  style={profileStyles.input}
+                  style={styles.input}
                   value={formData.premium_type || (formData.id_premium === 2 ? 'Premium' : 'Free')}
                   editable={false}
                 />

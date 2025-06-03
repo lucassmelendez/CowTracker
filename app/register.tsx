@@ -1,235 +1,292 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
   ScrollView,
+  Alert,
   Modal,
-  StyleSheet
+  StyleSheet,
 } from 'react-native';
-import { useAuth } from '../src/components/AuthContext';
 import { useRouter } from 'expo-router';
-import { registerStyles } from '../src/styles/registerStyles';
+import { useAuth } from '../src/components/AuthContext';
 
-export default function RegisterPage() {
+interface Role {
+  id: string;
+  name: string;
+  description: string;
+}
+
+const roles: Role[] = [
+  { id: 'ganadero', name: 'Ganadero', description: 'Propietario de ganado y granjas' },
+  { id: 'trabajador', name: 'Trabajador', description: 'Empleado que maneja el ganado' },
+  { id: 'veterinario', name: 'Veterinario', description: 'Profesional de salud animal' },
+];
+
+export default function RegisterScreen() {
   const router = useRouter();
-  const [primerNombre, setPrimerNombre] = useState('');
-  const [segundoNombre, setSegundoNombre] = useState('');
-  const [primerApellido, setPrimerApellido] = useState('');
-  const [segundoApellido, setSegundoApellido] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('admin'); 
-  const [localError, setLocalError] = useState('');
+  const { register } = useAuth();
+
+  const [formData, setFormData] = useState({
+    primer_nombre: '',
+    segundo_nombre: '',
+    primer_apellido: '',
+    segundo_apellido: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: '',
+  });
+
+  const [errors, setErrors] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
-  const { register, isLoading, error } = useAuth();
 
-  const roles = [
-    { label: 'Ganadero', value: 'admin' },
-    { label: 'Trabajador', value: 'trabajador' },
-    { label: 'Veterinario', value: 'veterinario' }
-  ];
+  const validateForm = (): boolean => {
+    const newErrors: string[] = [];
 
-  const getRoleLabel = (value: string) => {
-    const selectedRole = roles.find(r => r.value === value);
-    return selectedRole ? selectedRole.label : 'Ganadero';
+    if (!formData.primer_nombre.trim()) {
+      newErrors.push('El primer nombre es obligatorio');
+    }
+
+    if (!formData.primer_apellido.trim()) {
+      newErrors.push('El primer apellido es obligatorio');
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.push('El email es obligatorio');
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.push('El email no es válido');
+    }
+
+    if (!formData.password) {
+      newErrors.push('La contraseña es obligatoria');
+    } else if (formData.password.length < 6) {
+      newErrors.push('La contraseña debe tener al menos 6 caracteres');
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.push('Las contraseñas no coinciden');
+    }
+
+    if (!formData.role) {
+      newErrors.push('Debes seleccionar un rol');
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
   };
 
-  const handleRegister = () => {
-    if (!primerNombre || !primerApellido || !email || !password || !confirmPassword) {
-      setLocalError('Por favor complete los campos obligatorios (primer nombre, primer apellido, email y contraseña)');
+  const handleRegister = async () => {
+    if (!validateForm()) {
       return;
     }
 
-    if (password !== confirmPassword) {
-      setLocalError('Las contraseñas no coinciden');
-      return;
-    }
+    setIsLoading(true);
+    setErrors([]);
 
-    if (password.length < 6) {
-      setLocalError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
+    try {
+      const userData = {
+        primer_nombre: formData.primer_nombre.trim(),
+        segundo_nombre: formData.segundo_nombre.trim(),
+        primer_apellido: formData.primer_apellido.trim(),
+        segundo_apellido: formData.segundo_apellido.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+        role: formData.role,
+      };
 
-    setLocalError('');
-    
-    // Enviar directamente los datos sin crear un objeto intermedio
-    console.log('RegisterScreen - Enviando datos directamente:', {
-      primer_nombre: primerNombre,
-      segundo_nombre: segundoNombre,
-      primer_apellido: primerApellido,
-      segundo_apellido: segundoApellido,
-      email,
-      role
-    });
-    
-    // Pasar los datos directamente para evitar conversiones innecesarias
-    register({
-      primer_nombre: primerNombre,
-      segundo_nombre: segundoNombre || "",
-      primer_apellido: primerApellido,
-      segundo_apellido: segundoApellido || "",
-      email,
-      password,
-      role
-    });
+      console.log('Datos a enviar:', userData);
+
+      const result = await register(userData);
+      
+      if (result.success) {
+        Alert.alert(
+          'Registro exitoso',
+          'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.push('/login'),
+            },
+          ]
+        );
+      } else {
+        setErrors([result.message || 'Error en el registro']);
+      }
+    } catch (error: any) {
+      console.error('Error en registro:', error);
+      setErrors([error.message || 'Error al crear la cuenta']);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const navigateToLogin = () => {
-    console.log('Navegando a login');
-    router.push('/login');
+  const handleRoleSelect = (role: Role) => {
+    setFormData({ ...formData, role: role.id });
+    setShowRoleModal(false);
+  };
+
+  const getSelectedRoleName = () => {
+    const selectedRole = roles.find(role => role.id === formData.role);
+    return selectedRole ? selectedRole.name : 'Seleccionar rol';
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={registerStyles.container}
-    >
-      <ScrollView contentContainerStyle={registerStyles.scrollView}>
-        <View style={registerStyles.headerContainer}>
-          <Text style={registerStyles.headerTitle}>Crear Cuenta</Text>
-          <Text style={registerStyles.headerSubtitle}>Registrate para comenzar a gestionar tu ganado</Text>
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollView}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerTitle}>Crear Cuenta</Text>
+          <Text style={styles.headerSubtitle}>Únete a CowTracker</Text>
         </View>
 
-        <View style={registerStyles.formContainer}>
-          <Text style={registerStyles.label}>Primer Nombre *</Text>
+        <View style={styles.formContainer}>
+          <Text style={styles.label}>Primer Nombre *</Text>
           <TextInput
-            style={registerStyles.input}
-            placeholder="Ingrese su primer nombre"
-            value={primerNombre}
-            onChangeText={setPrimerNombre}
+            style={styles.input}
+            value={formData.primer_nombre}
+            onChangeText={(text) => setFormData({ ...formData, primer_nombre: text })}
+            placeholder="Ingresa tu primer nombre"
+            autoCapitalize="words"
           />
 
-          <Text style={registerStyles.label}>Segundo Nombre</Text>
+          <Text style={styles.label}>Segundo Nombre</Text>
           <TextInput
-            style={registerStyles.input}
-            placeholder="Ingrese su segundo nombre (opcional)"
-            value={segundoNombre}
-            onChangeText={setSegundoNombre}
+            style={styles.input}
+            value={formData.segundo_nombre}
+            onChangeText={(text) => setFormData({ ...formData, segundo_nombre: text })}
+            placeholder="Ingresa tu segundo nombre (opcional)"
+            autoCapitalize="words"
           />
 
-          <Text style={registerStyles.label}>Primer Apellido *</Text>
+          <Text style={styles.label}>Primer Apellido *</Text>
           <TextInput
-            style={registerStyles.input}
-            placeholder="Ingrese su primer apellido"
-            value={primerApellido}
-            onChangeText={setPrimerApellido}
+            style={styles.input}
+            value={formData.primer_apellido}
+            onChangeText={(text) => setFormData({ ...formData, primer_apellido: text })}
+            placeholder="Ingresa tu primer apellido"
+            autoCapitalize="words"
           />
 
-          <Text style={registerStyles.label}>Segundo Apellido</Text>
+          <Text style={styles.label}>Segundo Apellido</Text>
           <TextInput
-            style={registerStyles.input}
-            placeholder="Ingrese su segundo apellido (opcional)"
-            value={segundoApellido}
-            onChangeText={setSegundoApellido}
+            style={styles.input}
+            value={formData.segundo_apellido}
+            onChangeText={(text) => setFormData({ ...formData, segundo_apellido: text })}
+            placeholder="Ingresa tu segundo apellido (opcional)"
+            autoCapitalize="words"
           />
 
-          <Text style={registerStyles.label}>Email *</Text>
+          <Text style={styles.label}>Email *</Text>
           <TextInput
-            style={registerStyles.input}
-            placeholder="usuario@ejemplo.com"
-            value={email}
-            onChangeText={setEmail}
+            style={styles.input}
+            value={formData.email}
+            onChangeText={(text) => setFormData({ ...formData, email: text })}
+            placeholder="ejemplo@correo.com"
             keyboardType="email-address"
             autoCapitalize="none"
           />
 
-          <Text style={registerStyles.label}>Contraseña *</Text>
+          <Text style={styles.label}>Contraseña *</Text>
           <TextInput
-            style={registerStyles.input}
-            placeholder="Ingrese su contraseña"
-            value={password}
-            onChangeText={setPassword}
+            style={styles.input}
+            value={formData.password}
+            onChangeText={(text) => setFormData({ ...formData, password: text })}
+            placeholder="Mínimo 6 caracteres"
             secureTextEntry
           />
 
-          <Text style={registerStyles.label}>Confirmar Contraseña *</Text>
+          <Text style={styles.label}>Confirmar Contraseña *</Text>
           <TextInput
-            style={registerStyles.input}
-            placeholder="Confirme su contraseña"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            style={styles.input}
+            value={formData.confirmPassword}
+            onChangeText={(text) => setFormData({ ...formData, confirmPassword: text })}
+            placeholder="Repite tu contraseña"
             secureTextEntry
           />
 
-          <Text style={registerStyles.label}>Tipo de Rol *</Text>
-          <TouchableOpacity 
-            style={registerStyles.selectorButton} 
+          <Text style={styles.label}>Rol *</Text>
+          <TouchableOpacity
+            style={styles.selectorButton}
             onPress={() => setShowRoleModal(true)}
           >
-            <Text style={registerStyles.selectorText}>{getRoleLabel(role)}</Text>
+            <Text style={styles.selectorText}>{getSelectedRoleName()}</Text>
           </TouchableOpacity>
 
-          {(localError || error) && <Text style={registerStyles.errorText}>{localError || error}</Text>}
+          {errors.length > 0 && (
+            <View>
+              {errors.map((error, index) => (
+                <Text key={index} style={styles.errorText}>
+                  {error}
+                </Text>
+              ))}
+            </View>
+          )}
 
-          <TouchableOpacity 
-            style={registerStyles.button} 
+          <TouchableOpacity
+            style={styles.button}
             onPress={handleRegister}
             disabled={isLoading}
           >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Text style={registerStyles.buttonText}>Registrarse</Text>
-            )}
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
+            </Text>
           </TouchableOpacity>
 
-          <View style={registerStyles.loginContainer}>
-            <Text style={registerStyles.loginText}>¿Ya tienes una cuenta? </Text>
-            <TouchableOpacity onPress={navigateToLogin}>
-              <Text style={registerStyles.loginLink}>Inicia sesión aquí</Text>
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>¿Ya tienes cuenta? </Text>
+            <TouchableOpacity onPress={() => router.push('/login')}>
+              <Text style={styles.loginLink}>Inicia sesión</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
-      {/* Modal para selección de rol */}
+      {/* Modal de selección de rol */}
       <Modal
         visible={showRoleModal}
         transparent={true}
         animationType="slide"
         onRequestClose={() => setShowRoleModal(false)}
       >
-        <View style={registerStyles.modalOverlay}>
-          <View style={registerStyles.modalContent}>
-            <Text style={registerStyles.modalTitle}>Seleccione un Rol</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Selecciona tu rol</Text>
             
-            {roles.map((item) => (
+            {roles.map((role) => (
               <TouchableOpacity
-                key={item.value}
+                key={role.id}
                 style={[
-                  registerStyles.roleItem,
-                  role === item.value && registerStyles.roleItemSelected
+                  styles.roleItem,
+                  formData.role === role.id && styles.roleItemSelected,
                 ]}
-                onPress={() => {
-                  setRole(item.value);
-                  setShowRoleModal(false);
-                }}
+                onPress={() => handleRoleSelect(role)}
               >
-                <Text style={[
-                  registerStyles.roleItemText,
-                  role === item.value && registerStyles.roleItemTextSelected
-                ]}>
-                  {item.label}
+                <Text
+                  style={[
+                    styles.roleItemText,
+                    formData.role === role.id && styles.roleItemTextSelected,
+                  ]}
+                >
+                  {role.name}
+                </Text>
+                <Text style={{ fontSize: 12, color: '#7f8c8d', textAlign: 'center', marginTop: 2 }}>
+                  {role.description}
                 </Text>
               </TouchableOpacity>
             ))}
-            
+
             <TouchableOpacity
-              style={registerStyles.cancelButton}
+              style={styles.cancelButton}
               onPress={() => setShowRoleModal(false)}
             >
-              <Text style={registerStyles.cancelButtonText}>Cancelar</Text>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -237,5 +294,134 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  scrollView: {
+    flexGrow: 1,
+    padding: 20,
+  },
+  headerContainer: {
+    marginVertical: 30,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  },
+  formContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 20,
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  input: {
+    backgroundColor: '#f9f9f9',
+    height: 50,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  selectorButton: {
+    backgroundColor: '#f9f9f9',
+    height: 50,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    justifyContent: 'center',
+  },
+  selectorText: {
+    color: '#333',
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: '#27ae60',
+    height: 50,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#e74c3c',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 15,
+  },
+  loginText: {
+    color: '#7f8c8d',
+  },
+  loginLink: {
+    color: '#3498db',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  roleItem: {
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ecf0f1',
+  },
+  roleItemSelected: {
+    backgroundColor: '#e8f7f0',
+  },
+  roleItemText: {
+    fontSize: 16,
+    color: '#2c3e50',
+    textAlign: 'center',
+  },
+  roleItemTextSelected: {
+    fontWeight: 'bold',
+    color: '#27ae60',
+  },
+  cancelButton: {
+    marginTop: 15,
+    paddingVertical: 15,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    color: '#7f8c8d',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '600',
   },
 });

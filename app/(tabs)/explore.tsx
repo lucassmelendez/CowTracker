@@ -12,8 +12,6 @@ import {
 import api from '../../src/services/api';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
-import { cattleListStyles } from '../../src/styles/cattleListStyles';
-import { colors } from '../../src/styles/commonStyles';
 import { useFarm } from '../../src/components/FarmContext';
 import { useAuth } from '../../src/components/AuthContext';
 import { fallbackCattleData, generateFallbackCattleForFarm } from '../../src/utils/fallbackData';
@@ -331,48 +329,48 @@ export default function CattleTab() {
 
     return (
       <TouchableOpacity 
-        style={cattleListStyles.cattleItem}
+        style={styles.cattleItem}
         onPress={() => router.push({
           pathname: '/(tabs)/cattle-details',
           params: { id: item.id_ganado }
         })}
       >
-        <View style={cattleListStyles.cattleHeader}>
-          <Text style={cattleListStyles.cattleId}>
+        <View style={styles.cattleHeader}>
+          <Text style={styles.cattleId}>
             ID: {item.numero_identificacion || 'No disponible'}
           </Text>
           <View style={[
-            cattleListStyles.statusBadge, 
+            styles.statusBadge, 
             { backgroundColor: getStatusColor(item.id_estado_salud) }
           ]}>
-            <Text style={cattleListStyles.statusText}>
+            <Text style={styles.statusText}>
               {formatStatus(item.id_estado_salud)}
             </Text>
           </View>
         </View>
 
-        <View style={cattleListStyles.cattleBody}>
-          <Text style={cattleListStyles.cattleTitle}>{item.nombre || 'Sin nombre'}</Text>
-          <Text style={cattleListStyles.cattleType}>
+        <View style={styles.cattleBody}>
+          <Text style={styles.cattleTitle}>{item.nombre || 'Sin nombre'}</Text>
+          <Text style={styles.cattleType}>
             {formatProduccion(item.id_produccion)}
           </Text>
-          <Text style={cattleListStyles.cattleGender}>
+          <Text style={styles.cattleGender}>
             {formatGenero(item.id_genero)}
           </Text>
           {item.precio_compra && (
-            <Text style={cattleListStyles.cattlePrice}>
+            <Text style={styles.cattlePrice}>
               Precio: ${item.precio_compra}
             </Text>
           )}
           {item.nota && (
-            <Text style={cattleListStyles.cattleNotes} numberOfLines={2}>
+            <Text style={styles.cattleNotes} numberOfLines={2}>
               Nota: {item.nota}
             </Text>
           )}
         </View>
 
-        <View style={cattleListStyles.farmInfo}>
-          <Text style={cattleListStyles.farmName}>
+        <View style={styles.farmInfo}>
+          <Text style={styles.farmName}>
             Granja: {item.finca?.nombre || 'No asignada'}
           </Text>
         </View>
@@ -382,8 +380,8 @@ export default function CattleTab() {
 
   if (loading && !refreshing && !dataLoaded) {
     return (
-      <View style={cattleListStyles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#27ae60" />
       </View>
     );
   }
@@ -399,49 +397,49 @@ export default function CattleTab() {
 
   return (
     <View style={styles.container}>
-      <View style={cattleListStyles.container}>
-        <View style={cattleListStyles.header}>
-          <View style={cattleListStyles.headerTextContainer}>
-            <Text style={cattleListStyles.headerTitle}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerTitle}>
               Total: {cattle.length} {cattle.length === 1 ? 'animal' : 'animales'}
             </Text>
             {farmSubtitle && (
-              <Text style={cattleListStyles.headerSubtitle}>
+              <Text style={styles.headerSubtitle}>
                 {farmSubtitle}
               </Text>
             )}
           </View>
           <TouchableOpacity 
-            style={cattleListStyles.addButton}
+            style={styles.addButton}
             onPress={navigateToAdd}
           >
-            <Text style={cattleListStyles.addButtonText}>+ Añadir</Text>
+            <Text style={styles.addButtonText}>+ Añadir</Text>
           </TouchableOpacity>
         </View>
 
         {error ? (
-          <View style={cattleListStyles.errorContainer}>
-            <Text style={cattleListStyles.errorText}>{error}</Text>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity 
-              style={cattleListStyles.retryButton}
+              style={styles.retryButton}
               onPress={loadCattle}
             >
-              <Text style={cattleListStyles.retryButtonText}>Reintentar</Text>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
             </TouchableOpacity>
           </View>
         ) : cattle.length === 0 ? (
-          <View style={cattleListStyles.emptyContainer}>
-            <Text style={cattleListStyles.emptyText}>
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
               {selectedFarm && selectedFarm._id !== 'all-farms' 
                 ? `No hay ganado en la granja "${selectedFarm.name}"`
                 : 'No tienes ganado registrado'
               }
             </Text>
             <TouchableOpacity
-              style={cattleListStyles.emptyButton}
+              style={styles.emptyButton}
               onPress={navigateToAdd}
             >
-              <Text style={cattleListStyles.emptyButtonText}>Añadir ganado</Text>
+              <Text style={styles.emptyButtonText}>Añadir ganado</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -456,9 +454,9 @@ export default function CattleTab() {
                      `cattle-${index}`;
             }}
             renderItem={renderCattleItem}
-            contentContainerStyle={cattleListStyles.list}
+            contentContainerStyle={styles.list}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#27ae60"]} />
             }
           />
         )}
@@ -471,5 +469,179 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#dddddd',
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#777777',
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  addButton: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+  },
+  addButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  list: {
+    padding: 10,
+  },
+  cattleItem: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    marginBottom: 10,
+    padding: 15,
+  },
+  cattleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cattleId: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  cattleBody: {
+    marginBottom: 10,
+  },
+  cattleTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    marginBottom: 3,
+  },
+  cattleType: {
+    fontSize: 14,
+    color: '#333333',
+    marginBottom: 3,
+  },
+  cattleGender: {
+    fontSize: 14,
+    color: '#777777',
+    marginBottom: 3,
+  },
+  cattleWeight: {
+    fontSize: 14,
+    color: '#777777',
+  },
+  cattleFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  healthBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  healthText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  locationText: {
+    fontSize: 12,
+    color: '#777777',
+    fontStyle: 'italic',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#e74c3c',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#777777',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  emptyButton: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  emptyButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  farmInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  farmName: {
+    fontSize: 14,
+    color: '#777777',
+    fontStyle: 'italic',
+  },
+  cattlePrice: {
+    fontSize: 14,
+    color: '#777777',
+  },
+  cattleNotes: {
+    fontSize: 14,
+    color: '#777777',
   },
 });

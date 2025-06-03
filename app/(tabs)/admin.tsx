@@ -438,7 +438,7 @@ export default function Admin() {
       </View>
     </View>
   );
-}
+} 
 
 const styles = StyleSheet.create({
   container: {

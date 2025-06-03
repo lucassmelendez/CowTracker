@@ -159,7 +159,7 @@ export default function CattleDetailPage() {
       </View>
     );
   }
-
+  
   return (
     <View style={cattleDetailStyles.container}>
       <ScrollView>

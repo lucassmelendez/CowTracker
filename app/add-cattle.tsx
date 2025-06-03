@@ -462,7 +462,7 @@ export default function AddCattlePage() {
         .delete()
         .eq('id_ganado', cattleId);
       
-      if (error) throw error;
+    if (error) throw error;
       
       Alert.alert('Éxito', 'Ganado eliminado correctamente');
       router.back();

@@ -15,7 +15,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/components/AuthContext';
 import api from '../../src/services/api';
-import { farmsStyles } from '../../src/styles/farmsStyles';
 
 interface Farm {
   _id: string;
@@ -249,15 +248,15 @@ export default function FarmsPage() {
       
       // Cargar todos los trabajadores disponibles
       const allUsers = await api.users.getAll();
-      const allWorkers = allUsers.filter((user: any) => user.role === 'trabajador');
+      const allWorkers = Array.isArray(allUsers) ? allUsers.filter((user: any) => user.role === 'trabajador') : [];
       setAvailableWorkers(allWorkers.filter((worker: any) => 
-        !workers.some((w: any) => w._id === worker._id)
+        !Array.isArray(workers) || !workers.some((w: any) => w._id === worker._id)
       ));
       
       // Cargar todos los veterinarios disponibles
-      const allVets = allUsers.filter((user: any) => user.role === 'veterinario');
+      const allVets = Array.isArray(allUsers) ? allUsers.filter((user: any) => user.role === 'veterinario') : [];
       setAvailableVeterinarians(allVets.filter((vet: any) => 
-        !vets.some((v: any) => v._id === vet._id)
+        !Array.isArray(vets) || !vets.some((v: any) => v._id === vet._id)
       ));
     } catch (error: any) {
       console.error('Error al cargar personal de la granja:', error);
@@ -356,18 +355,18 @@ export default function FarmsPage() {
   };
 
   const renderItem = ({ item }: { item: Farm }) => (
-    <View style={farmsStyles.farmItem}>
-      <View style={farmsStyles.cardHeader}>
-        <Text style={farmsStyles.farmName}>{item.name}</Text>
-        <View style={farmsStyles.actionsContainer}>
+    <View style={styles.farmItem}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.farmName}>{item.name}</Text>
+        <View style={styles.actionsContainer}>
           <TouchableOpacity 
-            style={farmsStyles.actionButton} 
+            style={styles.actionButton} 
             onPress={() => openEditModal(item)}
           >
             <Ionicons name="create-outline" size={20} color="#27ae60" />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={farmsStyles.actionButton} 
+            style={styles.actionButton} 
             onPress={() => openDeleteModal(item._id)}
           >
             <Ionicons name="trash-outline" size={20} color="#e74c3c" />
@@ -375,84 +374,426 @@ export default function FarmsPage() {
         </View>
       </View>
 
-      <View style={farmsStyles.infoContainer}>
-        <View style={farmsStyles.infoItem}>
+      <View style={styles.infoContainer}>
+        <View style={styles.infoItem}>
           <Ionicons name="location-outline" size={18} color="#555" />
-          <Text style={farmsStyles.infoText}>{item.location}</Text>
+          <Text style={styles.infoText}>{item.location}</Text>
         </View>
-        <View style={farmsStyles.infoItem}>
+        <View style={styles.infoItem}>
           <Ionicons name="resize-outline" size={18} color="#555" />
-          <Text style={farmsStyles.infoText}>{item.size} hectáreas</Text>
+          <Text style={styles.infoText}>{item.size} hectáreas</Text>
         </View>
-        <View style={farmsStyles.infoItem}>
+        <View style={styles.infoItem}>
           <Ionicons name="browsers-outline" size={18} color="#555" />
-          <Text style={farmsStyles.infoText}>{item.cattleCount || 0} animales</Text>
+          <Text style={styles.infoText}>{item.cattleCount || 0} animales</Text>
         </View>
       </View>
 
-      <View style={farmsStyles.buttonContainer}>
+      <View style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={farmsStyles.manageButton}
+          style={styles.manageButton}
           onPress={() => handleManageStaff(item)}
         >
           <Ionicons name="people-outline" size={16} color="#fff" />
-          <Text style={farmsStyles.buttonText}>Gestionar Personal</Text>
+          <Text style={styles.buttonText}>Gestionar Personal</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={farmsStyles.viewButton}
+          style={styles.viewButton}
           onPress={() => handleViewCattle(item)}
         >
           <Ionicons name="eye-outline" size={16} color="#fff" />
-          <Text style={farmsStyles.buttonText}>Ver Ganado</Text>
+          <Text style={styles.buttonText}>Ver Ganado</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#f5f5f5',
+    },
+    header: {
+      backgroundColor: '#27ae60',
+      padding: 20,
+      paddingTop: 40,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#ffffff',
+    },
+    subtitle: {
+      fontSize: 16,
+      color: 'rgba(255,255,255,0.8)',
+      marginTop: 5,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      color: '#777777',
+      marginTop: 10,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    emptyText: {
+      fontSize: 18,
+      color: '#777777',
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    emptySubtext: {
+      fontSize: 16,
+      color: '#777777',
+      textAlign: 'center',
+      marginTop: 5,
+    },
+    listContainer: {
+      padding: 10,
+      paddingBottom: 80,
+    },
+    farmItem: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      marginHorizontal: 10,
+      marginVertical: 6,
+      padding: 15,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    farmName: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#333333',
+    },
+    actionsContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    actionButton: {
+      marginLeft: 10,
+      padding: 5,
+    },
+    infoContainer: {
+      marginTop: 5,
+    },
+    infoItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 5,
+    },
+    infoText: {
+      fontSize: 14,
+      color: '#777777',
+      marginLeft: 8,
+    },
+    buttonContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 10,
+    },
+    manageButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#27ae60',
+      padding: 10,
+      borderRadius: 8,
+      marginRight: 5,
+    },
+    viewButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#3498db',
+      padding: 10,
+      borderRadius: 8,
+      marginLeft: 5,
+    },
+    buttonText: {
+      color: '#ffffff',
+      fontSize: 12,
+      marginLeft: 5,
+    },
+    addButton: {
+      position: 'absolute',
+      right: 20,
+      bottom: 20,
+      backgroundColor: '#27ae60',
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: 20,
+    },
+    modalContent: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 20,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#333333',
+      marginBottom: 20,
+      textAlign: 'center',
+    },
+    modalText: {
+      fontSize: 16,
+      color: '#333333',
+      textAlign: 'center',
+      marginVertical: 15,
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#333333',
+      marginBottom: 5,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: '#dddddd',
+      borderRadius: 5,
+      padding: 10,
+      marginBottom: 15,
+      fontSize: 16,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 10,
+    },
+    saveButton: {
+      flex: 1,
+      backgroundColor: '#27ae60',
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginLeft: 5,
+    },
+    cancelButton: {
+      flex: 1,
+      backgroundColor: '#f5f5f5',
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginRight: 5,
+      borderWidth: 1,
+      borderColor: '#dddddd',
+    },
+    saveButtonText: {
+      color: '#ffffff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    cancelButtonText: {
+      color: '#333333',
+      fontSize: 16,
+    },
+    confirmButton: {
+      flex: 1,
+      backgroundColor: '#e74c3c',
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginLeft: 5,
+    },
+    confirmButtonText: {
+      color: '#ffffff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalButton: {
+      backgroundColor: '#27ae60',
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginTop: 10,
+      width: '100%',
+    },
+    modalButtonText: {
+      color: '#ffffff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    errorContainer: {
+      backgroundColor: '#ffebee',
+      padding: 10,
+      margin: 10,
+      borderRadius: 5,
+      borderLeftWidth: 4,
+      borderLeftColor: '#e74c3c',
+    },
+    errorText: {
+      color: '#e74c3c',
+      fontSize: 14,
+    },
+    // Estilos para la sección de personal
+    staffContainer: {
+      flex: 1,
+      backgroundColor: '#f5f5f5',
+    },
+    staffHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#27ae60',
+      padding: 15,
+    },
+    backButton: {
+      marginRight: 10,
+    },
+    staffTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#ffffff',
+      flex: 1,
+    },
+    staffScrollView: {
+      padding: 10,
+    },
+    staffSection: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 10,
+      marginBottom: 15,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#333333',
+      marginBottom: 10,
+      marginLeft: 5,
+    },
+    staffCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 10,
+      borderRadius: 8,
+      backgroundColor: '#f9f9f9',
+      marginBottom: 8,
+    },
+    staffInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    staffName: {
+      fontSize: 15,
+      color: '#333333',
+      marginLeft: 10,
+    },
+    removeButton: {
+      padding: 5,
+    },
+    addStaffButton: {
+      padding: 5,
+    },
+    addStaffSection: {
+      marginTop: 15,
+      paddingTop: 15,
+      borderTopWidth: 1,
+      borderTopColor: '#dddddd',
+    },
+    addStaffTitle: {
+      fontSize: 15,
+      color: '#333333',
+      marginBottom: 10,
+      marginLeft: 5,
+    },
+    emptyStaffText: {
+      fontSize: 14,
+      color: '#777777',
+      textAlign: 'center',
+      marginVertical: 10,
+      fontStyle: 'italic',
+    },
+    viewCattleButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f5f5f5',
+      padding: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#27ae60',
+    },
+    viewCattleButtonText: {
+      color: '#27ae60',
+      fontSize: 15,
+      marginRight: 8,
+    },
+  });
+
   return (
-    <View style={farmsStyles.container}>
-      <View style={farmsStyles.header}>
-        <Text style={farmsStyles.title}>Mis Granjas</Text>
-        <Text style={farmsStyles.subtitle}>Gestiona tus propiedades</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Mis Granjas</Text>
+        <Text style={styles.subtitle}>Gestiona tus propiedades</Text>
       </View>
 
       {loading ? (
-        <View style={farmsStyles.loadingContainer}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#27ae60" />
-          <Text style={farmsStyles.loadingText}>Cargando granjas...</Text>
+          <Text style={styles.loadingText}>Cargando granjas...</Text>
         </View>
       ) : managingStaff ? (
-        <View style={farmsStyles.staffContainer}>
-          <View style={farmsStyles.staffHeader}>
+        <View style={styles.staffContainer}>
+          <View style={styles.staffHeader}>
             <TouchableOpacity 
-              style={farmsStyles.backButton}
+              style={styles.backButton}
               onPress={() => setManagingStaff(false)}
             >
               <Ionicons name="arrow-back" size={24} color="#27ae60" />
             </TouchableOpacity>
-            <Text style={farmsStyles.staffTitle}>Gestionar Personal - {selectedFarm?.name}</Text>
+            <Text style={styles.staffTitle}>Gestionar Personal - {selectedFarm?.name}</Text>
           </View>
           
           {loadingStaff ? (
-            <View style={farmsStyles.loadingContainer}>
+            <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#27ae60" />
-              <Text style={farmsStyles.loadingText}>Cargando personal...</Text>
+              <Text style={styles.loadingText}>Cargando personal...</Text>
             </View>
           ) : (
-            <ScrollView style={farmsStyles.staffScrollView}>
-              <View style={farmsStyles.staffSection}>
-                <Text style={farmsStyles.sectionTitle}>Trabajadores</Text>
+            <ScrollView style={styles.staffScrollView}>
+              <View style={styles.staffSection}>
+                <Text style={styles.sectionTitle}>Trabajadores</Text>
                 
                 {farmWorkers.length > 0 ? (
                   farmWorkers.map(worker => (
-                    <View key={worker._id} style={farmsStyles.staffCard}>
-                      <View style={farmsStyles.staffInfo}>
+                    <View key={worker._id} style={styles.staffCard}>
+                      <View style={styles.staffInfo}>
                         <Ionicons name="person" size={20} color="#555" />
-                        <Text style={farmsStyles.staffName}>{worker.name}</Text>
+                        <Text style={styles.staffName}>{worker.name}</Text>
                       </View>
                       <TouchableOpacity 
-                        style={farmsStyles.removeButton}
+                        style={styles.removeButton}
                         onPress={() => handleRemoveWorker(worker._id)}
                       >
                         <Ionicons name="close-circle" size={20} color="#e74c3c" />
@@ -460,20 +801,20 @@ export default function FarmsPage() {
                     </View>
                   ))
                 ) : (
-                  <Text style={farmsStyles.emptyStaffText}>No hay trabajadores asignados</Text>
+                  <Text style={styles.emptyStaffText}>No hay trabajadores asignados</Text>
                 )}
                 
                 {availableWorkers.length > 0 && (
-                  <View style={farmsStyles.addStaffSection}>
-                    <Text style={farmsStyles.addStaffTitle}>Añadir Trabajador:</Text>
+                  <View style={styles.addStaffSection}>
+                    <Text style={styles.addStaffTitle}>Añadir Trabajador:</Text>
                     {availableWorkers.map(worker => (
-                      <View key={worker._id} style={farmsStyles.staffCard}>
-                        <View style={farmsStyles.staffInfo}>
+                      <View key={worker._id} style={styles.staffCard}>
+                        <View style={styles.staffInfo}>
                           <Ionicons name="person-add" size={20} color="#555" />
-                          <Text style={farmsStyles.staffName}>{worker.name}</Text>
+                          <Text style={styles.staffName}>{worker.name}</Text>
                         </View>
                         <TouchableOpacity 
-                          style={farmsStyles.addStaffButton}
+                          style={styles.addStaffButton}
                           onPress={() => handleAddWorker(worker._id)}
                         >
                           <Ionicons name="add-circle" size={20} color="#27ae60" />
@@ -484,18 +825,18 @@ export default function FarmsPage() {
                 )}
               </View>
               
-              <View style={farmsStyles.staffSection}>
-                <Text style={farmsStyles.sectionTitle}>Veterinarios</Text>
+              <View style={styles.staffSection}>
+                <Text style={styles.sectionTitle}>Veterinarios</Text>
                 
                 {farmVeterinarians.length > 0 ? (
                   farmVeterinarians.map(vet => (
-                    <View key={vet._id} style={farmsStyles.staffCard}>
-                      <View style={farmsStyles.staffInfo}>
+                    <View key={vet._id} style={styles.staffCard}>
+                      <View style={styles.staffInfo}>
                         <Ionicons name="medkit" size={20} color="#555" />
-                        <Text style={farmsStyles.staffName}>{vet.name}</Text>
+                        <Text style={styles.staffName}>{vet.name}</Text>
                       </View>
                       <TouchableOpacity 
-                        style={farmsStyles.removeButton}
+                        style={styles.removeButton}
                         onPress={() => handleRemoveVeterinarian(vet._id)}
                       >
                         <Ionicons name="close-circle" size={20} color="#e74c3c" />
@@ -503,20 +844,20 @@ export default function FarmsPage() {
                     </View>
                   ))
                 ) : (
-                  <Text style={farmsStyles.emptyStaffText}>No hay veterinarios asignados</Text>
+                  <Text style={styles.emptyStaffText}>No hay veterinarios asignados</Text>
                 )}
                 
                 {availableVeterinarians.length > 0 && (
-                  <View style={farmsStyles.addStaffSection}>
-                    <Text style={farmsStyles.addStaffTitle}>Añadir Veterinario:</Text>
+                  <View style={styles.addStaffSection}>
+                    <Text style={styles.addStaffTitle}>Añadir Veterinario:</Text>
                     {availableVeterinarians.map(vet => (
-                      <View key={vet._id} style={farmsStyles.staffCard}>
-                        <View style={farmsStyles.staffInfo}>
+                      <View key={vet._id} style={styles.staffCard}>
+                        <View style={styles.staffInfo}>
                           <Ionicons name="medkit" size={20} color="#555" />
-                          <Text style={farmsStyles.staffName}>{vet.name}</Text>
+                          <Text style={styles.staffName}>{vet.name}</Text>
                         </View>
                         <TouchableOpacity 
-                          style={farmsStyles.addStaffButton}
+                          style={styles.addStaffButton}
                           onPress={() => handleAddVeterinarian(vet._id)}
                         >
                           <Ionicons name="add-circle" size={20} color="#27ae60" />
@@ -527,14 +868,14 @@ export default function FarmsPage() {
                 )}
               </View>
 
-              <View style={farmsStyles.staffSection}>
-                <Text style={farmsStyles.sectionTitle}>Ganado</Text>
+              <View style={styles.staffSection}>
+                <Text style={styles.sectionTitle}>Ganado</Text>
                 
                 <TouchableOpacity 
-                  style={farmsStyles.viewCattleButton}
+                  style={styles.viewCattleButton}
                   onPress={() => handleViewCattle(selectedFarm!)}
                 >
-                  <Text style={farmsStyles.viewCattleButtonText}>Ver y Gestionar Ganado</Text>
+                  <Text style={styles.viewCattleButtonText}>Ver y Gestionar Ganado</Text>
                   <Ionicons name="arrow-forward" size={16} color="#27ae60" />
                 </TouchableOpacity>
               </View>
@@ -544,8 +885,8 @@ export default function FarmsPage() {
       ) : (
         <>
           {errorMessage ? (
-            <View style={farmsStyles.errorContainer}>
-              <Text style={farmsStyles.errorText}>{errorMessage}</Text>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
           ) : null}
 
@@ -553,17 +894,17 @@ export default function FarmsPage() {
             data={farms}
             renderItem={renderItem}
             keyExtractor={item => item._id}
-            contentContainerStyle={farmsStyles.listContainer}
+            contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
-              <View style={farmsStyles.emptyContainer}>
+              <View style={styles.emptyContainer}>
                 <Ionicons name="leaf-outline" size={60} color="#ddd" />
-                <Text style={farmsStyles.emptyText}>No tienes granjas registradas</Text>
-                <Text style={farmsStyles.emptySubtext}>Agrega una nueva granja para comenzar</Text>
+                <Text style={styles.emptyText}>No tienes granjas registradas</Text>
+                <Text style={styles.emptySubtext}>Agrega una nueva granja para comenzar</Text>
               </View>
             }
           />
 
-          <TouchableOpacity style={farmsStyles.addButton} onPress={() => setModalVisible(true)}>
+          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
             <Ionicons name="add" size={30} color="#fff" />
           </TouchableOpacity>
         </>
@@ -576,23 +917,23 @@ export default function FarmsPage() {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={farmsStyles.modalContainer}>
-          <View style={farmsStyles.modalContent}>
-            <Text style={farmsStyles.modalTitle}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
               {editingFarm ? 'Editar Granja' : 'Agregar Granja'}
             </Text>
 
-            <Text style={farmsStyles.label}>Nombre</Text>
+            <Text style={styles.label}>Nombre</Text>
             <TextInput 
-              style={farmsStyles.input}
+              style={styles.input}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
               placeholder="Nombre de la granja"
             />
 
-            <Text style={farmsStyles.label}>Tamaño</Text>
+            <Text style={styles.label}>Tamaño</Text>
             <TextInput 
-              style={farmsStyles.input}
+              style={styles.input}
               value={formData.size}
               onChangeText={(text) => setFormData({ ...formData, size: text })}
               placeholder="Ej. 150 hectáreas"
@@ -600,25 +941,25 @@ export default function FarmsPage() {
             />
 
             {errorMessage ? (
-              <Text style={farmsStyles.errorText}>{errorMessage}</Text>
+              <Text style={styles.errorText}>{errorMessage}</Text>
             ) : null}
 
-            <View style={farmsStyles.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity 
-                style={farmsStyles.cancelButton} 
+                style={styles.cancelButton} 
                 onPress={() => {
                   setModalVisible(false);
                   resetForm();
                   setErrorMessage('');
                 }}
               >
-                <Text style={farmsStyles.cancelButtonText}>Cancelar</Text>
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={farmsStyles.saveButton}
+                style={styles.saveButton}
                 onPress={handleCreateFarm}
               >
-                <Text style={farmsStyles.saveButtonText}>Guardar</Text>
+                <Text style={styles.saveButtonText}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -632,11 +973,11 @@ export default function FarmsPage() {
         visible={messageModalVisible}
         onRequestClose={closeModal}
       >
-        <View style={farmsStyles.modalOverlay}>
-          <View style={farmsStyles.modalContent}>
-            <Text style={farmsStyles.modalText}>{modalMessage}</Text>
-            <TouchableOpacity style={farmsStyles.modalButton} onPress={closeModal}>
-              <Text style={farmsStyles.modalButtonText}>Cerrar</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>{modalMessage}</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={closeModal}>
+              <Text style={styles.modalButtonText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -649,28 +990,28 @@ export default function FarmsPage() {
         visible={deleteModalVisible}
         onRequestClose={closeDeleteModal}
       >
-        <View style={farmsStyles.modalOverlay}>
-          <View style={farmsStyles.modalContent}>
-            <Text style={farmsStyles.modalTitle}>Confirmar eliminación</Text>
-            <Text style={farmsStyles.modalText}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirmar eliminación</Text>
+            <Text style={styles.modalText}>
               ¿Estás seguro de que deseas eliminar esta granja?
             </Text>
-            <View style={farmsStyles.modalButtons}>
+            <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={farmsStyles.cancelButton}
+                style={styles.cancelButton}
                 onPress={closeDeleteModal}
               >
-                <Text style={farmsStyles.cancelButtonText}>Cancelar</Text>
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={farmsStyles.confirmButton}
+                style={styles.confirmButton}
                 onPress={() => {
                   if (farmToDelete) {
                     handleDeleteFarm(farmToDelete);
                   }
                 }}
               >
-                <Text style={farmsStyles.confirmButtonText}>Eliminar</Text>
+                <Text style={styles.confirmButtonText}>Eliminar</Text>
               </TouchableOpacity>
             </View>
           </View>

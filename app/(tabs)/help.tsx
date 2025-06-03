@@ -3,94 +3,133 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const FAQ_DATA = [
+interface FAQItem {
+  id: number;
+  question: string;
+  answer: string;
+}
+
+const faqData: FAQItem[] = [
   {
-    id: '1',
-    question: '¿Cómo puedo agregar una nueva vaca a mi ganado?',
-    answer: 'Para agregar una nueva vaca, dirígete a la sección "Mi Ganado" en el menú principal, luego presiona el botón "+" o "Agregar" y completa el formulario con la información requerida del animal.'
+    id: 1,
+    question: "¿Cómo registro un nuevo animal?",
+    answer: "Para registrar un nuevo animal, ve a la sección 'Ganado' y presiona el botón '+'. Completa la información requerida como número de identificación, nombre, género y otros datos relevantes."
   },
   {
-    id: '2',
-    question: '¿Cómo escaneo el código QR de un animal?',
-    answer: 'Ve a la sección "Escanear QR" en el menú principal. Apunta la cámara de tu dispositivo hacia el código QR del animal y espera a que se escanee automáticamente para ver sus detalles.'
+    id: 2,
+    question: "¿Cómo puedo gestionar mis granjas?",
+    answer: "En la sección 'Granjas' puedes crear, editar y eliminar granjas. También puedes asignar trabajadores y veterinarios a cada granja específica."
   },
   {
-    id: '3',
-    question: '¿Cómo genero un informe de mi ganado?',
-    answer: 'Dirígete a la sección "Informe" en el menú principal, selecciona el tipo de informe que deseas generar, establece los filtros necesarios y presiona "Generar Informe".'
+    id: 3,
+    question: "¿Qué es la cuenta Premium?",
+    answer: "La cuenta Premium te permite registrar ganado ilimitado, acceder a reportes avanzados, exportar datos y recibir soporte prioritario. La cuenta gratuita está limitada a 2 animales."
   },
   {
-    id: '4',
-    question: '¿Cómo registro la producción de leche?',
-    answer: 'Ve a la sección "Producción" en el menú principal, selecciona "Registro de Leche", completa los campos con la cantidad producida, fecha y otros detalles, y guarda el registro.'
+    id: 4,
+    question: "¿Cómo genero reportes?",
+    answer: "Ve a la sección 'Reportes' donde puedes generar diferentes tipos de informes sobre tu ganado, ventas, producción y salud animal."
   },
   {
-    id: '5',
-    question: '¿Cómo administro los datos veterinarios?',
-    answer: 'Accede a la sección "Datos veterinarios" en el menú principal. Allí puedes registrar visitas veterinarias, tratamientos, vacunas y otros datos importantes para la salud de tu ganado.'
+    id: 5,
+    question: "¿Cómo registro información veterinaria?",
+    answer: "Selecciona un animal específico y ve a la sección de información veterinaria. Allí puedes registrar tratamientos, diagnósticos y notas médicas."
   },
   {
-    id: '6',
-    question: '¿Puedo cambiar entre diferentes granjas?',
-    answer: 'Sí, puedes cambiar entre granjas utilizando el selector de granjas ubicado en la parte superior de la aplicación. Toca el nombre de la granja actual para ver y seleccionar otras granjas disponibles.'
+    id: 6,
+    question: "¿Puedo exportar mis datos?",
+    answer: "Sí, con una cuenta Premium puedes exportar tus datos en formato Excel o PDF desde la sección de reportes."
   },
   {
-    id: '7',
-    question: '¿Cómo actualizo la información de un animal?',
-    answer: 'Ve a la sección "Mi Ganado", busca y selecciona el animal que deseas modificar. En la pantalla de detalles, presiona el botón "Editar" y actualiza la información necesaria.'
+    id: 7,
+    question: "¿Cómo contacto al soporte técnico?",
+    answer: "Puedes contactarnos a través del email soporte@cowtracker.com o llamando al +57 300 123 4567. Los usuarios Premium tienen soporte prioritario."
   },
   {
-    id: '8',
-    question: '¿Cómo registro una venta de ganado?',
-    answer: 'Dirígete a la sección "Producción", selecciona "Venta de Ganado", completa el formulario con los detalles de la venta como precio, fecha y comprador, y guarda la transacción.'
-  },
+    id: 8,
+    question: "¿Los datos están seguros?",
+    answer: "Sí, todos los datos están encriptados y almacenados de forma segura. Realizamos copias de seguridad regulares para proteger tu información."
+  }
 ];
 
 export default function Help() {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<number[]>([]);
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
+  const toggleExpanded = (id: number) => {
+    setExpandedItems(prev => 
+      prev.includes(id) 
+        ? prev.filter(item => item !== id)
+        : [...prev, id]
+    );
   };
+
+  const isExpanded = (id: number) => expandedItems.includes(id);
 
   return (
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ headerTitle: 'Ayuda y Soporte' }} />
       
       <View style={styles.container}>
-        <Text style={styles.header}>Preguntas Frecuentes</Text>
-        <Text style={styles.subheader}>Encuentra respuestas a las preguntas más comunes sobre CowTracker</Text>
-        
-        <ScrollView style={styles.faqContainer}>
-          {FAQ_DATA.map((item) => (
-            <View key={item.id} style={styles.faqItem}>
-              <TouchableOpacity 
-                style={styles.questionContainer} 
-                onPress={() => toggleExpand(item.id)}
-              >
-                <Text style={styles.questionText}>{item.question}</Text>
-                <Ionicons 
-                  name={expandedId === item.id ? 'chevron-up' : 'chevron-down'} 
-                  size={24} 
-                  color="#666"
-                />
-              </TouchableOpacity>
-              
-              {expandedId === item.id && (
-                <View style={styles.answerContainer}>
-                  <Text style={styles.answerText}>{item.answer}</Text>
-                </View>
-              )}
-            </View>
-          ))}
-        </ScrollView>
-
-        <View style={styles.contactContainer}>
-          <Text style={styles.contactHeader}>¿Necesitas más ayuda?</Text>
-          <Text style={styles.contactText}>
-            Si no encuentras la respuesta que buscas, contáctanos en soporte@cowtracker.com
-          </Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Centro de Ayuda</Text>
+          <Text style={styles.subtitle}>Preguntas frecuentes y soporte</Text>
         </View>
+
+        <ScrollView style={styles.content}>
+          <View style={styles.faqContainer}>
+            <Text style={styles.sectionTitle}>Preguntas Frecuentes</Text>
+            
+            {faqData.map((item) => (
+              <View key={item.id} style={styles.faqItem}>
+                <TouchableOpacity 
+                  style={styles.questionContainer}
+                  onPress={() => toggleExpanded(item.id)}
+                >
+                  <Text style={styles.questionText}>{item.question}</Text>
+                  <Ionicons 
+                    name={isExpanded(item.id) ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color="#27ae60" 
+                  />
+                </TouchableOpacity>
+                
+                {isExpanded(item.id) && (
+                  <View style={styles.answerContainer}>
+                    <Text style={styles.answerText}>{item.answer}</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.contactContainer}>
+            <Text style={styles.sectionTitle}>Contacto</Text>
+            
+            <View style={styles.contactItem}>
+              <Ionicons name="mail" size={24} color="#27ae60" />
+              <View style={styles.contactInfo}>
+                <Text style={styles.contactLabel}>Email</Text>
+                <Text style={styles.contactValue}>soporte@cowtracker.com</Text>
+              </View>
+            </View>
+            
+            <View style={styles.contactItem}>
+              <Ionicons name="call" size={24} color="#27ae60" />
+              <View style={styles.contactInfo}>
+                <Text style={styles.contactLabel}>Teléfono</Text>
+                <Text style={styles.contactValue}>+57 300 123 4567</Text>
+              </View>
+            </View>
+            
+            <View style={styles.contactItem}>
+              <Ionicons name="time" size={24} color="#27ae60" />
+              <View style={styles.contactInfo}>
+                <Text style={styles.contactLabel}>Horario de atención</Text>
+                <Text style={styles.contactValue}>Lunes a Viernes: 8:00 AM - 6:00 PM</Text>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
       </View>
     </View>
   );
@@ -99,77 +138,91 @@ export default function Help() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    fontSize: 28,
+    backgroundColor: '#27ae60',
+    padding: 20,
+    paddingTop: 40,
+  },
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
+    color: '#ffffff',
   },
-  subheader: {
+  subtitle: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 5,
   },
-  faqContainer: {
+  content: {
     flex: 1,
   },
+  faqContainer: {
+    margin: 20,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 15,
+  },
   faqItem: {
-    marginBottom: 12,
-    borderRadius: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    marginBottom: 10,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
   },
   questionContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: 15,
   },
   questionText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#333333',
     flex: 1,
+    marginRight: 10,
   },
   answerContainer: {
-    padding: 16,
-    paddingTop: 0,
-    backgroundColor: '#f8f8f8',
+    paddingHorizontal: 15,
+    paddingBottom: 15,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopColor: '#f0f0f0',
   },
   answerText: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
+    fontSize: 14,
+    color: '#666666',
+    lineHeight: 20,
+    marginTop: 10,
   },
   contactContainer: {
-    marginTop: 20,
-    padding: 16,
-    backgroundColor: '#e9f7fe',
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4a90e2',
+    margin: 20,
+    marginTop: 10,
   },
-  contactHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
   },
-  contactText: {
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 22,
+  contactInfo: {
+    marginLeft: 15,
+    flex: 1,
+  },
+  contactLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 2,
+  },
+  contactValue: {
+    fontSize: 14,
+    color: '#666666',
   },
 }); 

@@ -189,32 +189,41 @@ const FarmSelector = ({ onSelectFarm, selectedFarm }) => {
           />
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="home" size={50} color="#fff" />
+              </View>
               <Text style={styles.modalTitle}>Seleccionar Granja</Text>
-              <TouchableOpacity 
-                onPress={() => setModalVisible(false)}
-                style={styles.closeButton}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
+              <Text style={styles.modalSubtitle}>
+                Elige la granja con la que quieres trabajar
+              </Text>
             </View>
             
-            <FlatList
-              data={farms}
-              renderItem={renderFarmItem}
-              keyExtractor={(item) => item._id}
-              contentContainerStyle={styles.farmList}
-              showsVerticalScrollIndicator={false}
-              style={styles.flatList}
-            />
-            
-            <TouchableOpacity 
-              style={styles.addFarmButton}
-              onPress={handleAddFarm}
-              activeOpacity={0.8}
+            <View style={styles.modalBody}>
+              <FlatList
+                data={farms}
+                renderItem={renderFarmItem}
+                keyExtractor={(item) => item._id}
+                contentContainerStyle={styles.farmList}
+                showsVerticalScrollIndicator={false}
+                style={styles.flatList}
+              />
+              
+              <TouchableOpacity 
+                style={styles.addFarmButton}
+                onPress={handleAddFarm}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.addFarmButtonText}>Añadir nueva granja</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.addFarmButtonText}>Añadir nueva granja</Text>
-              <Ionicons name="add" size={18} color="#fff" />
+              <Ionicons name="close" size={24} color="#95a5a6" />
             </TouchableOpacity>
           </View>
         </View>
@@ -270,17 +279,17 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingBottom: Platform.OS === 'android' ? 20 : 0,
+    maxHeight: '85%',
+    overflow: 'hidden',
     ...Platform.select({
       android: {
         elevation: 10,
@@ -294,63 +303,53 @@ const styles = StyleSheet.create({
     }),
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: colors.primary,
+    paddingVertical: 30,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
   },
-  closeButton: {
-    padding: 4,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
+  modalSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  modalBody: {
+    flex: 1,
+    padding: 20,
   },
   flatList: {
-    maxHeight: 300,
+    flex: 1,
+    marginBottom: 20,
   },
   farmList: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingBottom: 10,
   },
   farmItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    backgroundColor: '#f9f9f9',
-    ...Platform.select({
-      android: {
-        elevation: 1,
-      },
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-      },
-    }),
-  },
-  selectedFarmItem: {
-    backgroundColor: '#e8f5e8',
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#f8f9fa',
     borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  farmIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    borderColor: 'transparent',
     ...Platform.select({
       android: {
         elevation: 2,
@@ -358,8 +357,43 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+    }),
+  },
+  selectedFarmItem: {
+    backgroundColor: '#e8f5e8',
+    borderColor: colors.primary,
+    ...Platform.select({
+      android: {
+        elevation: 4,
+      },
+      ios: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+    }),
+  },
+  farmIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+    ...Platform.select({
+      android: {
+        elevation: 3,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.15,
-        shadowRadius: 2,
+        shadowRadius: 3,
       },
     }),
   },
@@ -367,10 +401,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   farmName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   selectedFarmName: {
     color: colors.primary,
@@ -378,16 +412,15 @@ const styles = StyleSheet.create({
   farmLocation: {
     fontSize: 14,
     color: colors.textLight,
+    fontStyle: 'italic',
   },
   addFarmButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginHorizontal: 20,
-    marginTop: 10,
+    paddingVertical: 16,
+    borderRadius: 12,
     ...Platform.select({
       android: {
         elevation: 3,
@@ -402,9 +435,19 @@ const styles = StyleSheet.create({
   },
   addFarmButtonText: {
     color: '#fff',
-    fontWeight: '600',
-    marginRight: 8,
-    fontSize: 15,
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

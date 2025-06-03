@@ -441,7 +441,14 @@ const CattleListScreen = () => {
       ) : (
         <FlatList
           data={cattle}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item, index) => {
+            // Intentar diferentes campos de ID que podrían existir
+            return item.id_ganado?.toString() || 
+                   item._id?.toString() || 
+                   item.id?.toString() || 
+                   item.numero_identificacion?.toString() || 
+                   `cattle-${index}`;
+          }}
           renderItem={renderCattleItem}
           contentContainerStyle={cattleListStyles.list}
           refreshControl={

@@ -4,8 +4,7 @@ import { AuthProvider, useAuth } from '../components/AuthContext';
 import { FarmProvider } from '../components/FarmContext';
 import { StatusBar } from 'expo-status-bar';
 import { Text, View, ActivityIndicator } from 'react-native';
-import CustomHeader from '../components/CustomHeader.js';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import CustomHeader from '../components/CustomHeader';
 
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();

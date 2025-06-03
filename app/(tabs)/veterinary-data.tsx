@@ -15,12 +15,11 @@ import api from '../../src/services/api';
 import { useAuth } from '../../src/components/AuthContext';
 import { useFarm } from '../../src/components/FarmContext';
 import { useFocusEffect } from '@react-navigation/native';
-import { colors } from '../../src/styles/commonStyles';
 
 export default function VeterinaryDataPage() {
-  const [cattle, setCattle] = useState([]);
+  const [cattle, setCattle] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const router = useRouter();
@@ -39,27 +38,29 @@ export default function VeterinaryDataPage() {
       setLoading(true);
       setError(null);
       
-      let cattleData = [];
+      let cattleData: any[] = [];
       
       // Si seleccionó la opción "Todas las granjas"
       if (!selectedFarm || selectedFarm?._id === 'all-farms') {
         console.log('Cargando ganado de todas las granjas...');
         
         // Primero obtenemos todas las granjas
-        const farmsData = await api.farms.getAll();
+        const farmsResponse = await api.farms.getAll();
+        const farmsData = Array.isArray(farmsResponse) ? farmsResponse : farmsResponse?.data || [];
         console.log(`Se encontraron ${farmsData.length} granjas`);
         
         // Para cada granja, cargamos su ganado
-        const allCattlePromises = farmsData.map(farm => 
+        const allCattlePromises = farmsData.map((farm: any) => 
           api.farms.getCattle(farm._id)
-            .then(cattle => {
+            .then((cattleResponse: any) => {
+              const cattle = Array.isArray(cattleResponse) ? cattleResponse : cattleResponse?.data || [];
               // Añadimos el nombre de la granja a cada animal
-              return cattle.map(animal => ({
+              return cattle.map((animal: any) => ({
                 ...animal,
                 farmName: farm.name
               }));
             })
-            .catch(err => {
+            .catch((err: any) => {
               console.error(`Error al cargar ganado de granja ${farm.name}:`, err);
               return [];
             })
@@ -75,9 +76,10 @@ export default function VeterinaryDataPage() {
       // Si seleccionó una granja específica
       else if (selectedFarm?._id) {
         // Cargamos ganado de esa granja específica
-        cattleData = await api.farms.getCattle(selectedFarm._id);
+        const cattleResponse = await api.farms.getCattle(selectedFarm._id);
+        const rawCattleData = Array.isArray(cattleResponse) ? cattleResponse : cattleResponse?.data || [];
         // Añadimos el nombre de la granja a cada animal
-        cattleData = cattleData.map(animal => ({
+        cattleData = rawCattleData.map((animal: any) => ({
           ...animal,
           farmName: selectedFarm.name
         }));
@@ -183,7 +185,7 @@ export default function VeterinaryDataPage() {
   if (loading && !refreshing && !dataLoaded) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color="#27ae60" />
         <Text style={styles.loadingText}>Cargando ganado...</Text>
       </View>
     );
@@ -192,7 +194,7 @@ export default function VeterinaryDataPage() {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={50} color={colors.error} />
+        <Ionicons name="alert-circle" size={50} color="#e74c3c" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={loadCattle}>
           <Text style={styles.retryButtonText}>Intentar de nuevo</Text>
@@ -204,7 +206,7 @@ export default function VeterinaryDataPage() {
   if (cattle.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="information-circle" size={50} color={colors.textLight} />
+        <Ionicons name="information-circle" size={50} color="#777777" />
         <Text style={styles.emptyText}>
           {selectedFarm && selectedFarm._id !== 'all-farms' 
             ? `No hay ganado en la granja "${selectedFarm.name}"`
@@ -240,7 +242,7 @@ export default function VeterinaryDataPage() {
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={onRefresh} 
-            colors={[colors.primary]} 
+            colors={["#27ae60"]} 
           />
         }
       />
@@ -260,13 +262,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#333333',
     marginBottom: 5,
     marginTop: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#777777',
     marginBottom: 5,
   },
   listContainer: {
@@ -280,7 +282,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.textLight,
+    color: '#777777',
   },
   errorContainer: {
     flex: 1,
@@ -291,12 +293,12 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.text,
+    color: '#333333',
     textAlign: 'center',
   },
   retryButton: {
     marginTop: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
@@ -315,12 +317,12 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.textLight,
+    color: '#777777',
     textAlign: 'center',
   },
   addButton: {
     marginTop: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
@@ -348,8 +350,8 @@ const styles = StyleSheet.create({
   },
   cattleIdentifier: {
     fontSize: 14,
-    color: colors.textLight,
-    backgroundColor: colors.background,
+    color: '#777777',
+    backgroundColor: '#f5f5f5',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
@@ -358,7 +360,7 @@ const styles = StyleSheet.create({
   cattleName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#333333',
     flex: 1,
   },
   cattleInfo: {
@@ -370,16 +372,16 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#777777',
     width: 100,
   },
   infoValue: {
     fontSize: 14,
-    color: colors.text,
+    color: '#333333',
     flex: 1,
   },
   addRecordButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

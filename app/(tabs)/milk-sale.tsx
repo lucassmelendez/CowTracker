@@ -1,44 +1,34 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
   Alert,
-  Platform,
   Modal,
-  StyleSheet
+  Platform
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { milkSaleStyles } from '../../src/styles/milkSaleStyles';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
 
 export default function MilkSaleTab() {
   const router = useRouter();
-  
   const [formData, setFormData] = useState({
     date: new Date(),
     customer: '',
     liters: '',
     pricePerLiter: '',
-    totalAmount: '',
+    totalAmount: '0.00',
     notes: ''
   });
-  
+
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
-  // Estados para validación de campos numéricos
   const [litersError, setLitersError] = useState(false);
   const [priceError, setPriceError] = useState(false);
   const [validationModalVisible, setValidationModalVisible] = useState(false);
-
-  // Función de validación numérica
-  const validateNumericInput = (text: string) => {
-    // Permitir números enteros y decimales (con punto o coma)
-    return /^[0-9]*[.,]?[0-9]*$/.test(text);
-  };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || formData.date;
@@ -46,73 +36,105 @@ export default function MilkSaleTab() {
     setFormData({ ...formData, date: currentDate });
   };
 
-  const calculateTotal = (liters: string, price: string) => {
-    const total = parseFloat(liters) * parseFloat(price);
-    return isNaN(total) ? '' : total.toString();
-  };
-
   const handleLitersChange = (text: string) => {
-    // Validar entrada numérica
-    if (text.trim() !== '') {
-      setLitersError(!validateNumericInput(text));
-    } else {
+    const numericRegex = /^[0-9]*\.?[0-9]*$/;
+    if (text === '' || numericRegex.test(text)) {
+      setFormData({ ...formData, liters: text });
       setLitersError(false);
+      calculateTotal(text, formData.pricePerLiter);
+    } else {
+      setLitersError(true);
     }
-    
-    const newTotal = calculateTotal(text, formData.pricePerLiter);
-    setFormData({ 
-      ...formData, 
-      liters: text,
-      totalAmount: newTotal
-    });
   };
 
   const handlePriceChange = (text: string) => {
-    // Validar entrada numérica
-    if (text.trim() !== '') {
-      setPriceError(!validateNumericInput(text));
-    } else {
+    const numericRegex = /^[0-9]*\.?[0-9]*$/;
+    if (text === '' || numericRegex.test(text)) {
+      setFormData({ ...formData, pricePerLiter: text });
       setPriceError(false);
+      calculateTotal(formData.liters, text);
+    } else {
+      setPriceError(true);
+    }
+  };
+
+  const calculateTotal = (liters: string, price: string) => {
+    const litersNum = parseFloat(liters) || 0;
+    const priceNum = parseFloat(price) || 0;
+    const total = (litersNum * priceNum).toFixed(2);
+    setFormData(prev => ({ ...prev, totalAmount: total }));
+  };
+
+  const validateForm = () => {
+    const errors = [];
+    
+    if (!formData.customer.trim()) {
+      errors.push('customer');
     }
     
-    const newTotal = calculateTotal(formData.liters, text);
-    setFormData({ 
-      ...formData,
-      pricePerLiter: text,
-      totalAmount: newTotal
-    });
+    if (!formData.liters.trim()) {
+      errors.push('liters');
+    }
+    
+    if (!formData.pricePerLiter.trim()) {
+      errors.push('price');
+    }
+    
+    if (litersError || priceError) {
+      errors.push('format');
+    }
+    
+    return errors.length === 0;
   };
 
   const handleSave = () => {
-    // Verificar si hay errores de validación numérica O campos vacíos
-    const hasValidationErrors = litersError || priceError;
-    const hasEmptyFields = !formData.customer || !formData.liters || !formData.pricePerLiter;
-    
-    if (hasValidationErrors || hasEmptyFields) {
+    if (!validateForm()) {
       setValidationModalVisible(true);
       return;
     }
 
-    // Aquí irá la lógica para guardar la venta
-    Alert.alert('Éxito', 'Venta de leche registrada correctamente');
+    Alert.alert(
+      'Venta registrada',
+      'La venta de leche se ha registrado correctamente',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Reset form
+            setFormData({
+              date: new Date(),
+              customer: '',
+              liters: '',
+              pricePerLiter: '',
+              totalAmount: '0.00',
+              notes: ''
+            });
+            router.back();
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCancel = () => {
     router.back();
   };
 
   return (
     <View style={styles.container}>
-      <ScrollView style={milkSaleStyles.container}>
-        <View style={milkSaleStyles.header}>
-          <Text style={milkSaleStyles.headerText}>Registrar Venta de Leche</Text>
+      <ScrollView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Registrar Venta de Leche</Text>
         </View>
 
-        <View style={milkSaleStyles.form}>
-          <View style={milkSaleStyles.inputContainer}>
-            <Text style={milkSaleStyles.label}>Fecha de venta</Text>
+        <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Fecha de venta</Text>
             <TouchableOpacity 
-              style={milkSaleStyles.dateButton}
+              style={styles.dateButton}
               onPress={() => setShowDatePicker(true)}
             >
-              <Text style={milkSaleStyles.dateText}>
+              <Text style={styles.dateText}>
                 {formData.date.toLocaleDateString()}
               </Text>
               <Ionicons name="calendar" size={24} color="#27ae60" />
@@ -128,144 +150,144 @@ export default function MilkSaleTab() {
             />
           )}
 
-          <View style={milkSaleStyles.inputContainer}>
-            <Text style={milkSaleStyles.label}>Comprador *</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Comprador *</Text>
             <TextInput
-              style={milkSaleStyles.input}
+              style={styles.input}
               value={formData.customer}
               onChangeText={(text) => setFormData({ ...formData, customer: text })}
               placeholder="Nombre del comprador"
             />
           </View>
 
-          <View style={milkSaleStyles.inputContainer}>
-            <Text style={milkSaleStyles.label}>Cantidad de litros *</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Cantidad de litros *</Text>
             <TextInput
-              style={litersError ? milkSaleStyles.inputError : milkSaleStyles.input}
+              style={litersError ? styles.inputError : styles.input}
               value={formData.liters}
               onChangeText={handleLitersChange}
               placeholder="Cantidad en litros"
               keyboardType="numeric"
             />
             {litersError && (
-              <Text style={milkSaleStyles.errorText}>
+              <Text style={styles.errorText}>
                 Solo se permiten números en este campo
               </Text>
             )}
           </View>
 
-          <View style={milkSaleStyles.inputContainer}>
-            <Text style={milkSaleStyles.label}>Precio por litro *</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Precio por litro *</Text>
             <TextInput
-              style={priceError ? milkSaleStyles.inputError : milkSaleStyles.input}
+              style={priceError ? styles.inputError : styles.input}
               value={formData.pricePerLiter}
               onChangeText={handlePriceChange}
               placeholder="Precio por litro"
               keyboardType="numeric"
             />
             {priceError && (
-              <Text style={milkSaleStyles.errorText}>
+              <Text style={styles.errorText}>
                 Solo se permiten números en este campo
               </Text>
             )}
           </View>
 
-          <View style={milkSaleStyles.inputContainer}>
-            <Text style={milkSaleStyles.label}>Monto total</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Monto total</Text>
             <TextInput
-              style={milkSaleStyles.input}
+              style={styles.input}
               value={formData.totalAmount}
               editable={false}
               placeholder="0.00"
             />
           </View>
 
-          <View style={milkSaleStyles.inputContainer}>
-            <Text style={milkSaleStyles.label}>Notas</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Notas (opcional)</Text>
             <TextInput
-              style={[milkSaleStyles.input, milkSaleStyles.textArea]}
+              style={[styles.input, styles.textArea]}
               value={formData.notes}
               onChangeText={(text) => setFormData({ ...formData, notes: text })}
-              placeholder="Detalles adicionales de la venta"
+              placeholder="Notas adicionales sobre la venta"
               multiline
               numberOfLines={4}
             />
           </View>
 
-          <View style={milkSaleStyles.buttonContainer}>
+          <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={milkSaleStyles.cancelButton}
-              onPress={() => router.back()}
+              style={styles.cancelButton}
+              onPress={handleCancel}
             >
-              <Text style={milkSaleStyles.cancelButtonText}>Cancelar</Text>
+              <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
-
+            
             <TouchableOpacity 
-              style={milkSaleStyles.saveButton}
+              style={styles.saveButton}
               onPress={handleSave}
             >
-              <Text style={milkSaleStyles.saveButtonText}>Guardar</Text>
+              <Text style={styles.saveButtonText}>Guardar</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Modal de validación de errores */}
         <Modal
           animationType="fade"
           transparent={true}
           visible={validationModalVisible}
           onRequestClose={() => setValidationModalVisible(false)}
         >
-          <View style={milkSaleStyles.modalOverlay}>
-            <View style={milkSaleStyles.validationModalContent}>
-              <View style={milkSaleStyles.validationModalHeader}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.validationModalContent}>
+              <View style={styles.validationModalHeader}>
                 <Ionicons name="warning" size={50} color="#e74c3c" />
-                <Text style={milkSaleStyles.validationModalTitle}>
+                <Text style={styles.validationModalTitle}>
                   Formulario Incompleto
                 </Text>
               </View>
               
-              <View style={milkSaleStyles.validationModalBody}>
-                <Text style={milkSaleStyles.validationModalText}>
+              <View style={styles.validationModalBody}>
+                <Text style={styles.validationModalText}>
                   Por favor, corrige los siguientes errores antes de guardar:
                 </Text>
-                <View style={milkSaleStyles.errorsList}>
+                
+                <View style={styles.errorsList}>
                   {litersError && (
-                    <View style={milkSaleStyles.errorItem}>
+                    <View style={styles.errorItem}>
                       <Ionicons name="close-circle" size={16} color="#e74c3c" />
-                      <Text style={milkSaleStyles.errorItemText}>
+                      <Text style={styles.errorItemText}>
                         La cantidad de litros debe contener solo números
                       </Text>
                     </View>
                   )}
                   {priceError && (
-                    <View style={milkSaleStyles.errorItem}>
+                    <View style={styles.errorItem}>
                       <Ionicons name="close-circle" size={16} color="#e74c3c" />
-                      <Text style={milkSaleStyles.errorItemText}>
+                      <Text style={styles.errorItemText}>
                         El precio por litro debe contener solo números
                       </Text>
                     </View>
                   )}
                   {!formData.customer && (
-                    <View style={milkSaleStyles.errorItem}>
+                    <View style={styles.errorItem}>
                       <Ionicons name="close-circle" size={16} color="#e74c3c" />
-                      <Text style={milkSaleStyles.errorItemText}>
+                      <Text style={styles.errorItemText}>
                         El campo comprador es requerido
                       </Text>
                     </View>
                   )}
                   {!formData.liters && (
-                    <View style={milkSaleStyles.errorItem}>
+                    <View style={styles.errorItem}>
                       <Ionicons name="close-circle" size={16} color="#e74c3c" />
-                      <Text style={milkSaleStyles.errorItemText}>
+                      <Text style={styles.errorItemText}>
                         El campo cantidad de litros es requerido
                       </Text>
                     </View>
                   )}
                   {!formData.pricePerLiter && (
-                    <View style={milkSaleStyles.errorItem}>
+                    <View style={styles.errorItem}>
                       <Ionicons name="close-circle" size={16} color="#e74c3c" />
-                      <Text style={milkSaleStyles.errorItemText}>
+                      <Text style={styles.errorItemText}>
                         El campo precio por litro es requerido
                       </Text>
                     </View>
@@ -273,12 +295,12 @@ export default function MilkSaleTab() {
                 </View>
               </View>
               
-              <View style={milkSaleStyles.validationModalButtons}>
+              <View style={styles.validationModalButtons}>
                 <TouchableOpacity
-                  style={milkSaleStyles.validationModalButton}
+                  style={styles.validationModalButton}
                   onPress={() => setValidationModalVisible(false)}
                 >
-                  <Text style={milkSaleStyles.validationModalButtonText}>Entendido</Text>
+                  <Text style={styles.validationModalButtonText}>Entendido</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -293,5 +315,176 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  header: {
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  form: {
+    padding: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  inputError: {
+    borderWidth: 2,
+    borderColor: '#e74c3c',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fdf2f2',
+    marginBottom: 4,
+  },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 12,
+    marginBottom: 8,
+    marginTop: 0,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+  },
+  dateText: {
+    fontSize: 16,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    padding: 16,
+    borderRadius: 8,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#27ae60',
+    padding: 16,
+    borderRadius: 8,
+    marginLeft: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  // Modal styles for validation
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  validationModalContent: {
+    width: '85%',
+    maxWidth: 350,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  validationModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  validationModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  validationModalBody: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  validationModalText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  errorsList: {
+    width: '100%',
+  },
+  errorItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fdf2f2',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#e74c3c',
+  },
+  errorItemText: {
+    fontSize: 13,
+    color: '#e74c3c',
+    marginLeft: 8,
+    flex: 1,
+  },
+  validationModalButtons: {
+    width: '100%',
+  },
+  validationModalButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  validationModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

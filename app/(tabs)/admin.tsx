@@ -10,7 +10,6 @@ import {
   Clipboard
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../../src/styles/commonStyles';
 import { useAuth } from '../../src/components/AuthContext';
 import { useFarm } from '../../src/components/FarmContext';
 import api from '../../src/services/api';
@@ -21,10 +20,10 @@ export default function Admin() {
   
   const [loading, setLoading] = useState(true);
   const [generatingCode, setGeneratingCode] = useState(false);
-  const [workers, setWorkers] = useState([]);
-  const [vets, setVets] = useState([]);
+  const [workers, setWorkers] = useState<any[]>([]);
+  const [vets, setVets] = useState<any[]>([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   
   // Estados para el modal de código de vinculación
   const [codeModalVisible, setCodeModalVisible] = useState(false);
@@ -173,10 +172,10 @@ export default function Admin() {
         setCodeType(tipoUsuario);
         setCodeModalVisible(true);
         
-      } else if (response && response.success) {
+      } else if (response && (response as any).success) {
         // Formato alternativo de respuesta
-        const codigo = response.data.codigo;
-        const expiraEn = new Date(response.data.expiraEn);
+        const codigo = (response as any).data.codigo;
+        const expiraEn = new Date((response as any).data.expiraEn);
         
         // Formatear fecha de expiración
         const formatoFecha = expiraEn.toLocaleString('es-ES', {
@@ -197,12 +196,17 @@ export default function Admin() {
         console.error("Respuesta inesperada:", response);
         throw new Error(`Respuesta inválida del servidor: ${JSON.stringify(response)}`);
       }
-    } catch (error) {
-      console.error("Error generando código de vinculación:", error);
-      Alert.alert(
-        "Error", 
-        `No se pudo generar el código de vinculación. ${error.message || ''}`
-      );
+    } catch (error: any) {
+      console.error("Error generando código:", error);
+      
+      let mensaje = "No se pudo generar el código de vinculación";
+      if (error?.response?.data?.message) {
+        mensaje += `: ${error.response.data.message}`;
+      } else if (error?.message) {
+        mensaje += `: ${error.message}`;
+      }
+      
+      Alert.alert("Error", mensaje);
     } finally {
       setGeneratingCode(false);
     }
@@ -238,7 +242,7 @@ export default function Admin() {
   if (loading && workers.length === 0 && vets.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color="#27ae60" />
         <Text style={styles.loadingText}>Cargando personal...</Text>
       </View>
     );
@@ -275,7 +279,7 @@ export default function Admin() {
           disabled={generatingCode}
         >
           {generatingCode ? (
-            <ActivityIndicator size="small" color={colors.white} />
+            <ActivityIndicator size="small" color="#ffffff" />
           ) : (
             <Text style={styles.addButtonText}>Vincular nuevo trabajador</Text>
           )}
@@ -287,7 +291,7 @@ export default function Admin() {
           disabled={generatingCode}
         >
           {generatingCode ? (
-            <ActivityIndicator size="small" color={colors.white} />
+            <ActivityIndicator size="small" color="#ffffff" />
           ) : (
             <Text style={styles.addButtonText}>Vincular nuevo veterinario</Text>
           )}
@@ -444,29 +448,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: colors.background,
+    backgroundColor: '#f5f5f5',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#f5f5f5',
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.text,
+    color: '#2c3e50',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: colors.text,
+    color: '#2c3e50',
     textAlign: 'center',
   },
   listContainer: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 8,
     padding: 10,
     marginBottom: 20,
@@ -474,7 +478,7 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     padding: 20,
-    color: colors.textLight,
+    color: '#7f8c8d',
     fontStyle: 'italic',
   },
   personItem: {
@@ -482,7 +486,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#e0e0e0',
     alignItems: 'center',
   },
   personInfo: {
@@ -491,11 +495,11 @@ const styles = StyleSheet.create({
   personName: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.text,
+    color: '#2c3e50',
   },
   personRole: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#7f8c8d',
     marginTop: 2,
   },
   deleteButton: {
@@ -503,7 +507,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   addButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -511,11 +515,11 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   disabledButton: {
-    backgroundColor: colors.textLight,
+    backgroundColor: '#7f8c8d',
     opacity: 0.7,
   },
   addButtonText: {
-    color: colors.white,
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -527,20 +531,20 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '80%',
-    backgroundColor: colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 20,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 10,
     textAlign: 'center',
   },
   modalText: {
     fontSize: 16,
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -553,11 +557,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     marginRight: 10,
-    backgroundColor: colors.background,
+    backgroundColor: '#f5f5f5',
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: colors.text,
+    color: '#2c3e50',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -569,7 +573,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteConfirmButtonText: {
-    color: colors.white,
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -582,7 +586,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   codeModalHeader: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     paddingVertical: 30,
     paddingHorizontal: 24,
     alignItems: 'center',
@@ -626,14 +630,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: colors.primary,
+    borderColor: '#27ae60',
     borderStyle: 'dashed',
   },
   codeText: {
     flex: 1,
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: '#27ae60',
     textAlign: 'center',
     letterSpacing: 2,
   },
@@ -676,7 +680,7 @@ const styles = StyleSheet.create({
   instructionNumber: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: '#27ae60',
     marginRight: 8,
     minWidth: 20,
   },
@@ -698,7 +702,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
   },
   copyButtonText: {
     fontSize: 16,

@@ -2,11 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../src/components/AuthContext';
 import { useRouter } from 'expo-router';
-import { getShadowStyle } from '../../src/utils/styles';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 import { supabase } from '../../src/config/supabase';
 import PremiumUpgradeModal from '../../src/components/PremiumUpgradeModal';
+
+interface UserData {
+  email: string;
+  role: string;
+  roleDisplay: string;
+  primer_nombre: string;
+  segundo_nombre: string;
+  primer_apellido: string;
+  segundo_apellido: string;
+  id_premium: number;
+  premium_type: string;
+  password?: string;
+  confirmPassword?: string;
+}
 
 export default function ProfilePage() {
   const { currentUser, userInfo, updateProfile, logout } = useAuth();
@@ -14,7 +27,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [userData, setUserData] = useState({
+  const [userData, setUserData] = useState<UserData>({
     email: '',
     role: '',
     roleDisplay: '',
@@ -25,7 +38,7 @@ export default function ProfilePage() {
     id_premium: 1,
     premium_type: 'Free'
   });
-  const [formData, setFormData] = useState({...userData});
+  const [formData, setFormData] = useState<UserData>({...userData});
 
   // Cargar datos del perfil al montar el componente
   useEffect(() => {
@@ -37,7 +50,7 @@ export default function ProfilePage() {
         const userData = userResponse?.data || userResponse;
         
         if (userData) {
-          setUserData({
+          const processedData: UserData = {
             email: userData.email || '',
             role: userData.role || '',
             roleDisplay: userData.role === 'admin' ? 'Ganadero' : 
@@ -47,28 +60,21 @@ export default function ProfilePage() {
             segundo_nombre: userData.segundo_nombre || '',
             primer_apellido: userData.primer_apellido || '',
             segundo_apellido: userData.segundo_apellido || '',
-            id_premium: userData.id_premium || 1
-          });
-          setFormData({
-            email: userData.email || '',
-            role: userData.role || '',
-            roleDisplay: userData.role === 'admin' ? 'Ganadero' : 
-                       userData.role === 'trabajador' ? 'Trabajador' : 
-                       userData.role === 'veterinario' ? 'Veterinario' : userData.role,
-            primer_nombre: userData.primer_nombre || '',
-            segundo_nombre: userData.segundo_nombre || '',
-            primer_apellido: userData.primer_apellido || '',
-            segundo_apellido: userData.segundo_apellido || '',
-            id_premium: userData.id_premium || 1
-          });
+            id_premium: userData.id_premium || 1,
+            premium_type: userData.premium_type || 'Free'
+          };
+          
+          setUserData(processedData);
+          setFormData(processedData);
         }
       } catch (error) {
         console.error('Error al cargar perfil:', error);
         // Si falla, usar datos del contexto
         if (userInfo) {
-          const fallbackData = {
+          const fallbackData: UserData = {
             email: userInfo.email || currentUser?.email || '',
-            role: userInfo.role === 'admin' ? 'Administrador' : 
+            role: userInfo.role || '',
+            roleDisplay: userInfo.role === 'admin' ? 'Administrador' : 
                   userInfo.role === 'veterinario' ? 'Veterinario' :
                   userInfo.role === 'trabajador' ? 'Trabajador' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
@@ -96,21 +102,20 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     try {
-      if ((formData as any).password && (formData as any).password !== (formData as any).confirmPassword) {
+      if (formData.password && formData.password !== formData.confirmPassword) {
         Alert.alert('Error', 'Las contraseñas no coinciden');
         return;
       }
 
-      // Ya no construimos el nombre completo
       // Enviar los campos separados directamente
-      const updateData = {
+      const updateData: any = {
         email: formData.email,
         primer_nombre: formData.primer_nombre,
         segundo_nombre: formData.segundo_nombre,
         primer_apellido: formData.primer_apellido,
         segundo_apellido: formData.segundo_apellido,
         id_premium: formData.id_premium,
-        ...((formData as any).password ? { password: (formData as any).password } : {})
+        ...(formData.password ? { password: formData.password } : {})
       };
 
       setIsLoading(true);
@@ -178,7 +183,7 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#0066CC" />
+        <ActivityIndicator size="large" color="#27ae60" />
         <Text style={{ marginTop: 10 }}>Cargando perfil...</Text>
       </View>
     );
@@ -245,26 +250,26 @@ export default function ProfilePage() {
               </>
             ) : (
               <>
-                <Text style={profileStyles.label}>Primer nombre</Text>
-                <Text style={profileStyles.infoText}>{userData.primer_nombre || 'No especificado'}</Text>
+                <Text style={styles.label}>Primer nombre</Text>
+                <Text style={styles.infoText}>{userData.primer_nombre || 'No especificado'}</Text>
                 
-                <Text style={profileStyles.label}>Segundo nombre</Text>
-                <Text style={profileStyles.infoText}>{userData.segundo_nombre || 'No especificado'}</Text>
+                <Text style={styles.label}>Segundo nombre</Text>
+                <Text style={styles.infoText}>{userData.segundo_nombre || 'No especificado'}</Text>
                 
-                <Text style={profileStyles.label}>Primer apellido</Text>
-                <Text style={profileStyles.infoText}>{userData.primer_apellido || 'No especificado'}</Text>
+                <Text style={styles.label}>Primer apellido</Text>
+                <Text style={styles.infoText}>{userData.primer_apellido || 'No especificado'}</Text>
                 
-                <Text style={profileStyles.label}>Segundo apellido</Text>
-                <Text style={profileStyles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
+                <Text style={styles.label}>Segundo apellido</Text>
+                <Text style={styles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
 
-                <Text style={profileStyles.label}>Suscripción</Text>
-                <Text style={profileStyles.infoText}>
+                <Text style={styles.label}>Suscripción</Text>
+                <Text style={styles.infoText}>
                   {userData.premium_type || (userData.id_premium === 2 ? 'Premium' : 'Free')}
                 </Text>
                 
                 {userData.id_premium !== 2 && (
                   <TouchableOpacity 
-                    style={[profileStyles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
+                    style={[styles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
                     onPress={() => setShowPremiumModal(true)}
                   >
                     <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
@@ -275,34 +280,34 @@ export default function ProfilePage() {
               </>
             )}
             
-            <Text style={profileStyles.label}>Correo electrónico</Text>
+            <Text style={styles.label}>Correo electrónico</Text>
             {isEditing ? (
               <TextInput
-                style={profileStyles.input}
+                style={styles.input}
                 value={formData.email}
                 onChangeText={(text) => setFormData({...formData, email: text})}
                 placeholder="Correo electrónico"
                 keyboardType="email-address"
               />
             ) : (
-              <Text style={profileStyles.infoText}>{userData.email}</Text>
+              <Text style={styles.infoText}>{userData.email}</Text>
             )}
             
             {isEditing && (
               <>
-                <Text style={profileStyles.label}>Nueva contraseña (opcional)</Text>
+                <Text style={styles.label}>Nueva contraseña (opcional)</Text>
                 <TextInput
-                  style={profileStyles.input}
-                  value={(formData as any).password || ''}
+                  style={styles.input}
+                  value={formData.password || ''}
                   onChangeText={(text) => setFormData({...formData, password: text})}
                   placeholder="Nueva contraseña"
                   secureTextEntry
                 />
                 
-                <Text style={profileStyles.label}>Confirmar contraseña</Text>
+                <Text style={styles.label}>Confirmar contraseña</Text>
                 <TextInput
-                  style={profileStyles.input}
-                  value={(formData as any).confirmPassword || ''}
+                  style={styles.input}
+                  value={formData.confirmPassword || ''}
                   onChangeText={(text) => setFormData({...formData, confirmPassword: text})}
                   placeholder="Confirmar contraseña"
                   secureTextEntry
@@ -311,24 +316,24 @@ export default function ProfilePage() {
             )}
           </View>
           
-          <View style={profileStyles.buttonContainer}>
+          <View style={styles.buttonContainer}>
             {isEditing ? (
               <>
-                <TouchableOpacity style={profileStyles.saveButton} onPress={handleSave}>
-                  <Text style={profileStyles.buttonText}>Guardar cambios</Text>
+                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                  <Text style={styles.buttonText}>Guardar cambios</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={profileStyles.cancelButton} onPress={handleCancel}>
-                  <Text style={profileStyles.cancelText}>Cancelar</Text>
+                <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+                  <Text style={styles.cancelText}>Cancelar</Text>
                 </TouchableOpacity>
               </>
             ) : (
-              <TouchableOpacity style={profileStyles.editButton} onPress={handleEdit}>
-                <Text style={profileStyles.buttonText}>Editar perfil</Text>
+              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+                <Text style={styles.buttonText}>Editar perfil</Text>
               </TouchableOpacity>
             )}
             
-            <TouchableOpacity style={profileStyles.logoutButton} onPress={handleLogout}>
-              <Text style={profileStyles.buttonText}>Cerrar sesión</Text>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <Text style={styles.buttonText}>Cerrar sesión</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -347,5 +352,126 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  header: {
+    backgroundColor: '#27ae60',
+    padding: 20,
+    paddingTop: 40,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 5,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    margin: 20,
+    borderRadius: 10,
+    padding: 20,
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#27ae60',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  avatarText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  role: {
+    fontSize: 16,
+    color: '#777777',
+    fontWeight: '600',
+  },
+  infoContainer: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 5,
+    marginTop: 10,
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#666666',
+    marginBottom: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#dddddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#ffffff',
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    gap: 10,
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  editButton: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButton: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#dddddd',
+  },
+  logoutButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelText: {
+    color: '#333333',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

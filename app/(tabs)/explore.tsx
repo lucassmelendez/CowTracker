@@ -14,16 +14,48 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFarm } from '../../src/components/FarmContext';
 import { useAuth } from '../../src/components/AuthContext';
-import { fallbackCattleData, generateFallbackCattleForFarm } from '../../src/utils/fallbackData';
+
+interface CattleItem {
+  id_ganado?: string | number;
+  _id?: string;
+  numero_identificacion?: string;
+  identificationNumber?: string;
+  nombre?: string;
+  id_estado_salud?: number;
+  id_produccion?: number;
+  id_genero?: number;
+  precio_compra?: number;
+  nota?: string;
+  notes?: string;
+  finca?: {
+    nombre: string;
+  };
+  farmName?: string;
+  farmId?: string;
+  // Campos adicionales para compatibilidad con datos de respaldo
+  tipo?: string;
+  type?: string;
+  raza?: string;
+  breed?: string;
+  genero?: {
+    descripcion: string;
+  };
+  estado_salud?: {
+    descripcion: string;
+  };
+  produccion?: {
+    descripcion: string;
+  };
+}
 
 export default function CattleTab() {
   const router = useRouter();
   const { selectedFarm } = useFarm();
   const { userInfo } = useAuth();
-  const [cattle, setCattle] = useState([]);
+  const [cattle, setCattle] = useState<CattleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
 
   useFocusEffect(
@@ -38,7 +70,7 @@ export default function CattleTab() {
       setLoading(true);
       setError(null);
       
-      let cattleData = [];
+      let cattleData: CattleItem[] = [];
       
       // Si seleccionó la opción "Todas las granjas"
       if (!selectedFarm || selectedFarm?._id === 'all-farms') {
@@ -68,7 +100,7 @@ export default function CattleTab() {
             return api.farms.getCattle(farmId)
               .then(response => {
                 // Manejar diferentes formatos de respuesta
-                let cattleItems = [];
+                let cattleItems: any[] = [];
                 
                 if (Array.isArray(response)) {
                   cattleItems = response;
@@ -78,8 +110,8 @@ export default function CattleTab() {
                   // Intentar extraer datos si es un objeto
                   const possibleArrays = ['data', 'cattle', 'items', 'results'];
                   for (const key of possibleArrays) {
-                    if (response[key] && Array.isArray(response[key])) {
-                      cattleItems = response[key];
+                    if ((response as any)[key] && Array.isArray((response as any)[key])) {
+                      cattleItems = (response as any)[key];
                       break;
                     }
                   }
@@ -134,9 +166,8 @@ export default function CattleTab() {
                 const farmId = farm?._id || farm?.id_finca || `farm-${index}`;
                 const farmName = farm?.name || farm?.nombre || `Granja ${index+1}`;
                 
-                // Generar algunos datos para cada granja
-                const farmCattle = generateFallbackCattleForFarm(farmId, farmName, 3);
-                cattleData = [...cattleData, ...farmCattle];
+                // Sin datos de respaldo disponibles
+                console.warn(`No se pudieron cargar datos para ${farmName}`);
               });
               
               // Mostrar mensaje temporal
@@ -155,9 +186,8 @@ export default function CattleTab() {
               const farmId = farm?._id || farm?.id_finca || `farm-${index}`;
               const farmName = farm?.name || farm?.nombre || `Granja ${index+1}`;
               
-              // Generar algunos datos para cada granja
-              const farmCattle = generateFallbackCattleForFarm(farmId, farmName, 3);
-              cattleData = [...cattleData, ...farmCattle];
+              // Sin datos de respaldo disponibles
+              console.warn(`No se pudieron cargar datos para ${farmName}`);
             });
           }
         } catch (farmsError) {
@@ -170,12 +200,9 @@ export default function CattleTab() {
             { _id: 'fallback-farm-2', name: 'Granja Local 2' }
           ];
           
-          // Generar datos de respaldo para estas granjas
+          // Sin datos de respaldo disponibles
           cattleData = [];
-          backupFarms.forEach(farm => {
-            const farmCattle = generateFallbackCattleForFarm(farm._id, farm.name, 4);
-            cattleData = [...cattleData, ...farmCattle];
-          });
+          console.warn('No se pudieron cargar datos de ninguna granja');
         }
       }
       // Si seleccionó una granja específica
@@ -187,7 +214,7 @@ export default function CattleTab() {
           const response = await api.farms.getCattle(selectedFarm._id);
           
           // Manejar diferentes formatos de respuesta
-          let receivedData = [];
+          let receivedData: any[] = [];
           let usedFallbackData = false;
           
           if (Array.isArray(response)) {
@@ -198,8 +225,8 @@ export default function CattleTab() {
             // Intentar extraer datos si es un objeto
             const possibleArrays = ['data', 'cattle', 'items', 'results'];
             for (const key of possibleArrays) {
-              if (response[key] && Array.isArray(response[key])) {
-                receivedData = response[key];
+              if ((response as any)[key] && Array.isArray((response as any)[key])) {
+                receivedData = (response as any)[key];
                 break;
               }
             }
@@ -207,15 +234,10 @@ export default function CattleTab() {
           
           // Si no hay datos o el array está vacío, usar datos de respaldo
           if (!receivedData || !Array.isArray(receivedData) || receivedData.length === 0) {
-            console.warn(`No se pudieron obtener datos reales para la granja ${selectedFarm._id}, usando datos de respaldo`);
-            receivedData = generateFallbackCattleForFarm(
-              selectedFarm._id, 
-              selectedFarm.name || selectedFarm.nombre || `Granja ${selectedFarm._id}`,
-              5
-            );
-            usedFallbackData = true;
+            console.warn(`No se pudieron obtener datos reales para la granja ${selectedFarm._id}`);
+            receivedData = [];
             // Mostrar mensaje temporal
-            setError(`Mostrando datos locales para "${selectedFarm.name}"`);
+            setError(`No hay datos disponibles para "${selectedFarm.name}"`);
             setTimeout(() => setError(null), 3000);
           }
           
@@ -239,13 +261,9 @@ export default function CattleTab() {
           console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name || selectedFarm.nombre || selectedFarm._id})${usedFallbackData ? ' - DATOS LOCALES' : ''}`);
         } catch (farmCattleError) {
           console.error(`Error al cargar ganado para la granja ${selectedFarm._id}:`, farmCattleError);
-          // Usar datos de respaldo en caso de error
-          setError(`Mostrando datos locales debido a un error de conexión`);
-          cattleData = generateFallbackCattleForFarm(
-            selectedFarm._id, 
-            selectedFarm.name || selectedFarm.nombre || `Granja ${selectedFarm._id}`,
-            5
-          );
+          // Sin datos de respaldo disponibles
+          setError(`Error de conexión - No se pudieron cargar los datos`);
+          cattleData = [];
         }
       }
       
@@ -266,7 +284,10 @@ export default function CattleTab() {
   };
 
   const navigateToDetail = (id: string) => {
-    router.push(`/cattle/${id}`);
+    router.push({
+      pathname: '/(tabs)/cattle-details',
+      params: { id }
+    });
   };
 
   const navigateToAdd = () => {
@@ -274,7 +295,7 @@ export default function CattleTab() {
     router.push('/add-cattle');
   };
 
-  const renderCattleItem = ({ item }: { item: any }) => {
+  const renderCattleItem = ({ item }: { item: CattleItem }) => {
     // Función auxiliar para obtener el color del estado de salud
     const getStatusColor = (status: number) => {
       switch (status) {
@@ -332,19 +353,19 @@ export default function CattleTab() {
         style={styles.cattleItem}
         onPress={() => router.push({
           pathname: '/(tabs)/cattle-details',
-          params: { id: item.id_ganado }
+          params: { id: (item.id_ganado || item._id || item.numero_identificacion || item.identificationNumber || '').toString() }
         })}
       >
         <View style={styles.cattleHeader}>
           <Text style={styles.cattleId}>
-            ID: {item.numero_identificacion || 'No disponible'}
+            ID: {item.numero_identificacion || item.identificationNumber || 'No disponible'}
           </Text>
           <View style={[
             styles.statusBadge, 
-            { backgroundColor: getStatusColor(item.id_estado_salud) }
+            { backgroundColor: getStatusColor(item.id_estado_salud || 0) }
           ]}>
             <Text style={styles.statusText}>
-              {formatStatus(item.id_estado_salud)}
+              {formatStatus(item.id_estado_salud || 0)}
             </Text>
           </View>
         </View>
@@ -352,26 +373,26 @@ export default function CattleTab() {
         <View style={styles.cattleBody}>
           <Text style={styles.cattleTitle}>{item.nombre || 'Sin nombre'}</Text>
           <Text style={styles.cattleType}>
-            {formatProduccion(item.id_produccion)}
+            {formatProduccion(item.id_produccion || 0)}
           </Text>
           <Text style={styles.cattleGender}>
-            {formatGenero(item.id_genero)}
+            {formatGenero(item.id_genero || 0)}
           </Text>
           {item.precio_compra && (
             <Text style={styles.cattlePrice}>
               Precio: ${item.precio_compra}
             </Text>
           )}
-          {item.nota && (
+          {(item.nota || item.notes) && (
             <Text style={styles.cattleNotes} numberOfLines={2}>
-              Nota: {item.nota}
+              Nota: {item.nota || item.notes}
             </Text>
           )}
         </View>
 
         <View style={styles.farmInfo}>
           <Text style={styles.farmName}>
-            Granja: {item.finca?.nombre || 'No asignada'}
+            Granja: {item.finca?.nombre || item.farmName || 'No asignada'}
           </Text>
         </View>
       </TouchableOpacity>
@@ -449,8 +470,8 @@ export default function CattleTab() {
               // Intentar diferentes campos de ID que podrían existir
               return item.id_ganado?.toString() || 
                      item._id?.toString() || 
-                     item.id?.toString() || 
                      item.numero_identificacion?.toString() || 
+                     item.identificationNumber?.toString() ||
                      `cattle-${index}`;
             }}
             renderItem={renderCattleItem}

@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { useAuth } from '../../src/components/AuthContext';
 import { useRouter } from 'expo-router';
-import { colors } from '../../src/styles/commonStyles';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../src/services/api';
 
@@ -21,7 +20,7 @@ export default function VinculacionTab() {
   const router = useRouter();
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fincasVinculadas, setFincasVinculadas] = useState([]);
+  const [fincasVinculadas, setFincasVinculadas] = useState<any[]>([]);
   const [loadingFincas, setLoadingFincas] = useState(true);
 
   useEffect(() => {
@@ -32,7 +31,8 @@ export default function VinculacionTab() {
     try {
       setLoadingFincas(true);
       const response = await api.farms.getAll();
-      setFincasVinculadas(response);
+      const fincasData = Array.isArray(response) ? response : response?.data || [];
+      setFincasVinculadas(fincasData);
     } catch (error) {
       console.error('Error al cargar fincas vinculadas:', error);
       Alert.alert('Error', 'No se pudieron cargar las fincas vinculadas');
@@ -57,7 +57,7 @@ export default function VinculacionTab() {
       
       console.log("Respuesta completa de verificación:", JSON.stringify(response));
 
-      if (response && (response.data?.success || response.success)) {
+      if (response && (response.data?.success || (response as any).success)) {
         Alert.alert(
           'Vinculación exitosa',
           'Has sido vinculado correctamente a la finca',
@@ -74,18 +74,18 @@ export default function VinculacionTab() {
       } else {
         throw new Error('Respuesta inválida del servidor');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al verificar código:', error);
       let mensaje = 'No se pudo verificar el código. Inténtalo de nuevo.';
       
-      if (error.message && typeof error.message === 'string') {
+      if (error?.message && typeof error.message === 'string') {
         if (error.message.includes('inválido') || error.message.includes('expirado')) {
           mensaje = 'El código ingresado es inválido o ha expirado.';
         } else if (error.message.includes('rol')) {
           mensaje = 'Tu rol de usuario no es compatible con este código de vinculación.';
         }
         
-        if (error.data && error.data.message) {
+        if (error?.data && error.data.message) {
           mensaje += `\n\nDetalles: ${error.data.message}`;
         }
       }
@@ -99,14 +99,14 @@ export default function VinculacionTab() {
   const renderFinca = ({ item }: { item: any }) => (
     <View style={styles.fincaCard}>
       <View style={styles.fincaInfo}>
-        <Ionicons name="business" size={24} color={colors.primary} />
+        <Ionicons name="business" size={24} color="#27ae60" />
         <View style={styles.fincaTexts}>
           <Text style={styles.fincaName}>{item.name}</Text>
           <Text style={styles.fincaLocation}>{item.location || 'Ubicación no especificada'}</Text>
         </View>
       </View>
       <View style={styles.fincaStatus}>
-        <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+        <Ionicons name="checkmark-circle" size={24} color="#2ecc71" />
         <Text style={styles.statusText}>Vinculada</Text>
       </View>
     </View>
@@ -154,7 +154,7 @@ export default function VinculacionTab() {
           <Text style={styles.sectionTitle}>Fincas Vinculadas</Text>
           
           {loadingFincas ? (
-            <ActivityIndicator size="large" color={colors.primary} style={styles.loadingFincas} />
+            <ActivityIndicator size="large" color="#27ae60" style={styles.loadingFincas} />
           ) : fincasVinculadas.length > 0 ? (
             <FlatList
               data={fincasVinculadas}
@@ -164,7 +164,7 @@ export default function VinculacionTab() {
             />
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="information-circle" size={50} color={colors.textLight} />
+              <Ionicons name="information-circle" size={50} color="#777777" />
               <Text style={styles.emptyText}>No tienes fincas vinculadas</Text>
               <Text style={styles.emptySubtext}>
                 Ingresa un código de vinculación para comenzar a trabajar con una finca
@@ -181,10 +181,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: colors.background
+    backgroundColor: '#f5f5f5'
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 20,
     marginBottom: 20,
@@ -195,27 +195,27 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     textAlign: 'center',
     marginBottom: 10
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textLight,
+    color: '#7f8c8d',
     textAlign: 'center',
     marginBottom: 30
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 15
   },
   inputContainer: {
     marginBottom: 20
   },
   input: {
-    backgroundColor: colors.background,
+    backgroundColor: '#f5f5f5',
     borderRadius: 8,
     paddingHorizontal: 15,
     paddingVertical: 12,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   button: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     borderRadius: 8,
     paddingVertical: 15,
     alignItems: 'center',
@@ -233,17 +233,17 @@ const styles = StyleSheet.create({
     minHeight: 50
   },
   disabledButton: {
-    backgroundColor: colors.textLight,
+    backgroundColor: '#7f8c8d',
     opacity: 0.7
   },
   buttonText: {
-    color: colors.white,
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold'
   },
   infoText: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#7f8c8d',
     textAlign: 'center',
     fontStyle: 'italic'
   },
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border
+    borderBottomColor: '#e0e0e0'
   },
   fincaInfo: {
     flexDirection: 'row',
@@ -268,11 +268,11 @@ const styles = StyleSheet.create({
   fincaName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.text
+    color: '#2c3e50'
   },
   fincaLocation: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#7f8c8d',
     marginTop: 2
   },
   fincaStatus: {
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     marginLeft: 5,
-    color: colors.success,
+    color: '#2ecc71',
     fontSize: 14
   },
   loadingFincas: {
@@ -294,12 +294,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.textLight,
+    color: '#7f8c8d',
     marginTop: 10
   },
   emptySubtext: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#7f8c8d',
     textAlign: 'center',
     marginTop: 5
   }

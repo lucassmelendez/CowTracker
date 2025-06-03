@@ -15,7 +15,6 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../../src/services/api';
-import { colors } from '../../src/styles/colors';
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();
@@ -114,7 +113,7 @@ export default function AddVeterinaryRecordPage() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color="#27ae60" />
         <Text style={styles.loadingText}>Cargando...</Text>
       </View>
     );
@@ -123,7 +122,7 @@ export default function AddVeterinaryRecordPage() {
   if (error || !cattle) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={50} color={colors.error} />
+        <Ionicons name="alert-circle" size={50} color="#e74c3c" />
         <Text style={styles.errorText}>{error || 'No se encontró el ganado'}</Text>
         <TouchableOpacity 
           style={styles.backButton}
@@ -157,7 +156,7 @@ export default function AddVeterinaryRecordPage() {
               onPress={() => setShowDatePicker(true)}
             >
               <Text style={styles.dateButtonText}>{formatDate(date)}</Text>
-              <Ionicons name="calendar" size={22} color={colors.primary} />
+              <Ionicons name="calendar" size={22} color="#27ae60" />
             </TouchableOpacity>
             
             {showDatePicker && (
@@ -250,7 +249,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.textLight,
+    color: '#7f8c8d',
   },
   errorContainer: {
     flex: 1,
@@ -261,12 +260,12 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.text,
+    color: '#2c3e50',
     textAlign: 'center',
   },
   backButton: {
     marginTop: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
@@ -276,7 +275,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   header: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     padding: 20,
     paddingTop: 40,
     borderBottomLeftRadius: 20,
@@ -301,16 +300,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 8,
   },
   required: {
-    color: colors.error,
+    color: '#e74c3c',
   },
   input: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#e0e0e0',
     borderRadius: 5,
     padding: 12,
     fontSize: 16,
@@ -318,7 +317,7 @@ const styles = StyleSheet.create({
   inputLarge: {
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#e0e0e0',
     borderRadius: 5,
     padding: 12,
     fontSize: 16,
@@ -331,13 +330,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#e0e0e0',
     borderRadius: 5,
     padding: 12,
   },
   dateButtonText: {
     fontSize: 16,
-    color: colors.text,
+    color: '#2c3e50',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -345,7 +344,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   cancelButton: {
-    backgroundColor: colors.lightBackground,
+    backgroundColor: '#f5f5f5',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -354,12 +353,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: colors.text,
+    color: '#2c3e50',
     fontWeight: 'bold',
     fontSize: 16,
   },
   submitButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 5,

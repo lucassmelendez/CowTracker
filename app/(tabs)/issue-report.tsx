@@ -14,7 +14,6 @@ import {
   StyleSheet
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { colors } from '../../src/styles/commonStyles';
 import { useAuth } from '../../src/components/AuthContext';
 
 // Importar de forma segura, con manejo de errores
@@ -383,12 +382,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.textLight,
+    color: '#7f8c8d',
   },
   typeSelector: {
     marginBottom: 20,
@@ -396,7 +395,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 10,
   },
   typeButtons: {
@@ -413,15 +412,15 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   typeButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
+    borderColor: '#27ae60',
+    backgroundColor: '#27ae6010',
   },
   typeButtonText: {
     fontSize: 16,
-    color: colors.text,
+    color: '#2c3e50',
   },
   typeButtonTextActive: {
-    color: colors.primary,
+    color: '#27ae60',
     fontWeight: 'bold',
   },
   inputSection: {
@@ -445,12 +444,12 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 10,
   },
   infoText: {
     fontSize: 14,
-    color: colors.textLight,
+    color: '#7f8c8d',
     lineHeight: 20,
   },
   buttonContainer: {
@@ -469,12 +468,12 @@ const styles = StyleSheet.create({
   },
   helpButtonText: {
     fontSize: 16,
-    color: colors.text,
+    color: '#2c3e50',
   },
   sendButton: {
     flex: 2,
     padding: 15,
-    backgroundColor: colors.primary,
+    backgroundColor: '#27ae60',
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -495,12 +494,12 @@ const styles = StyleSheet.create({
   contactTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.text,
+    color: '#2c3e50',
     marginBottom: 5,
   },
   contactEmail: {
     fontSize: 16,
-    color: colors.primary,
+    color: '#27ae60',
     textDecorationLine: 'underline',
   },
 }); 

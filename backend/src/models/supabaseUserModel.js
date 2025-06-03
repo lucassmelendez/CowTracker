@@ -239,9 +239,9 @@ const signInWithEmail = async (email, password) => {
     
     // Convertir el rol a formato compatible con la app existente
     let role = 'user';
-    if (userData.rol && userData.rol.id) {
-      if (userData.rol.id === 1) role = 'admin';
-      else if (userData.rol.id === 3) role = 'veterinario';
+    if (userData.rol && userData.rol.id_rol) {
+      if (userData.rol.id_rol === 1) role = 'admin';
+      else if (userData.rol.id_rol === 3) role = 'veterinario';
     }
     
     return {
@@ -254,7 +254,9 @@ const signInWithEmail = async (email, password) => {
       segundo_nombre: userData.segundo_nombre,
       primer_apellido: userData.primer_apellido,
       segundo_apellido: userData.segundo_apellido,
-      id_usuario: userData.id_usuario
+      id_usuario: userData.id_usuario,
+      id_rol: userData.id_rol,
+      rol: userData.rol
     };
   } catch (error) {
     console.error('Error en servicio de login:', error);

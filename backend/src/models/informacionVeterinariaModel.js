@@ -6,13 +6,12 @@ const { supabase } = require('../config/supabase');
  * @returns {Promise<Object>} - Información veterinaria creada
  */
 const createInformacionVeterinaria = async (datos) => {
-  try {
-    // Preparar los datos según la estructura de la tabla
+  try {    // Preparar los datos según la estructura de la tabla
     const informacionVeterinariaData = {
-      fecha_tratamiento: datos.fecha_tratamiento || new Date().toISOString(),
-      diagnostico: datos.diagnostico || '',
-      tratamiento: datos.tratamiento || '',
-      nota: datos.nota || ''
+      fecha_tratamiento: datos.fecha_tratamiento || new Date().toISOString(), // timestamp
+      diagnostico: datos.diagnostico || '', // varchar
+      tratamiento: datos.tratamiento || '', // varchar
+      nota: datos.nota || '' // varchar
     };
     
     const { data, error } = await supabase
@@ -57,12 +56,11 @@ const getInformacionVeterinariaById = async (id) => {
  * @returns {Promise<Object>} - Información veterinaria actualizada
  */
 const updateInformacionVeterinaria = async (id, datos) => {
-  try {
-    const updateData = {
-      fecha_tratamiento: datos.fecha_tratamiento,
-      diagnostico: datos.diagnostico,
-      tratamiento: datos.tratamiento,
-      nota: datos.nota
+  try {    const updateData = {
+      fecha_tratamiento: datos.fecha_tratamiento, // timestamp
+      diagnostico: datos.diagnostico, // varchar
+      tratamiento: datos.tratamiento, // varchar
+      nota: datos.nota // varchar
     };
     
     // Eliminar campos undefined

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Modal, Platform } from 'react-native';
 import FarmSelector from './FarmSelector';
 import { useFarm } from './FarmContext';
 import { useAuth } from './AuthContext';
@@ -23,7 +23,12 @@ function CustomHeader({ title }: { title: string }) {
 
   const handleNavigateToProfile = () => {
     setProfileMenuVisible(false);
-    console.log('Navegando a perfil');
+    router.push('/profile');
+  };
+
+  const handleNavigateToFarms = () => {
+    setProfileMenuVisible(false);
+    router.push('/farms');
   };
 
   return (
@@ -41,6 +46,7 @@ function CustomHeader({ title }: { title: string }) {
         <TouchableOpacity 
           style={styles.profileButton}
           onPress={() => setProfileMenuVisible(true)}
+          activeOpacity={0.7}
         >
           <Ionicons name="person-circle" size={28} color="#ffffff" />
         </TouchableOpacity>
@@ -69,6 +75,7 @@ function CustomHeader({ title }: { title: string }) {
               <TouchableOpacity 
                 style={styles.menuItem}
                 onPress={handleNavigateToProfile}
+                activeOpacity={0.7}
               >
                 <Ionicons name="person" size={18} color="#333" />
                 <Text style={styles.menuItemText}>Mi Perfil</Text>
@@ -76,10 +83,8 @@ function CustomHeader({ title }: { title: string }) {
               
               <TouchableOpacity 
                 style={styles.menuItem}
-                onPress={() => {
-                  console.log('Navegando a granjas');
-                  setProfileMenuVisible(false);
-                }}
+                onPress={handleNavigateToFarms}
+                activeOpacity={0.7}
               >
                 <Ionicons name="business" size={18} color="#333" />
                 <Text style={styles.menuItemText}>Mis Granjas</Text>
@@ -90,6 +95,7 @@ function CustomHeader({ title }: { title: string }) {
               <TouchableOpacity 
                 style={[styles.menuItem, styles.logoutItem]}
                 onPress={handleLogout}
+                activeOpacity={0.7}
               >
                 <Ionicons name="log-out" size={18} color="#e74c3c" />
                 <Text style={[styles.menuItemText, styles.logoutText]}>Cerrar sesión</Text>
@@ -108,39 +114,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    paddingRight: 5,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minHeight: 50,
   },
   headerTitle: {
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 18,
     color: '#ffffff',
-    marginLeft: 10,
     flex: 1,
+    marginRight: 10,
   },
   headerRightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 2,
     justifyContent: 'flex-end',
+    flex: 1,
   },
   farmSelectorWrapper: {
-    marginRight: 8,
-    padding: 2,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    elevation: 3,
+    marginRight: 12,
+    maxWidth: 180,
+    minWidth: 120,
   },
   profileButton: {
-    marginLeft: 10,
-    padding: 5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 20,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
+    ...Platform.select({
+      android: {
+        elevation: 2,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+      },
+    }),
   },
   modalOverlay: {
     flex: 1,
@@ -150,51 +164,59 @@ const styles = StyleSheet.create({
   },
   profileMenuContainer: {
     backgroundColor: '#fff',
-    borderRadius: 10,
-    width: 250,
-    marginTop: 60,
-    marginRight: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderRadius: 12,
+    width: 260,
+    marginTop: Platform.OS === 'android' ? 70 : 60,
+    marginRight: 15,
+    ...Platform.select({
+      android: {
+        elevation: 8,
+      },
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+      },
+    }),
     overflow: 'hidden',
   },
   profileHeader: {
-    padding: 15,
-    backgroundColor: '#f5f5f5',
+    padding: 16,
+    backgroundColor: '#f8f9fa',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#e9ecef',
   },
   profileName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 2,
   },
   profileEmail: {
     fontSize: 14,
     color: '#666',
-    marginTop: 2,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: 16,
+    minHeight: 50,
   },
   menuItemText: {
     fontSize: 15,
     color: '#333',
-    marginLeft: 10,
+    marginLeft: 12,
+    fontWeight: '500',
   },
   menuDivider: {
     height: 1,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 15,
+    backgroundColor: '#e9ecef',
+    marginHorizontal: 16,
   },
   logoutItem: {
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#e9ecef',
   },
   logoutText: {
     color: '#e74c3c',

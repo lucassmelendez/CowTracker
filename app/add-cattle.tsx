@@ -86,8 +86,6 @@ export default function AddCattlePage() {
         return;
       }
       
-      console.log('Cargando granjas para el usuario:', userInfo.uid);
-      
       try {
         // Obtener el ID numérico del usuario
         const { data: userNumericData, error: userNumericError } = await supabase
@@ -135,9 +133,7 @@ export default function AddCattlePage() {
               };
             });
           
-          console.log(`Se procesaron ${finalFarms.length} granjas válidas`);
         } else {
-          console.log('El usuario no tiene granjas asignadas');
         }
         
         setFarms(finalFarms);
@@ -393,9 +389,6 @@ export default function AddCattlePage() {
             id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
             id_produccion: tipoProduccion === 'leche' ? 1 : 2
           };
-          
-          console.log('Datos del ganado a insertar:', cattleData);
-          
           // Insertar en la tabla ganado
           const { data, error } = await supabase
             .from('ganado')
@@ -406,8 +399,6 @@ export default function AddCattlePage() {
             console.error('Error de Supabase al insertar ganado:', error);
             throw error;
           }
-
-          console.log('Ganado insertado exitosamente:', data);
           Alert.alert('Éxito', 'Ganado registrado correctamente');
         }
 

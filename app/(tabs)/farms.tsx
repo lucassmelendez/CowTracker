@@ -85,10 +85,7 @@ export default function FarmsPage() {
   const loadFarms = async () => {
     try {
       setLoading(true);
-      setErrorMessage('');
-      
-      console.log('Cargando granjas desde FarmsScreen...');
-      
+      setErrorMessage('')    
       // Usar la API en lugar de Firestore directamente
       const response = await api.farms.getAll();
       
@@ -99,8 +96,6 @@ export default function FarmsPage() {
         setFarms([]);
         return;
       }
-      
-      console.log(`Se han cargado ${response.length} granjas`);
       
       // Procesar y validar cada granja
       const processedFarms = response.map((farm: any) => {
@@ -151,23 +146,16 @@ export default function FarmsPage() {
         tamano: formData.size ? parseInt(formData.size) : 0, // Agregar también tamano para compatibilidad
       };
 
-      console.log('Enviando datos de finca:', farmData);
-
       let response;
       if (editingFarm) {
-        // Actualizar granja existente
-        console.log(`Actualizando granja con ID: ${editingFarm._id}`);
         response = await api.farms.update(editingFarm._id, farmData);
         showModal('Granja actualizada correctamente');
       } else {
         // Crear nueva granja
-        console.log('Creando nueva granja');
         response = await api.farms.create(farmData);
         showModal('Granja creada correctamente');
       }
       
-      console.log('Respuesta de la API:', response);
-
       setModalVisible(false);
       resetForm();
       // Recargar las granjas después de un breve retraso para dar tiempo a que se actualice el backend

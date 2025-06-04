@@ -199,15 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
       
-      console.log('AuthContext - Enviando datos en el formato correcto:', {
-        primer_nombre: userData.primer_nombre,
-        primer_apellido: userData.primer_apellido,
-        email: userData.email,
-        role: userData.role
-      });
-      
       const response = await api.users.register(userData);
-      console.log('Respuesta de registro recibida:', response);
       
       await login(userData.email, userData.password);
       
@@ -216,12 +208,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
           router.push('/(tabs)');
         } catch (navError) {
-          console.log('Error de navegación manejado, el usuario ya está autenticado');
           // Intentar navegar a la pantalla principal como alternativa
           try {
             router.push('/');
           } catch (homeNavError) {
-            console.log('Error al navegar a la pantalla principal, el usuario está autenticado pero debe navegar manualmente');
           }
         }
       }, 500);
@@ -269,8 +259,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ...response,
         token: token // Añadir explícitamente el token
       };
-      
-      console.log('AuthContext - Usuario autenticado con token:', token.substring(0, 15) + '...');
       
       setUserInfo(userInfoWithToken);
       setCurrentUser(userInfoWithToken);

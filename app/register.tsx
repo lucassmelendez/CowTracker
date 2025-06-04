@@ -97,8 +97,6 @@ export default function RegisterScreen() {
         role: formData.role,
       };
 
-      console.log('Datos a enviar:', userData);
-
       const result = await register(userData);
       
       if (result.success) {

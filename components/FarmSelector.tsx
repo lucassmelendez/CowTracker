@@ -38,17 +38,13 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState<number>(0);
 
-  useEffect(() => {
-    console.log('FarmSelector - userInfo actualizado:', 
-      userInfo ? `uid: ${userInfo.uid ? 'Sí' : 'No'}, token: ${userInfo.token ? 'Sí' : 'No'}` : 'No hay userInfo');
-    
+  useEffect(() => { 
     if (userInfo && userInfo.token) {
       setLoading(true);
       loadFarms();
     } else {
       if (retryCount < 3) {
         const timer = setTimeout(() => {
-          console.log(`FarmSelector - Reintentando carga (${retryCount + 1}/3)`);
           setRetryCount(prev => prev + 1);
         }, 1000);
         
@@ -71,31 +67,23 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
       if (!loading) setLoading(true);
       setError(null);
       
-      console.log('FarmSelector - Iniciando carga de granjas para usuario:', userInfo?.uid);
-      
       const farmsData = await api.farms.getUserFarms();
       
-      console.log('FarmSelector - Granjas recibidas:', farmsData ? farmsData.length : 0);
-      
       if (!farmsData || farmsData.length === 0) {
-        console.log('FarmSelector - No hay granjas, intentando con getAll');
         const allFarmsData = await api.farms.getAll();
         setFarms(allFarmsData || []);
         
         if (!selectedFarm && allFarmsData && allFarmsData.length > 0) {
-          console.log('FarmSelector - Seleccionando granja por defecto:', allFarmsData[0].name);
           onSelectFarm(allFarmsData[0]);
         }
       } else {
         setFarms(farmsData);
         
         if (!selectedFarm && farmsData.length > 0) {
-          console.log('FarmSelector - Seleccionando granja por defecto:', farmsData[0].name);
           onSelectFarm(farmsData[0]);
         }
       }
     } catch (err) {
-      console.error('Error loading farms:', err);
       setError('No se pudieron cargar las granjas');
     } finally {
       setLoading(false);

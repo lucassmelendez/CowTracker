@@ -25,18 +25,6 @@ export default function LoginScreen() {
     }
 
     setLocalError('');
-    
-    try {
-      const result = await login(email, password);
-      
-      if (result) {
-        // La navegación se maneja automáticamente en AuthContext
-        console.log('Login exitoso');
-      }
-    } catch (err: any) {
-      console.error('Error en login:', err);
-      setLocalError(err.message || 'Error al iniciar sesión');
-    }
   };
 
   const navigateToRegister = () => {

@@ -26,9 +26,6 @@ if (isProd) {
   }
 }
 
-// Para debugging
-console.log('API URL configurada como:', API_URL);
-
 const api: AxiosInstance = axios.create({
   baseURL: API_URL,
   headers: {

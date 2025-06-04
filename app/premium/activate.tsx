@@ -26,12 +26,6 @@ export default function PremiumActivateScreen() {
       setIsActivating(true);
       setError(null);
 
-      console.log('🔄 Activando premium con datos:', {
-        buy_order: order,
-        amount: parseInt(amount as string),
-        authorization_code: auth
-      });
-
       // Obtener el token del usuario
       const token = userInfo?.token;
       if (!token) {
@@ -57,8 +51,6 @@ export default function PremiumActivateScreen() {
       }
 
       if (data.success) {
-        console.log('✅ Premium activado exitosamente:', data);
-        
         // Actualizar la información del usuario en el contexto
         if (updateProfile && data.user) {
           try {
@@ -66,7 +58,6 @@ export default function PremiumActivateScreen() {
               id_premium: data.user.id_premium,
               is_premium: data.user.is_premium
             });
-            console.log('✅ Perfil de usuario actualizado en el contexto');
           } catch (updateError) {
             console.warn('⚠️ Error al actualizar perfil en contexto:', updateError);
           }

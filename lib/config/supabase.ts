@@ -34,6 +34,4 @@ if (Platform.OS === 'web') {
 // Inicializar cliente de Supabase con las opciones apropiadas
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, supabaseOptions);
 
-console.log('✅ Cliente de Supabase inicializado en el frontend');
-
 export { supabase }; 

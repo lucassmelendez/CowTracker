@@ -35,7 +35,6 @@ export default function Admin() {
   useEffect(() => {
     if (selectedFarm) {
       const fincaId = selectedFarm.id_finca || selectedFarm._id;
-      console.log('Finca seleccionada cambió:', fincaId);
       loadPersonnel();
     }
   }, [selectedFarm]);
@@ -49,7 +48,6 @@ export default function Admin() {
       
       // Cargar trabajadores
       const workersResponse = await api.farms.getWorkers(fincaId);
-      console.log('Respuesta de trabajadores:', workersResponse);
       
       // Asegurarse de que workersResponse sea un array (ya no necesita .data)
       const workersData = Array.isArray(workersResponse) ? workersResponse : [];
@@ -63,7 +61,6 @@ export default function Admin() {
       
       // Cargar veterinarios
       const vetsResponse = await api.farms.getVeterinarians(fincaId);
-      console.log('Respuesta de veterinarios:', vetsResponse);
       
       // Asegurarse de que vetsResponse sea un array (ya no necesita .data)
       const vetsData = Array.isArray(vetsResponse) ? vetsResponse : [];
@@ -130,20 +127,11 @@ export default function Admin() {
       // Convertir tipo a formato esperado por la API
       const tipoUsuario = tipo === 'worker' ? 'trabajador' : 'veterinario';
       
-      console.log("Enviando solicitud para generar código:", {
-        idFinca: idFinca,
-        tipo: tipoUsuario,
-        duracionMinutos: 1440
-      });
-      
-      // Llamar a la API para generar un código de vinculación
       const response = await api.post('/vincular/generar', {
         idFinca: idFinca,
         tipo: tipoUsuario,
         duracionMinutos: 1440 // 24 horas
       });
-      
-      console.log("Respuesta completa:", JSON.stringify(response));
       
       if (response && response.data && response.data.success) {
         const codigo = response.data.data.codigo;
@@ -185,12 +173,9 @@ export default function Admin() {
         setCodeModalVisible(true);
         
       } else {
-        console.error("Respuesta inesperada:", response);
         throw new Error(`Respuesta inválida del servidor: ${JSON.stringify(response)}`);
       }
-    } catch (error: any) {
-      console.error("Error generando código:", error);
-      
+    } catch (error: any) {    
       let mensaje = "No se pudo generar el código de vinculación";
       if (error?.response?.data?.message) {
         mensaje += `: ${error.response.data.message}`;
@@ -210,7 +195,6 @@ export default function Admin() {
       await Clipboard.setString(generatedCode);
       Alert.alert("¡Código copiado!", "El código se ha copiado al portapapeles. Compártelo con el colaborador.");
     } catch (error) {
-      console.error("Error al copiar al portapapeles:", error);
       Alert.alert("Error", "No se pudo copiar el código");
     }
   };

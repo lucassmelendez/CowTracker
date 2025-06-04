@@ -11,9 +11,7 @@ function RootLayoutNav() {
   const router = useRouter();
   useEffect(() => {
     if (!loading && !currentUser) {
-      console.log('No hay usuario activo, redirigiendo a login...');
       try {
-        // Usar timeout para evitar problemas con el ciclo de rendering
         setTimeout(() => {
           router.replace('/login');
         }, 100);

@@ -70,13 +70,10 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       
       if (data.success && data.formatted && data.formatted.combined) {
         setPriceDisplay(data.formatted.combined);
-        console.log('✅ Conversión de precio obtenida:', data.formatted.combined);
       } else {
-        console.warn('⚠️ No se pudo obtener la conversión, usando precio por defecto');
         setPriceDisplay('$10.000');
       }
     } catch (error) {
-      console.error('❌ Error al obtener conversión de precio:', error);
       // En caso de error, mantener el precio por defecto
       setPriceDisplay('$10.000');
     } finally {
@@ -110,8 +107,6 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
         description: 'Actualización a CowTracker Premium'
       };
 
-      console.log('Iniciando transacción Webpay con datos:', paymentData);
-
       // Llamar a tu API de FastAPI en Vercel para crear la transacción usando fetchWithCORS
       const response = await fetchWithCORS(WEBPAY_URLS.createTransaction, {
         method: 'POST',
@@ -123,32 +118,16 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       }
 
       const result: PaymentResponse = await response.json();
-      console.log('Respuesta de la API:', result);
 
       if (result.success && result.url && result.token) {
-        // Cerrar el modal antes de redirigir
         onClose();
-        
-        console.log('✅ Transacción creada exitosamente');
-        console.log('🔗 URL de Webpay:', result.url);
-        console.log('🎫 Token:', result.token);
-        
-        // Crear la URL completa de Webpay con el token
+
         const webpayUrl = `${result.url}?token_ws=${result.token}`;
-        console.log('🌐 URL completa de redirección:', webpayUrl);
-        
-        console.log('🚨 A punto de mostrar Alert...');
-        
-        // Detectar si estamos en web
         const isWeb = Platform.OS === 'web' || typeof window !== 'undefined';
-        console.log('🌐 Plataforma detectada:', Platform.OS, 'Es web:', isWeb);
         
-        // Si estamos en web, redirigir directamente sin Alert
         if (isWeb) {
-          console.log('🌐 Redirección directa en web...');
           try {
             (window as any).open(webpayUrl, '_blank', 'noopener,noreferrer');
-            console.log('✅ URL abierta exitosamente en web');
             
             // Mostrar mensaje de confirmación
             Alert.alert(
@@ -176,8 +155,6 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
             );
           }
         } else {
-          // Para móvil, mostrar el Alert original
-          console.log('📱 Mostrando Alert para móvil...');
           Alert.alert(
             'Redirigiendo a Webpay',
             'Serás redirigido al sistema de pagos de Transbank para completar tu compra.',
@@ -186,21 +163,14 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
                 text: 'Continuar',
                 onPress: async () => {
                   try {
-                    console.log('🚀 Intentando abrir URL en móvil:', webpayUrl);
-                    
                     const supported = await Linking.canOpenURL(webpayUrl);
-                    console.log('🔍 URL soportada en móvil:', supported);
                     
                     if (supported) {
-                      console.log('✅ Abriendo URL en navegador móvil...');
                       await Linking.openURL(webpayUrl);
-                      console.log('✅ URL abierta exitosamente en móvil');
                     } else {
                       throw new Error('URL no soportada en esta plataforma móvil');
                     }
                   } catch (linkingError) {
-                    console.error('❌ Error al abrir Webpay:', linkingError);
-                    
                     Alert.alert(
                       'Abrir Webpay Manualmente',
                       `No se pudo abrir automáticamente. Por favor, copia y pega esta URL en tu navegador:\n\n${webpayUrl}`,

@@ -235,13 +235,6 @@ export default function TabOneScreen() {
   const HomeScreenVeterinario = () => {
     const veterinarioMenuItems = [
       {
-        id: 'cattle',
-        title: 'Ganado',
-        icon: '🐄',
-        route: '/(tabs)/explore',
-        description: 'Gestiona todo el ganado'
-      },
-      {
         id: 'vet',
         title: 'Datos Veterinarios',
         icon: '💊',

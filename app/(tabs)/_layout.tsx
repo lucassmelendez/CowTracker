@@ -124,7 +124,7 @@ export default function TabLayout() {
       <Stack.Screen
         name="explore"
         options={{
-          headerTitle: () => <CustomHeader title="Ganado" />,
+          headerTitle: () => <CustomHeader title="Mi Ganado" />,
         }}
       />
       <Stack.Screen

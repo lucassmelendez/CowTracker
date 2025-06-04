@@ -92,75 +92,378 @@ export default function VeterinaryDataPage() {
     setRefreshing(true);
     loadCattle();
   };
+  // Función para obtener un ID confiable para la navegación
+  const getReliableCattleId = (cattle: any): string => {
+    if (cattle._id) return cattle._id.toString();
+    if (cattle.id_ganado) return cattle.id_ganado.toString();
+    if (cattle.identificationNumber) return cattle.identificationNumber.toString();
+    if (cattle.numero_identificacion) return cattle.numero_identificacion.toString();
+    return `unknown-${Math.random().toString(36).substring(2, 15)}`;
+  };
 
-  const navigateToAddVeterinaryRecord = (cattleId: string) => {
+  const navigateToAddVeterinaryRecord = (cattle: any) => {
+    const cattleId = getReliableCattleId(cattle);
     router.push(`/add-veterinary-record?id=${cattleId}`);
   };
 
-  const navigateToCattleDetail = (cattleId: string) => {
+  const navigateToCattleDetail = (cattle: any) => {
+    const cattleId = getReliableCattleId(cattle);
     router.push({
       pathname: '/(tabs)/cattle-details',
       params: { id: cattleId }
     });
   };
+  // Función para obtener el identificador del ganado de forma consistente
+  const getCattleIdentifier = (cattle: any): string => {
+    if (cattle.identificationNumber) return cattle.identificationNumber;
+    if (cattle.numero_identificacion) return cattle.numero_identificacion;
+    if (cattle.id_ganado) return `${cattle.id_ganado}`;
+    return 'Sin ID';
+  };
+  
+  // Función para obtener el nombre del ganado de forma consistente
+  const getCattleName = (cattle: any): string => {
+    // Priorizar nombre propio si existe
+    if (cattle.name && cattle.name.trim() !== '') return cattle.name;
+    if (cattle.nombre && cattle.nombre.trim() !== '') return cattle.nombre;
+    
+    // Si no tiene nombre, usar identificador
+    let identifier = getCattleIdentifier(cattle);
+    if (identifier && identifier !== 'Sin ID') return `Ganado #${identifier}`;
+    
+    return 'Sin nombre';
+  };
+  
+  // Función para obtener el texto del género de forma consistente
+  const getGenderText = (cattle: any): string => {
+    // Si tiene objeto genero (backend)
+    if (cattle.genero && cattle.genero.descripcion) {
+      const descripcion = cattle.genero.descripcion.toLowerCase();
+      return descripcion === 'macho' ? 'Macho' : (descripcion === 'hembra' ? 'Hembra' : descripcion);
+    }
+    
+    // Si tiene campo gender (frontend)
+    if (cattle.gender) {
+      const gender = cattle.gender.toLowerCase();
+      return gender === 'macho' ? 'Macho' : (gender === 'hembra' ? 'Hembra' : gender);
+    }
 
-  const renderCattleItem = ({ item }: { item: any }) => {
+    // Si tiene campo genero pero es un string
+    if (cattle.genero && typeof cattle.genero === 'string') {
+      const genero = cattle.genero.toLowerCase();
+      return genero === 'macho' ? 'Macho' : (genero === 'hembra' ? 'Hembra' : genero);
+    }
+    
+    // Si tiene id_genero
+    if (cattle.id_genero === 1) return 'Macho';
+    if (cattle.id_genero === 2) return 'Hembra';
+    
+    return 'No especificado';
+  };
+  
+  // Función para formatear fechas de manera segura
+  const formatDate = (dateStr?: string): string => {
+    if (!dateStr) return 'No especificada';
+    
+    try {
+      const date = new Date(dateStr);
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) return 'Fecha inválida';
+      
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      return 'Error en formato';
+    }
+  };
+  
+  // Función para verificar si un registro veterinario está desactualizado
+  const isVeterinaryRecordOutdated = (vetInfo: any): boolean => {
+    // Si no hay fecha de próxima revisión, no podemos determinar si está desactualizado
+    if (!vetInfo?.proxima_revision && !vetInfo?.nextCheckup) return false;
+    
+    try {
+      const proximaRevision = new Date(vetInfo.proxima_revision || vetInfo.nextCheckup);
+      const hoy = new Date();
+      
+      // Desactualizado si la fecha de próxima revisión ya pasó
+      return proximaRevision < hoy;
+    } catch (error) {
+      console.error('Error verificando actualización del registro:', error);
+      return false;
+    }
+  };
+  
+  // Función para calcular días desde o hasta una fecha
+  const getDaysInfo = (dateStr?: string): string => {
+    if (!dateStr) return '';
+    
+    try {
+      const date = new Date(dateStr);
+      const today = new Date();
+      
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) return '';
+      
+      // Calcular diferencia en días
+      const diffTime = date.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 0) {
+        return `(en ${diffDays} día${diffDays !== 1 ? 's' : ''})`;
+      } else if (diffDays < 0) {
+        const absDiffDays = Math.abs(diffDays);
+        return `(hace ${absDiffDays} día${absDiffDays !== 1 ? 's' : ''})`;
+      } else {
+        return '(hoy)';
+      }
+    } catch (error) {
+      console.error('Error calculando información de días:', error);
+      return '';
+    }
+  };
+    // Función para normalizar datos veterinarios
+  const normalizeVeterinaryInfo = (item: any = {}): { 
+    hasVeterinaryInfo: boolean, 
+    vetInfo: any 
+  } => {
+    // Verificar si el ítem es válido
+    if (!item) return { hasVeterinaryInfo: false, vetInfo: {} };
+    
+    // Verificar si tiene información veterinaria (según el modelo backend o frontend)
+    const backendInfo = item.informacion_veterinaria || {};
+    const frontendInfo = item.veterinaryInfo || {};
+    const hasVeterinaryInfo = !!item.informacion_veterinaria || !!item.veterinaryInfo;
+    
+    if (!hasVeterinaryInfo) {
+      return { hasVeterinaryInfo: false, vetInfo: {} };
+    }
+    
+    // Calcular fecha de próxima revisión si no existe pero hay información de periodicidad
+    let proximaRevision = backendInfo?.proxima_revision || frontendInfo?.nextCheckup;
+    
+    // Si no hay fecha de próxima revisión pero hay información de periodicidad y fecha de tratamiento
+    if (!proximaRevision && (backendInfo?.periodicidad || frontendInfo?.checkupInterval)) {
+      const periodicidad = backendInfo?.periodicidad || frontendInfo?.checkupInterval;
+      const fechaTratamiento = backendInfo?.fecha_tratamiento || frontendInfo?.date;
+      
+      if (fechaTratamiento && periodicidad && typeof periodicidad === 'number') {
+        try {
+          const fechaBase = new Date(fechaTratamiento);
+          if (!isNaN(fechaBase.getTime())) {
+            // Sumar los días de periodicidad para obtener la próxima revisión
+            const fechaProximaRevision = new Date(fechaBase);
+            fechaProximaRevision.setDate(fechaBase.getDate() + periodicidad);
+            proximaRevision = fechaProximaRevision.toISOString();
+          }
+        } catch (error) {
+          console.error('Error calculando próxima revisión:', error);
+        }
+      }
+    }
+    
+    // Priorizar modelo de backend, pero asegurar que todos los campos estén presentes
+    const vetInfo = {
+      // Campos comunes normalizados
+      fecha_tratamiento: backendInfo?.fecha_tratamiento || frontendInfo?.date,
+      diagnostico: backendInfo?.diagnostico || frontendInfo?.diagnosis,
+      tratamiento: backendInfo?.tratamiento || frontendInfo?.treatment,
+      nota: backendInfo?.nota || frontendInfo?.notes,
+      
+      // Campos adicionales que podrían estar presentes
+      veterinario: backendInfo?.veterinario || frontendInfo?.veterinarian,
+      medicamentos: backendInfo?.medicamentos || frontendInfo?.medications,
+      dosis: backendInfo?.dosis || frontendInfo?.dosage,
+      proxima_revision: proximaRevision,
+      
+      // Mantener las referencias originales para compatibilidad
+      ...backendInfo,
+      ...frontendInfo,
+    };
+    
+    return { hasVeterinaryInfo, vetInfo };
+  };
+    const renderCattleItem = ({ item }: { item: any }) => {
+    // Validar que el ítem es válido
+    if (!item) {
+      return null; // No renderizar nada si el ítem es nulo o indefinido
+    }
+    
     // Función para obtener el nombre de la granja
     const getFarmName = () => {
-      if (!item.farmId) return 'Sin granja asignada';
+      // Verificar si tiene ID de finca (diferentes nombres de propiedad)
+      const farmId = item.farmId || item.id_finca;
+      
+      if (!farmId) return 'Sin granja asignada';
       
       // Si tenemos el nombre de la granja en los datos del ganado, lo mostramos
-      if (item.farmName) return item.farmName;
+      if (item.farmName || (item.finca && item.finca.nombre)) {
+        return item.farmName || item.finca.nombre;
+      }
       
       // Si estamos en modo "granja específica", podemos usar el nombre de la granja seleccionada
-      if (selectedFarm && selectedFarm._id === item.farmId) {
+      if (selectedFarm && selectedFarm._id === farmId) {
         return selectedFarm.name;
       }
       
-      return `Granja: ${item.farmId}`;
-    };
+      return `Granja: ${farmId}`;
+    };    // Verificar si tiene información veterinaria (según el modelo backend o frontend)
+    const { hasVeterinaryInfo, vetInfo } = normalizeVeterinaryInfo(item);
 
-    return (
-      <TouchableOpacity
+    return (      <TouchableOpacity
         style={styles.cattleCard}
-        onPress={() => navigateToCattleDetail(item._id)}
+        onPress={() => navigateToCattleDetail(item)}
       >
         <View style={styles.cattleHeader}>
           <Text style={styles.cattleIdentifier}>
-            {item.identificationNumber || 'Sin ID'}
+            {getCattleIdentifier(item)}
           </Text>
           <Text style={styles.cattleName}>
-            {item.name || 'Sin nombre'}
+            {getCattleName(item)}
           </Text>
         </View>
 
         <View style={styles.cattleInfo}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Raza:</Text>
-            <Text style={styles.infoValue}>{item.breed || 'No especificada'}</Text>
+            <Text style={styles.infoValue}>{item.breed || item.raza || 'No especificada'}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Género:</Text>
             <Text style={styles.infoValue}>
-              {item.gender ? (item.gender === 'macho' ? 'Macho' : 'Hembra') : 'No especificado'}
+              {getGenderText(item)}
             </Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Estado de salud:</Text>
-            <Text style={styles.infoValue}>{item.healthStatus || 'No especificado'}</Text>
+            <Text style={styles.infoValue}>{item.healthStatus || (item.estado_salud && item.estado_salud.descripcion) || 'No especificado'}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Granja:</Text>
             <Text style={styles.infoValue}>{getFarmName()}</Text>
           </View>
-        </View>
+        </View>        {hasVeterinaryInfo && (
+          <View style={[
+            styles.veterinaryInfoContainer,
+            // Aplicar estilo diferenciado si el registro está desactualizado
+            isVeterinaryRecordOutdated(vetInfo) && styles.outdatedVeterinaryContainer
+          ]}>
+            <View style={styles.veterinaryHeader}>
+              <Ionicons 
+                name={isVeterinaryRecordOutdated(vetInfo) ? "alert-circle" : "medkit"} 
+                size={16} 
+                color={isVeterinaryRecordOutdated(vetInfo) ? "#e74c3c" : "#27ae60"} 
+              />
+              <Text 
+                style={[
+                  styles.veterinaryHeaderText,
+                  isVeterinaryRecordOutdated(vetInfo) && styles.outdatedText
+                ]}
+              >
+                {isVeterinaryRecordOutdated(vetInfo) 
+                  ? "Información Veterinaria (Desactualizada)" 
+                  : "Información Veterinaria"
+                }
+              </Text>
+            </View>
+              {/* Fecha del tratamiento */}
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Fecha:</Text>
+              <Text style={styles.infoValue}>
+                {formatDate(vetInfo?.fecha_tratamiento || vetInfo?.date)}{' '}
+                <Text style={styles.daysInfo}>
+                  {getDaysInfo(vetInfo?.fecha_tratamiento || vetInfo?.date)}
+                </Text>
+              </Text>
+            </View>
 
-        <TouchableOpacity
-          style={styles.addRecordButton}
-          onPress={() => navigateToAddVeterinaryRecord(item._id)}
+            {/* Veterinario */}
+            {(vetInfo?.veterinario || vetInfo?.veterinarian) && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Veterinario:</Text>
+                <Text style={styles.infoValue}>{vetInfo?.veterinario || vetInfo?.veterinarian}</Text>
+              </View>
+            )}
+            
+            {/* Diagnóstico */}
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Diagnóstico:</Text>
+              <Text style={styles.infoValue}>{vetInfo?.diagnostico || vetInfo?.diagnosis || 'No especificado'}</Text>
+            </View>
+            
+            {/* Tratamiento */}
+            {(vetInfo?.tratamiento || vetInfo?.treatment) && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Tratamiento:</Text>
+                <Text style={styles.infoValue}>{vetInfo?.tratamiento || vetInfo?.treatment}</Text>
+              </View>
+            )}
+            
+            {/* Medicamentos */}
+            {(vetInfo?.medicamentos || vetInfo?.medications) && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Medicamentos:</Text>
+                <Text style={styles.infoValue}>{vetInfo?.medicamentos || vetInfo?.medications}</Text>
+              </View>
+            )}
+            
+            {/* Dosis */}
+            {(vetInfo?.dosis || vetInfo?.dosage) && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Dosis:</Text>
+                <Text style={styles.infoValue}>{vetInfo?.dosis || vetInfo?.dosage}</Text>
+              </View>
+            )}
+            
+            {/* Notas adicionales */}
+            {(vetInfo?.nota || vetInfo?.notes) && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Notas:</Text>
+                <Text style={styles.infoValue}>{vetInfo?.nota || vetInfo?.notes}</Text>
+              </View>
+            )}
+              {/* Fecha de próxima revisión */}
+            {(vetInfo?.proxima_revision || vetInfo?.nextCheckup) && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Próx. revisión:</Text>
+                <Text style={[
+                  styles.infoValue, 
+                  styles.highlightedValue,
+                  isVeterinaryRecordOutdated(vetInfo) && styles.outdatedText
+                ]}>
+                  {formatDate(vetInfo?.proxima_revision || vetInfo?.nextCheckup)}{' '}
+                  <Text style={[styles.daysInfo, isVeterinaryRecordOutdated(vetInfo) && styles.outdatedText]}>
+                    {getDaysInfo(vetInfo?.proxima_revision || vetInfo?.nextCheckup)}
+                  </Text>
+                  {isVeterinaryRecordOutdated(vetInfo) && " ⚠️ Vencida"}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}        <TouchableOpacity
+          style={[
+            styles.addRecordButton,
+            isVeterinaryRecordOutdated(vetInfo) && styles.urgentButton
+          ]}
+          onPress={() => navigateToAddVeterinaryRecord(item)}
         >
-          <Ionicons name="medical" size={16} color="#fff" />
-          <Text style={styles.addRecordButtonText}>Agregar registro veterinario</Text>
+          <Ionicons 
+            name={isVeterinaryRecordOutdated(vetInfo) ? "warning-outline" : "medical"} 
+            size={16} 
+            color="#fff" 
+          />
+          <Text style={styles.addRecordButtonText}>
+            {hasVeterinaryInfo 
+              ? (isVeterinaryRecordOutdated(vetInfo) 
+                ? 'Actualizar registro médico (Urgente)' 
+                : 'Actualizar registro médico')
+              : 'Agregar registro médico'
+            }
+          </Text>
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -222,11 +525,18 @@ export default function VeterinaryDataPage() {
           {getSubtitle()}
         </Text>
       </View>
-      
-      <FlatList
+        <FlatList
         data={cattle}
         renderItem={renderCattleItem}
-        keyExtractor={(item) => item._id.toString()}
+        keyExtractor={(item) => {
+          // Asegurarnos de que siempre devuelva un string único
+          if (item._id) return item._id.toString();
+          if (item.id_ganado) return `ganado-${item.id_ganado}`;
+          if (item.identificationNumber) return `id-${item.identificationNumber}`;
+          if (item.numero_identificacion) return `num-${item.numero_identificacion}`;
+          // Último recurso usando un timestamp para garantizar unicidad
+          return `item-${Math.random().toString(36).substring(2, 15)}`;
+        }}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -383,5 +693,48 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     marginLeft: 5,
+  },  // Estilos para información veterinaria
+  veterinaryInfoContainer: {
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#27ae60',
   },
-}); 
+  veterinaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  veterinaryHeaderText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#27ae60',
+    marginLeft: 6,
+  },  // Estilo para valores destacados
+  highlightedValue: {
+    fontWeight: '600',
+    color: '#2980b9',
+  },  // Estilos para registro veterinario desactualizado
+  outdatedVeterinaryContainer: {
+    borderLeftColor: '#e74c3c',
+    backgroundColor: '#FFF5F5',
+  },
+  outdatedText: {
+    color: '#e74c3c',
+    fontWeight: '600',
+  },  // Estilo para botón de acción urgente
+  urgentButton: {
+    backgroundColor: '#e74c3c',
+  },
+  // Estilo para información de días
+  daysInfo: {
+    fontSize: 12,
+    color: '#777777',
+    fontStyle: 'italic',
+  },
+});

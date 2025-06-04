@@ -39,7 +39,7 @@ export default function PremiumActivateScreen() {
       }
 
       // Llamar al backend de Express para activar premium (usando localhost)
-      const response = await fetch('https://cow-tracker-one.vercel.app/api/users/premium', {
+      const response = await fetch('https://ct-backend-gray.vercel.app/api/users/premium', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

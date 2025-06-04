@@ -3,7 +3,7 @@
  */
 
 // URL del backend en producción (Vercel)
-export const PROD_API_URL: string = 'https://cow-tracker-one.vercel.app/api';
+export const PROD_API_URL: string = 'https://ct-backend-gray.vercel.app/api';
 
 // Determina si estamos en modo producción o desarrollo
 export const isProd: boolean = true; // Cambia a false para usar la API local

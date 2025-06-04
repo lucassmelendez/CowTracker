@@ -12,8 +12,8 @@ import {
   Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 export default function SalesPage() {
   const router = useRouter();

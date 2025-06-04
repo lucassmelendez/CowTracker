@@ -25,17 +25,6 @@ export default function LoginScreen() {
     }
 
     setLocalError('');
-    
-    try {
-      // Llamar a la función login del contexto de autenticación
-      await login(email, password);
-      
-      // Si el login es exitoso, navegar a la pantalla principal
-      router.push('/(tabs)');
-    } catch (error: any) {
-      console.error('Error en handleLogin:', error);
-      setLocalError(error.message || 'Error al iniciar sesión');
-    }
   };
 
   const navigateToRegister = () => {

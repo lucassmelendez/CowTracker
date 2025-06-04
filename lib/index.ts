@@ -1,3 +1,4 @@
+// ==================== EXPORTACIONES DE TIPOS ====================
 // Tipos de usuario y autenticación
 export interface UserRole {
   id_rol: number;
@@ -187,4 +188,22 @@ export interface FarmContextType {
   selectFarm: (farm: Farm) => void;
   clearSelectedFarm: () => void;
   loading: boolean;
-} 
+}
+
+// ==================== EXPORTACIONES DE API Y CONFIGURACIÓN ====================
+// Exportar la API consolidada como default y named export
+export { default as api } from './config/api';
+export { default } from './config/api';
+
+// Exportar configuraciones
+export { supabase } from './config/supabase';
+export { 
+  API_URL, 
+  API_CONFIG, 
+  buildApiUrl, 
+  fetchWithCORS, 
+  WEBPAY_URLS,
+  PROD_API_URL,
+  LOCAL_IP,
+  isProd 
+} from './config/api'; 

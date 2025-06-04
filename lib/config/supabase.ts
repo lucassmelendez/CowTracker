@@ -4,8 +4,13 @@ import { Platform } from 'react-native';
 import 'react-native-url-polyfill/auto';
 
 // Obtener credenciales de Supabase desde variables de entorno
-const supabaseUrl: string = 'https://eisceuexbwpdpjxuskgz.supabase.co';
-const supabaseAnonKey: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpc2NldWV4YndwZHBqeHVza2d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1NTM3MzgsImV4cCI6MjA2NDEyOTczOH0.B-xDkrbShC76GwQ1p4poZzdcppxh1u95s24XRz185KE';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Validar que las variables de entorno estén configuradas
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Las variables de entorno de Supabase no están configuradas correctamente');
+}
 
 // Crear diferentes opciones de configuración basadas en la plataforma
 let supabaseOptions: any = {};

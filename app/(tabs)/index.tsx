@@ -106,6 +106,13 @@ export default function TabOneScreen() {
         description: 'Generar informes de ganado'
       },
       {
+        id: 'vet',
+        title: 'Datos Veterinarios',
+        icon: '💊',
+        route: '/(tabs)/veterinary-data',
+        description: 'Datos veterinarios y medicamentos'
+      },
+      {
         id: 'production',
         title: 'Producción',
         icon: '🥩',
@@ -234,6 +241,13 @@ export default function TabOneScreen() {
   // Componente HomeScreenVeterinario
   const HomeScreenVeterinario = () => {
     const veterinarioMenuItems = [
+      {
+        id: 'cattle',
+        title: 'Mi Ganado',
+        icon: '🐄',
+        route: '/(tabs)/explore',
+        description: 'Gestiona todo tu ganado'
+      },
       {
         id: 'vet',
         title: 'Datos Veterinarios',

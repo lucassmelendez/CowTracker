@@ -14,37 +14,12 @@ import {
 } from '../index';
 
 // ==================== CONFIGURACIÓN DE ENTORNO ====================
-// URL del backend en producción (Vercel) - desde variable de entorno
+// URL del backend en producción (Vercel) - siempre usar esta URL
 const PROD_API_URL: string = process.env.EXPO_PUBLIC_PROD_API_URL || 'https://ct-backend-gray.vercel.app/api';
 
-// IP local para desarrollo - desde variable de entorno
-const LOCAL_IP: string = process.env.EXPO_PUBLIC_LOCAL_IP || '192.168.1.100';
-
-// Determinar si estamos en producción - desde variable de entorno
-const isProd: boolean = process.env.EXPO_PUBLIC_IS_PROD === 'true' || process.env.NODE_ENV === 'production';
-
 // ==================== CONFIGURACIÓN DE URL ====================
-let API_URL: string;
-
-// Si estamos en modo producción, siempre usamos la URL de Vercel
-if (isProd) {
-  API_URL = PROD_API_URL;
-} else {
-  // Configuración dependiendo de la plataforma para desarrollo
-  if (Platform.OS === 'web') {
-    API_URL = 'http://localhost:5000/api';
-  } else if (Platform.OS === 'ios') {
-    // Para dispositivos iOS físicos o emulador, usamos la IP local
-    API_URL = `http://${LOCAL_IP}:5000/api`;
-  } else if (Platform.OS === 'android') {
-    // Para emulador de Android usamos 10.0.2.2 (apunta al localhost del host)
-    // Para dispositivos físicos Android, usamos la IP local
-    const isEmulator: boolean = false; // Cambia a true si estás usando el emulador
-    API_URL = isEmulator ? 'http://10.0.2.2:5000/api' : `http://${LOCAL_IP}:5000/api`;
-  } else {
-    API_URL = `http://${LOCAL_IP}:5000/api`;
-  }
-}
+// Siempre usar la URL de producción para evitar problemas de conexión local
+const API_URL: string = PROD_API_URL;
 
 // Asegúrate de que la URL base tenga el formato correcto
 const baseURL: string = API_URL.endsWith('/') ? API_URL : `${API_URL}/`;
@@ -321,5 +296,5 @@ const apiService = {
 };
 
 // Exportar también las constantes de configuración
-export { API_URL, PROD_API_URL, LOCAL_IP, isProd };
+export { API_URL, PROD_API_URL };
 export default apiService; 

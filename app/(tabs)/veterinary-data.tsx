@@ -39,14 +39,10 @@ export default function VeterinaryDataPage() {
       
       // Si seleccionó la opción "Todas las granjas"
       if (!selectedFarm || selectedFarm?._id === 'all-farms') {
-        console.log('Cargando ganado de todas las granjas...');
-        
-        // Primero obtenemos todas las granjas
+
         const farmsResponse = await api.farms.getAll();
         const farmsData = Array.isArray(farmsResponse) ? farmsResponse : [];
-        console.log(`Se encontraron ${farmsData.length} granjas`);
         
-        // Para cada granja, cargamos su ganado
         const allCattlePromises = farmsData.map((farm: any) => 
           api.farms.getCattle(farm._id)
             .then((cattleResponse: any) => {
@@ -68,7 +64,6 @@ export default function VeterinaryDataPage() {
         
         // Combinamos todos los resultados
         cattleData = allCattleResults.flat();
-        console.log(`Cargadas ${cattleData.length} cabezas de ganado (todas las granjas)`);
       }
       // Si seleccionó una granja específica
       else if (selectedFarm?._id) {
@@ -80,7 +75,6 @@ export default function VeterinaryDataPage() {
           ...animal,
           farmName: selectedFarm.name
         }));
-        console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name})`);
       }
       
       setCattle(cattleData);

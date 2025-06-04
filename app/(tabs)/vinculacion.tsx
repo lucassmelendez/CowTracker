@@ -45,14 +45,10 @@ export default function VinculacionTab() {
 
     setLoading(true);
     try {
-      console.log("Enviando código para verificación:", codigo.trim().toUpperCase());
-      
       const response = await api.post('/vincular/verificar', {
         codigo: codigo.trim().toUpperCase()
       });
       
-      console.log("Respuesta completa de verificación:", JSON.stringify(response));
-
       if (response && (response.data?.success || (response as any).success)) {
         Alert.alert(
           'Vinculación exitosa',

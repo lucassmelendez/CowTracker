@@ -71,8 +71,6 @@ export default function CattleTab() {
       
       // Si seleccionó la opción "Todas las granjas"
       if (!selectedFarm || selectedFarm?._id === 'all-farms') {
-        console.log('Cargando ganado de todas las granjas...');
-        
         try {
           // Primero obtenemos todas las granjas
           const farmsData = await api.farms.getAll();
@@ -82,9 +80,7 @@ export default function CattleTab() {
             setCattle([]);
             return;
           }
-          
-          console.log(`Se encontraron ${farmsData.length} granjas`);
-          
+
           // Para cada granja, cargamos su ganado
           const allCattlePromises = farmsData.map(farm => {
             // Verificar que la granja tenga un ID
@@ -171,8 +167,6 @@ export default function CattleTab() {
               setError('Mostrando datos locales para todas las granjas');
               setTimeout(() => setError(null), 3000);
             }
-            
-            console.log(`Cargadas ${cattleData.length} cabezas de ganado (todas las granjas)`);
           } catch (promiseError) {
             console.error('Error al procesar promesas de ganado:', promiseError);
             setError('Mostrando datos locales debido a un error de conexión');
@@ -205,9 +199,6 @@ export default function CattleTab() {
       // Si seleccionó una granja específica
       else if (selectedFarm?._id) {
         try {
-          console.log(`Cargando ganado para la granja: ${selectedFarm.name || selectedFarm._id}`);
-          
-          // Cargamos ganado de esa granja específica
           const response = await api.farms.getCattle(selectedFarm._id);
           
           // Manejar diferentes formatos de respuesta
@@ -255,7 +246,6 @@ export default function CattleTab() {
             };
           });
           
-          console.log(`Cargadas ${cattleData.length} cabezas de ganado (granja: ${selectedFarm.name || selectedFarm._id})${usedFallbackData ? ' - DATOS LOCALES' : ''}`);
         } catch (farmCattleError) {
           console.error(`Error al cargar ganado para la granja ${selectedFarm._id}:`, farmCattleError);
           // Sin datos de respaldo disponibles
@@ -288,7 +278,6 @@ export default function CattleTab() {
   };
 
   const navigateToAdd = () => {
-    console.log('Navegando a añadir ganado...');
     router.push('/add-cattle');
   };
 

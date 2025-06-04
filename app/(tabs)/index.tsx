@@ -7,27 +7,13 @@ export default function TabOneScreen() {
   const { isAdmin, isTrabajador, isVeterinario, userInfo } = useAuth();
   const router = useRouter();
 
-  console.log('=== TabOneScreen DEBUG ===');
-  console.log('userInfo completo:', JSON.stringify(userInfo, null, 2));
-  console.log('userInfo.id_rol:', userInfo?.id_rol);
-  console.log('userInfo.rol:', userInfo?.rol);
-  console.log('userInfo.rol?.nombre_rol:', userInfo?.rol?.nombre_rol);
-  console.log('userInfo.rol?.id_rol:', userInfo?.rol?.id_rol);
-  console.log('isAdmin():', isAdmin());
-  console.log('isTrabajador():', isTrabajador());
-  console.log('isVeterinario():', isVeterinario());
-  console.log('=== FIN DEBUG ===');
-
-  // Función para extraer el rol del token JWT
   const getRoleFromToken = () => {
     try {
       if (!userInfo?.token) return null;
-      
-      // Decodificar el JWT (solo la parte del payload)
+
       const payload = userInfo.token.split('.')[1];
       const decodedPayload = JSON.parse(atob(payload));
       
-      console.log('🔍 Rol extraído del token JWT:', decodedPayload.user_metadata?.role);
       return decodedPayload.user_metadata?.role;
     } catch (error) {
       console.error('Error al decodificar token:', error);
@@ -35,93 +21,68 @@ export default function TabOneScreen() {
     }
   };
 
-  // Lógica más robusta para determinar el rol
   const determineRole = () => {
     if (!userInfo) {
-      console.log('❌ No hay userInfo');
-      return 'admin'; // default
+      return 'trabajador';
     }
 
-    // NUEVO: Verificar por el rol en el token JWT
     const tokenRole = getRoleFromToken();
     if (tokenRole === 'veterinario') {
-      console.log('✅ Detectado veterinario por token JWT');
       return 'veterinario';
     }
     if (tokenRole === 'trabajador') {
-      console.log('✅ Detectado trabajador por token JWT');
       return 'trabajador';
     }
     if (tokenRole === 'admin') {
-      console.log('✅ Detectado admin por token JWT');
       return 'admin';
     }
 
-    // Verificar por el campo 'rol.nombre_rol' que está presente en userInfo
     if (userInfo.rol?.nombre_rol === 'veterinario') {
-      console.log('✅ Detectado veterinario por userInfo.rol?.nombre_rol === "veterinario"');
       return 'veterinario';
     }
     if (userInfo.rol?.nombre_rol === 'trabajador' || userInfo.rol?.nombre_rol === 'user') {
-      console.log('✅ Detectado trabajador por userInfo.rol?.nombre_rol === "trabajador" o "user"');
       return 'trabajador';
     }
     if (userInfo.rol?.nombre_rol === 'admin') {
-      console.log('✅ Detectado admin por userInfo.rol?.nombre_rol === "admin"');
       return 'admin';
     }
 
-    // Verificar por id_rol directo
     if (userInfo.id_rol === 3) {
-      console.log('✅ Detectado veterinario por id_rol === 3');
       return 'veterinario';
     }
     if (userInfo.id_rol === 2) {
-      console.log('✅ Detectado trabajador por id_rol === 2');
       return 'trabajador';
     }
     if (userInfo.id_rol === 1) {
-      console.log('✅ Detectado admin por id_rol === 1');
       return 'admin';
     }
 
     // Verificar usando las funciones del contexto
     if (isVeterinario()) {
-      console.log('✅ Detectado veterinario por función isVeterinario()');
       return 'veterinario';
     }
     if (isTrabajador()) {
-      console.log('✅ Detectado trabajador por función isTrabajador()');
       return 'trabajador';
     }
     if (isAdmin()) {
-      console.log('✅ Detectado admin por función isAdmin()');
       return 'admin';
     }
 
-    // Si el rol es "user" pero no se detectó como trabajador, podría ser admin por defecto
     if (userInfo.rol?.nombre_rol === 'user') {
-      console.log('⚠️ userInfo.rol?.nombre_rol es "user", asumiendo trabajador por defecto');
       return 'trabajador';
     }
 
-    console.log('⚠️ No se pudo determinar el rol, usando admin por defecto');
     return 'admin';
   };
 
   const role = determineRole();
 
   const navigateTo = (route: any) => {
-    console.log('Navegando a:', route);
     router.push(route);
   };
 
   // Componente HomeScreenAdmin
   const HomeScreenAdmin = () => {
-    useEffect(() => {
-      console.log('HomeScreenAdmin montado - Mostrando menús para administrador');
-    }, []);
-
     const adminMenuItems = [
       {
         id: 'admin',
@@ -197,10 +158,6 @@ export default function TabOneScreen() {
 
   // Componente HomeScreenTrabajador
   const HomeScreenTrabajador = () => {
-    useEffect(() => {
-      console.log('HomeScreenTrabajador montado - Mostrando menús para trabajador');
-    }, []);
-
     const trabajadorMenuItems = [
       {
         id: 'cattle',
@@ -276,10 +233,6 @@ export default function TabOneScreen() {
 
   // Componente HomeScreenVeterinario
   const HomeScreenVeterinario = () => {
-    useEffect(() => {
-      console.log('HomeScreenVeterinario montado - Mostrando menús para veterinario');
-    }, []);
-
     const veterinarioMenuItems = [
       {
         id: 'vet',
@@ -343,14 +296,11 @@ export default function TabOneScreen() {
   const renderHomeScreen = () => {
     switch (role) {
       case 'veterinario':
-        console.log('🏥 Renderizando HomeScreenVeterinario');
         return <HomeScreenVeterinario />;
       case 'trabajador':
-        console.log('👷 Renderizando HomeScreenTrabajador');
         return <HomeScreenTrabajador />;
       case 'admin':
       default:
-        console.log('👨‍💼 Renderizando HomeScreenAdmin');
         return <HomeScreenAdmin />;
     }
   };

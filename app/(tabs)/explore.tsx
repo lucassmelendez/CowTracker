@@ -8,7 +8,7 @@ import {
   RefreshControl,
   StyleSheet
 } from 'react-native';
-import api from '../../lib/services/api';
+import api from '../../lib/config/api';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFarm } from '../../components/FarmContext';

@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import api from '../lib/services/api';
+import api from '../lib/config/api';
 import { supabase } from '../lib/config/supabase';
 
 interface UserRole {

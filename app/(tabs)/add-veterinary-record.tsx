@@ -14,7 +14,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import api from '../../lib/services/api';
+import api from '../../lib/config/api';
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();

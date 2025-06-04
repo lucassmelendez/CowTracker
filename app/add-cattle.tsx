@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
-import api from '../lib/services/api';
+import api from '../lib/config/api';
 import { supabase } from '../lib/config/supabase';
 
 interface Farm {

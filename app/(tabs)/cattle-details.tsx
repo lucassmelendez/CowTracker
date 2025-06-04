@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../components/AuthContext';
 import { supabase } from '../../lib/config/supabase';
+import { useCacheManager } from '../../hooks/useCachedData';
+import cachedApi from '../../lib/services/cachedApi';
 import QRCode from 'react-native-qrcode-svg';
 
 export default function CattleDetailPage() {
@@ -83,12 +85,8 @@ export default function CattleDetailPage() {
 
   const handleDelete = async () => {
     try {
-      const { error: deleteError } = await supabase
-        .from('ganado')
-        .delete()
-        .eq('id_ganado', cattleId);
-
-      if (deleteError) throw deleteError;
+      // Usar el sistema de caché para eliminar la vaca
+      await cachedApi.deleteCattle(cattleId);
 
       Alert.alert('Éxito', 'Ganado eliminado correctamente');
       router.back();

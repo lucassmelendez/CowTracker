@@ -363,24 +363,6 @@ export default function FarmsPage() {
           <Text style={styles.infoText}>{item.cattleCount || 0} animales</Text>
         </View>
       </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.manageButton}
-          onPress={() => handleManageStaff(item)}
-        >
-          <Ionicons name="people-outline" size={16} color="#fff" />
-          <Text style={styles.buttonText}>Gestionar Personal</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.viewButton}
-          onPress={() => handleViewCattle(item)}
-        >
-          <Ionicons name="eye-outline" size={16} color="#fff" />
-          <Text style={styles.buttonText}>Ver Ganado</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 

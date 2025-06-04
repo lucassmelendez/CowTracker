@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert,
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../lib/config/api';
+import api from '../../lib/services/api';
 import { supabase } from '../../lib/config/supabase';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 

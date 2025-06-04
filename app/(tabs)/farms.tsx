@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import api from '../../lib/config/api';
+import api from '../../lib/services/api';
 
 interface Farm {
   _id: string;

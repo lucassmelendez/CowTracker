@@ -10,56 +10,63 @@ import {
   ActivityIndicator,
   ScrollView,
   Platform,
-  Share
+  Share,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import { 
   useUserFarms, 
   useAllCattle, 
   useAllCattleWithFarmInfo,
   useFarmCattle 
 } from '../../hooks/useCachedData';
+import { useFarm } from '../../components/FarmContext';
 import api from '../../lib/services/api';
 import { ReportGenerator, ReportData, CattleDetail } from '../../lib/utils/reportGenerator';
+
+const { width } = Dimensions.get('window');
 
 interface ReportType {
   id: string;
   name: string;
   description: string;
   icon: string;
+  color: string;
 }
 
 const reportTypes: ReportType[] = [
   {
     id: 'general',
-    name: 'Informe General',
-    description: 'Resumen completo de ganado y granjas',
-    icon: 'document-text-outline'
+    name: 'General',
+    description: 'Resumen completo',
+    icon: 'analytics-outline',
+    color: '#3498db'
   },
   {
     id: 'cattle',
-    name: 'Informe de Ganado',
-    description: 'Detalles específicos del ganado por granja',
-    icon: 'list-outline'
+    name: 'Ganado',
+    description: 'Detalles del ganado',
+    icon: 'list-outline',
+    color: '#e67e22'
   },
   {
     id: 'health',
-    name: 'Informe de Salud',
-    description: 'Estado de salud del ganado y registros médicos',
-    icon: 'medical-outline'
+    name: 'Salud',
+    description: 'Estado sanitario',
+    icon: 'medical-outline',
+    color: '#e74c3c'
   },
   {
     id: 'farms',
-    name: 'Informe de Granjas',
-    description: 'Información detallada de las granjas',
-    icon: 'leaf-outline'
+    name: 'Granjas',
+    description: 'Info de granjas',
+    icon: 'leaf-outline',
+    color: '#27ae60'
   }
 ];
 
 export default function ReportPage() {
   const [selectedReportType, setSelectedReportType] = useState<string>('general');
-  const [selectedFarm, setSelectedFarm] = useState<string>('all');
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [cattleDetails, setCattleDetails] = useState<CattleDetail[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,10 +74,13 @@ export default function ReportPage() {
   const [generatedReport, setGeneratedReport] = useState<string>('');
   const [exportModalVisible, setExportModalVisible] = useState(false);
 
+  // Usar el contexto de granja del header
+  const { selectedFarm } = useFarm();
+  
   // Hooks para obtener datos
   const { data: farms, loading: farmsLoading } = useUserFarms();
   const { data: allCattle, loading: cattleLoading } = useAllCattleWithFarmInfo();
-  const { data: farmCattle } = useFarmCattle(selectedFarm !== 'all' ? selectedFarm : null);
+  const { data: farmCattle } = useFarmCattle(selectedFarm?._id || null);
 
   useEffect(() => {
     if (farms && allCattle) {
@@ -83,17 +93,17 @@ export default function ReportPage() {
 
     setLoading(true);
     try {
-      const cattleData = selectedFarm === 'all' ? allCattle : farmCattle || [];
+      const cattleData = selectedFarm ? farmCattle || [] : allCattle;
       
       const data: ReportData = {
         totalCattle: cattleData.length,
-        totalFarms: farms.length,
+        totalFarms: selectedFarm ? 1 : farms.length,
         cattleByFarm: {},
         cattleByHealth: {},
         cattleByGender: {},
         cattleByBreed: {},
         medicalRecordsCount: 0,
-        averageCattlePerFarm: farms.length > 0 ? Math.round(allCattle.length / farms.length) : 0
+        averageCattlePerFarm: selectedFarm ? cattleData.length : (farms.length > 0 ? Math.round(allCattle.length / farms.length) : 0)
       };
 
       // Preparar detalles del ganado para exportación
@@ -110,10 +120,14 @@ export default function ReportPage() {
       setCattleDetails(details);
 
       // Agrupar ganado por granja
-      cattleData.forEach(cattle => {
-        const farmName = cattle.finca?.nombre || cattle.farmName || 'Sin granja';
-        data.cattleByFarm[farmName] = (data.cattleByFarm[farmName] || 0) + 1;
-      });
+      if (selectedFarm) {
+        data.cattleByFarm[selectedFarm.name] = cattleData.length;
+      } else {
+        cattleData.forEach(cattle => {
+          const farmName = cattle.finca?.nombre || cattle.farmName || 'Sin granja';
+          data.cattleByFarm[farmName] = (data.cattleByFarm[farmName] || 0) + 1;
+        });
+      }
 
       // Agrupar por estado de salud
       cattleData.forEach(cattle => {
@@ -125,12 +139,6 @@ export default function ReportPage() {
       cattleData.forEach(cattle => {
         const gender = cattle.genero?.descripcion || cattle.gender || 'No especificado';
         data.cattleByGender[gender] = (data.cattleByGender[gender] || 0) + 1;
-      });
-
-      // Agrupar por raza
-      cattleData.forEach(cattle => {
-        const breed = cattle.raza || cattle.breed || 'No especificado';
-        data.cattleByBreed[breed] = (data.cattleByBreed[breed] || 0) + 1;
       });
 
       // Contar registros médicos
@@ -164,8 +172,7 @@ export default function ReportPage() {
 
     let report = '';
     const currentDate = new Date().toLocaleDateString('es-ES');
-    const selectedFarmName = selectedFarm === 'all' ? 'Todas las granjas' : 
-      farms?.find(f => f._id === selectedFarm)?.name || 'Granja seleccionada';
+    const selectedFarmName = selectedFarm ? selectedFarm.name : 'Todas las granjas';
 
     switch (selectedReportType) {
       case 'general':
@@ -216,11 +223,6 @@ DISTRIBUCIÓN POR GÉNERO
 -----------------------
 ${Object.entries(data.cattleByGender).map(([gender, count]) => 
   `• ${gender}: ${count} animales`).join('\n')}
-
-DISTRIBUCIÓN POR RAZA
----------------------
-${Object.entries(data.cattleByBreed).map(([breed, count]) => 
-  `• ${breed}: ${count} animales`).join('\n')}
 
 ---
 Informe generado por CowTracker
@@ -353,8 +355,7 @@ ${date}
     if (!reportData) return;
     
     setExportModalVisible(false);
-    const selectedFarmName = selectedFarm === 'all' ? 'Todas las granjas' : 
-      farms?.find(f => f._id === selectedFarm)?.name || 'Granja seleccionada';
+    const selectedFarmName = selectedFarm ? selectedFarm.name : 'Todas las granjas';
     
     await ReportGenerator.exportToHTML(
       reportData, 
@@ -375,23 +376,23 @@ ${date}
     <TouchableOpacity
       style={[
         styles.reportTypeCard,
-        selectedReportType === item.id && styles.selectedReportType
+        selectedReportType === item.id && { ...styles.selectedReportType, backgroundColor: item.color }
       ]}
       onPress={() => setSelectedReportType(item.id)}
     >
-      <View style={styles.reportTypeHeader}>
+      <View style={styles.reportTypeIconContainer}>
         <Ionicons 
           name={item.icon as any} 
-          size={24} 
-          color={selectedReportType === item.id ? '#ffffff' : '#27ae60'} 
+          size={28} 
+          color={selectedReportType === item.id ? '#ffffff' : item.color} 
         />
-        <Text style={[
-          styles.reportTypeName,
-          selectedReportType === item.id && styles.selectedReportTypeName
-        ]}>
-          {item.name}
-        </Text>
       </View>
+      <Text style={[
+        styles.reportTypeName,
+        selectedReportType === item.id && styles.selectedReportTypeName
+      ]}>
+        {item.name}
+      </Text>
       <Text style={[
         styles.reportTypeDescription,
         selectedReportType === item.id && styles.selectedReportTypeDescription
@@ -399,6 +400,16 @@ ${date}
         {item.description}
       </Text>
     </TouchableOpacity>
+  );
+
+  const renderStatCard = (title: string, value: string | number, icon: string, color: string) => (
+    <View style={[styles.statCard, { borderLeftColor: color }]}>
+      <View style={styles.statCardHeader}>
+        <Ionicons name={icon as any} size={24} color={color} />
+        <Text style={styles.statCardValue}>{value}</Text>
+      </View>
+      <Text style={styles.statCardTitle}>{title}</Text>
+    </View>
   );
 
   if (farmsLoading || cattleLoading) {
@@ -412,67 +423,95 @@ ${date}
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Informes</Text>
-        <Text style={styles.subtitle}>Genera informes detallados de tu ganado</Text>
-      </View>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Información de la granja seleccionada */}
+        <View style={styles.farmInfoCard}>
+          <View style={styles.farmInfoHeader}>
+            <Ionicons name="location" size={20} color="#27ae60" />
+            <Text style={styles.farmInfoTitle}>
+              {selectedFarm ? selectedFarm.name : 'Todas las granjas'}
+            </Text>
+          </View>
+          <Text style={styles.farmInfoSubtitle}>
+            {selectedFarm ? 'Informe específico de granja' : 'Informe consolidado'}
+          </Text>
+        </View>
 
-      <ScrollView style={styles.content}>
+        {/* Tipos de informe */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tipo de Informe</Text>
           <FlatList
             data={reportTypes}
             renderItem={renderReportTypeItem}
             keyExtractor={item => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.reportTypesList}
+            numColumns={2}
+            scrollEnabled={false}
+            contentContainerStyle={styles.reportTypesGrid}
           />
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Seleccionar Granja</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={selectedFarm}
-              onValueChange={(value) => setSelectedFarm(value)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Todas las granjas" value="all" />
-              {farms?.map(farm => (
-                <Picker.Item 
-                  key={farm._id} 
-                  label={farm.name} 
-                  value={farm._id} 
-                />
-              ))}
-            </Picker>
-          </View>
-        </View>
-
+        {/* Estadísticas rápidas */}
         {reportData && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Vista Previa</Text>
-            <View style={styles.previewCard}>
-              <View style={styles.previewRow}>
-                <Text style={styles.previewLabel}>Total de ganado:</Text>
-                <Text style={styles.previewValue}>{reportData.totalCattle}</Text>
-              </View>
-              <View style={styles.previewRow}>
-                <Text style={styles.previewLabel}>Total de granjas:</Text>
-                <Text style={styles.previewValue}>{reportData.totalFarms}</Text>
-              </View>
-              <View style={styles.previewRow}>
-                <Text style={styles.previewLabel}>Registros médicos:</Text>
-                <Text style={styles.previewValue}>{reportData.medicalRecordsCount}</Text>
-              </View>
+            <Text style={styles.sectionTitle}>Resumen</Text>
+            <View style={styles.statsGrid}>
+              {renderStatCard('Ganado Total', reportData.totalCattle, 'list', '#3498db')}
+              {renderStatCard('Granjas', reportData.totalFarms, 'business', '#27ae60')}
+              {renderStatCard('Registros Médicos', reportData.medicalRecordsCount, 'medical', '#e74c3c')}
+              {renderStatCard('Promedio/Granja', reportData.averageCattlePerFarm, 'analytics', '#f39c12')}
             </View>
           </View>
         )}
 
-        <View style={styles.buttonContainer}>
+        {/* Distribuciones */}
+        {reportData && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Distribuciones</Text>
+            
+            {/* Estado de Salud */}
+            <View style={styles.distributionCard}>
+              <View style={styles.distributionHeader}>
+                <Ionicons name="medical" size={20} color="#e74c3c" />
+                <Text style={styles.distributionTitle}>Estado de Salud</Text>
+              </View>
+              {Object.entries(reportData.cattleByHealth).map(([health, count]) => (
+                <View key={health} style={styles.distributionItem}>
+                  <Text style={styles.distributionLabel}>{health}</Text>
+                  <View style={styles.distributionValueContainer}>
+                    <Text style={styles.distributionValue}>{count}</Text>
+                    <Text style={styles.distributionPercentage}>
+                      ({((count/reportData.totalCattle)*100).toFixed(1)}%)
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Género */}
+            <View style={styles.distributionCard}>
+              <View style={styles.distributionHeader}>
+                <Ionicons name="people" size={20} color="#9b59b6" />
+                <Text style={styles.distributionTitle}>Género</Text>
+              </View>
+              {Object.entries(reportData.cattleByGender).map(([gender, count]) => (
+                <View key={gender} style={styles.distributionItem}>
+                  <Text style={styles.distributionLabel}>{gender}</Text>
+                  <View style={styles.distributionValueContainer}>
+                    <Text style={styles.distributionValue}>{count}</Text>
+                    <Text style={styles.distributionPercentage}>
+                      ({((count/reportData.totalCattle)*100).toFixed(1)}%)
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Botones de acción */}
+        <View style={styles.actionButtonsContainer}>
           <TouchableOpacity
-            style={[styles.generateButton, loading && styles.disabledButton]}
+            style={[styles.actionButton, styles.viewButton, loading && styles.disabledButton]}
             onPress={generateReport}
             disabled={loading || !reportData}
           >
@@ -480,19 +519,19 @@ ${date}
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
               <>
-                <Ionicons name="document-text" size={20} color="#ffffff" />
-                <Text style={styles.generateButtonText}>Ver Informe</Text>
+                <Ionicons name="eye" size={20} color="#ffffff" />
+                <Text style={styles.actionButtonText}>Ver Informe</Text>
               </>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.exportButton, loading && styles.disabledButton]}
+            style={[styles.actionButton, styles.exportButton, loading && styles.disabledButton]}
             onPress={() => setExportModalVisible(true)}
             disabled={loading || !reportData}
           >
             <Ionicons name="download" size={20} color="#ffffff" />
-            <Text style={styles.exportButtonText}>Exportar</Text>
+            <Text style={styles.actionButtonText}>Exportar</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -507,14 +546,14 @@ ${date}
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <TouchableOpacity
-              style={styles.closeButton}
+              style={styles.modalHeaderButton}
               onPress={() => setReportModalVisible(false)}
             >
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Informe Generado</Text>
             <TouchableOpacity
-              style={styles.shareButton}
+              style={styles.modalHeaderButton}
               onPress={shareReport}
             >
               <Ionicons name="share" size={24} color="#27ae60" />
@@ -537,21 +576,25 @@ ${date}
         <View style={styles.modalOverlay}>
           <View style={styles.exportModalContent}>
             <Text style={styles.exportModalTitle}>Exportar Informe</Text>
-            <Text style={styles.exportModalSubtitle}>Selecciona el formato de exportación</Text>
+            <Text style={styles.exportModalSubtitle}>Selecciona el formato</Text>
             
             <TouchableOpacity style={styles.exportOption} onPress={handleExportHTML}>
-              <Ionicons name="document" size={24} color="#27ae60" />
+              <View style={styles.exportOptionIcon}>
+                <Ionicons name="document" size={24} color="#ffffff" />
+              </View>
               <View style={styles.exportOptionText}>
                 <Text style={styles.exportOptionTitle}>HTML</Text>
-                <Text style={styles.exportOptionDescription}>Formato web con diseño profesional</Text>
+                <Text style={styles.exportOptionDescription}>Formato web profesional</Text>
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.exportOption} onPress={handleExportCSV}>
-              <Ionicons name="grid" size={24} color="#27ae60" />
+              <View style={[styles.exportOptionIcon, { backgroundColor: '#27ae60' }]}>
+                <Ionicons name="grid" size={24} color="#ffffff" />
+              </View>
               <View style={styles.exportOptionText}>
                 <Text style={styles.exportOptionTitle}>CSV</Text>
-                <Text style={styles.exportOptionDescription}>Datos tabulares para Excel</Text>
+                <Text style={styles.exportOptionDescription}>Datos para Excel</Text>
               </View>
             </TouchableOpacity>
 
@@ -571,27 +614,13 @@ ${date}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    padding: 20,
-    paddingTop: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 5,
+    backgroundColor: '#f8f9fa',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8f9fa',
   },
   loadingText: {
     fontSize: 16,
@@ -600,122 +629,203 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: 16,
   },
-  section: {
-    marginBottom: 25,
+  farmInfoCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  sectionTitle: {
+  farmInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  farmInfoTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333333',
-    marginBottom: 15,
+    marginLeft: 8,
   },
-  reportTypesList: {
-    paddingRight: 20,
+  farmInfoSubtitle: {
+    fontSize: 14,
+    color: '#777777',
+    marginLeft: 28,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginBottom: 16,
+  },
+  reportTypesGrid: {
+    gap: 12,
   },
   reportTypeCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 15,
-    marginRight: 15,
-    minWidth: 200,
+    borderRadius: 16,
+    padding: 16,
+    flex: 1,
+    marginHorizontal: 6,
+    marginVertical: 6,
+    alignItems: 'center',
     borderWidth: 2,
     borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   selectedReportType: {
-    backgroundColor: '#27ae60',
-    borderColor: '#27ae60',
+    borderColor: 'transparent',
+    transform: [{ scale: 1.02 }],
   },
-  reportTypeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  reportTypeIconContainer: {
     marginBottom: 8,
   },
   reportTypeName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333333',
-    marginLeft: 8,
+    textAlign: 'center',
+    marginBottom: 4,
   },
   selectedReportTypeName: {
     color: '#ffffff',
   },
   reportTypeDescription: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#777777',
-    lineHeight: 18,
+    textAlign: 'center',
+    lineHeight: 16,
   },
   selectedReportTypeDescription: {
     color: 'rgba(255,255,255,0.9)',
   },
-  pickerContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  picker: {
-    height: 50,
-  },
-  previewCard: {
+  statCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    padding: 16,
+    flex: 1,
+    minWidth: (width - 48) / 2 - 6,
+    borderLeftWidth: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  previewRow: {
+  statCardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
-  previewLabel: {
-    fontSize: 16,
+  statCardValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#333333',
   },
-  previewValue: {
+  statCardTitle: {
+    fontSize: 14,
+    color: '#777777',
+    fontWeight: '500',
+  },
+  distributionCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  distributionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  distributionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#27ae60',
+    color: '#333333',
+    marginLeft: 8,
   },
-  buttonContainer: {
+  distributionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 30,
+    alignItems: 'center',
+    paddingVertical: 8,
   },
-  generateButton: {
-    backgroundColor: '#27ae60',
+  distributionLabel: {
+    fontSize: 14,
+    color: '#333333',
+    flex: 1,
+  },
+  distributionValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  distributionValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginRight: 8,
+  },
+  distributionPercentage: {
+    fontSize: 12,
+    color: '#777777',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 32,
+  },
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
+    padding: 16,
     borderRadius: 12,
-    flex: 1,
-    marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  viewButton: {
+    backgroundColor: '#3498db',
   },
   exportButton: {
-    backgroundColor: '#3498db',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 15,
-    borderRadius: 12,
-    flex: 1,
-    marginLeft: 10,
+    backgroundColor: '#27ae60',
   },
   disabledButton: {
     backgroundColor: '#cccccc',
+    shadowOpacity: 0,
+    elevation: 0,
   },
-  generateButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  exportButtonText: {
+  actionButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
@@ -730,21 +840,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 20,
-    paddingTop: 40,
-    backgroundColor: '#f8f8f8',
+    paddingTop: 50,
+    backgroundColor: '#f8f9fa',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  closeButton: {
-    padding: 5,
+  modalHeaderButton: {
+    padding: 8,
+    borderRadius: 8,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333333',
-  },
-  shareButton: {
-    padding: 5,
   },
   reportContent: {
     flex: 1,
@@ -752,7 +860,7 @@ const styles = StyleSheet.create({
   },
   reportText: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 22,
     color: '#333333',
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
@@ -764,55 +872,62 @@ const styles = StyleSheet.create({
   },
   exportModalContent: {
     backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 25,
-    width: '85%',
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
     maxWidth: 400,
   },
   exportModalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333333',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   exportModalSubtitle: {
     fontSize: 14,
     color: '#777777',
     textAlign: 'center',
-    marginBottom: 25,
+    marginBottom: 24,
   },
   exportOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: 16,
     backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  exportOptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#3498db',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
   exportOptionText: {
-    marginLeft: 15,
     flex: 1,
   },
   exportOptionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#333333',
+    marginBottom: 2,
   },
   exportOptionDescription: {
     fontSize: 14,
     color: '#777777',
-    marginTop: 2,
   },
   cancelExportButton: {
-    padding: 15,
+    padding: 16,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   cancelExportText: {
     fontSize: 16,
     color: '#777777',
+    fontWeight: '500',
   },
 });

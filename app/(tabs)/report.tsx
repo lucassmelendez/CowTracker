@@ -80,20 +80,41 @@ export default function ReportPage() {
   // Hooks para obtener datos
   const { data: farms, loading: farmsLoading } = useUserFarms();
   const { data: allCattle, loading: cattleLoading } = useAllCattleWithFarmInfo();
-  const { data: farmCattle } = useFarmCattle(selectedFarm?._id || null);
+  const { data: farmCattle, loading: farmCattleLoading, refresh: refreshFarmCattle } = useFarmCattle(selectedFarm?._id || null);
 
+  // Efecto para regenerar datos cuando cambia la granja seleccionada
+  useEffect(() => {
+    if (selectedFarm?._id) {
+      // Refrescar datos de la granja específica
+      refreshFarmCattle();
+    }
+  }, [selectedFarm?._id]);
+
+  // Efecto para generar datos del reporte cuando cambian los datos
   useEffect(() => {
     if (farms && allCattle) {
+      // Esperar a que los datos de la granja específica estén listos
+      if (selectedFarm && farmCattleLoading) {
+        return; // No generar datos hasta que terminen de cargar
+      }
       generateReportData();
     }
-  }, [farms, allCattle, selectedFarm]);
+  }, [farms, allCattle, farmCattle, selectedFarm, farmCattleLoading]);
 
   const generateReportData = async () => {
     if (!farms || !allCattle) return;
 
     setLoading(true);
     try {
-      const cattleData = selectedFarm ? farmCattle || [] : allCattle;
+      // Usar los datos correctos según la granja seleccionada
+      let cattleData;
+      if (selectedFarm) {
+        // Si hay granja seleccionada, usar farmCattle (que puede estar cargando)
+        cattleData = farmCattle || [];
+      } else {
+        // Si no hay granja seleccionada, usar todos los datos
+        cattleData = allCattle;
+      }
       
       const data: ReportData = {
         totalCattle: cattleData.length,
@@ -139,6 +160,12 @@ export default function ReportPage() {
       cattleData.forEach(cattle => {
         const gender = cattle.genero?.descripcion || cattle.gender || 'No especificado';
         data.cattleByGender[gender] = (data.cattleByGender[gender] || 0) + 1;
+      });
+
+      // Agrupar por raza
+      cattleData.forEach(cattle => {
+        const breed = cattle.raza || cattle.breed || 'No especificado';
+        data.cattleByBreed[breed] = (data.cattleByBreed[breed] || 0) + 1;
       });
 
       // Contar registros médicos
@@ -223,6 +250,11 @@ DISTRIBUCIÓN POR GÉNERO
 -----------------------
 ${Object.entries(data.cattleByGender).map(([gender, count]) => 
   `• ${gender}: ${count} animales`).join('\n')}
+
+DISTRIBUCIÓN POR RAZA
+---------------------
+${Object.entries(data.cattleByBreed).map(([breed, count]) => 
+  `• ${breed}: ${count} animales`).join('\n')}
 
 ---
 Informe generado por CowTracker
@@ -412,11 +444,14 @@ ${date}
     </View>
   );
 
-  if (farmsLoading || cattleLoading) {
+  // Mostrar loading si están cargando datos críticos
+  if (farmsLoading || cattleLoading || (selectedFarm && farmCattleLoading)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#27ae60" />
-        <Text style={styles.loadingText}>Cargando datos...</Text>
+        <Text style={styles.loadingText}>
+          {selectedFarm ? `Cargando datos de ${selectedFarm.name}...` : 'Cargando datos...'}
+        </Text>
       </View>
     );
   }
@@ -496,6 +531,25 @@ ${date}
               {Object.entries(reportData.cattleByGender).map(([gender, count]) => (
                 <View key={gender} style={styles.distributionItem}>
                   <Text style={styles.distributionLabel}>{gender}</Text>
+                  <View style={styles.distributionValueContainer}>
+                    <Text style={styles.distributionValue}>{count}</Text>
+                    <Text style={styles.distributionPercentage}>
+                      ({((count/reportData.totalCattle)*100).toFixed(1)}%)
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Razas */}
+            <View style={styles.distributionCard}>
+              <View style={styles.distributionHeader}>
+                <Ionicons name="paw" size={20} color="#e67e22" />
+                <Text style={styles.distributionTitle}>Razas</Text>
+              </View>
+              {Object.entries(reportData.cattleByBreed).slice(0, 5).map(([breed, count]) => (
+                <View key={breed} style={styles.distributionItem}>
+                  <Text style={styles.distributionLabel}>{breed}</Text>
                   <View style={styles.distributionValueContainer}>
                     <Text style={styles.distributionValue}>{count}</Text>
                     <Text style={styles.distributionPercentage}>
@@ -626,6 +680,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#777777',
     marginTop: 10,
+    textAlign: 'center',
   },
   content: {
     flex: 1,

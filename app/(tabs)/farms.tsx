@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
 import api from '../../lib/services/api';
 
 interface Farm {
@@ -37,8 +38,6 @@ interface Veterinarian {
 
 export default function FarmsPage() {
   const router = useRouter();
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
   const [farmWorkers, setFarmWorkers] = useState<Worker[]>([]);
@@ -63,6 +62,20 @@ export default function FarmsPage() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
 
+  // Usar hooks con caché
+  const { 
+    data: farms, 
+    loading: farmsLoading, 
+    error: farmsError,
+    refresh: refreshFarms 
+  } = useUserFarms();
+
+  // Ya no necesitamos los hooks de mutación, solo el invalidateCache
+  const { invalidateCache } = useCacheManager();
+
+  // Estado de carga simplificado
+  const loading = farmsLoading;
+
   const showModal = (message: string) => {
     setModalMessage(message);
     setMessageModalVisible(true);
@@ -79,56 +92,8 @@ export default function FarmsPage() {
   };
 
   useEffect(() => {
-    loadFarms();
+    refreshFarms();
   }, []);
-
-  const loadFarms = async () => {
-    try {
-      setLoading(true);
-      setErrorMessage('')    
-      // Usar la API en lugar de Firestore directamente
-      const response = await api.farms.getAll();
-      
-      // Validar la respuesta
-      if (!response || !Array.isArray(response)) {
-        console.warn('Respuesta de API inválida:', response);
-        setErrorMessage('Formato de datos inválido');
-        setFarms([]);
-        return;
-      }
-      
-      // Procesar y validar cada granja
-      const processedFarms = response.map((farm: any) => {
-        const farmId = farm._id || farm.id_finca || farm.id;
-        const farmName = farm.name || farm.nombre;
-        
-        if (!farmId) {
-          console.warn('Granja sin ID encontrada:', farm);
-        }
-        if (!farmName) {
-          console.warn('Granja sin nombre encontrada:', farm);
-        }
-        
-        return {
-          ...farm,
-          _id: farmId || `temp-${Math.random().toString(36).substring(2, 9)}`,
-          name: farmName || 'Granja sin nombre',
-          // Asegurar que tenemos todas las propiedades necesarias
-          size: farm.size || farm.tamano || 0,
-          location: farm.location || farm.ubicacion || 'Ubicación no especificada',
-          cattleCount: farm.cattleCount || 0
-        };
-      });
-      
-      setFarms(processedFarms);
-    } catch (error: any) {
-      console.error('Error al obtener granjas:', error);
-      setErrorMessage('No se pudieron cargar las granjas: ' + (error.message || 'Error desconocido'));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
 
   const handleCreateFarm = async () => {
     try {
@@ -140,10 +105,10 @@ export default function FarmsPage() {
 
       // Adaptar datos al formato que espera el backend
       const farmData = {
-        name: formData.name.trim(), // El backend traducirá esto a nombre
-        nombre: formData.name.trim(), // Agregar también nombre para compatibilidad
-        size: formData.size ? parseInt(formData.size) : 0, // El backend traducirá esto a tamano
-        tamano: formData.size ? parseInt(formData.size) : 0, // Agregar también tamano para compatibilidad
+        name: formData.name.trim(),
+        nombre: formData.name.trim(),
+        size: formData.size ? parseInt(formData.size) : 0,
+        tamano: formData.size ? parseInt(formData.size) : 0,
       };
 
       let response;
@@ -158,10 +123,11 @@ export default function FarmsPage() {
       
       setModalVisible(false);
       resetForm();
-      // Recargar las granjas después de un breve retraso para dar tiempo a que se actualice el backend
-      setTimeout(() => {
-        loadFarms();
-      }, 500);
+      
+      // Invalidar caché para que se reflejen los cambios
+      await invalidateCache('farms');
+      await invalidateCache('cattle');
+      await refreshFarms();
     } catch (error: any) {
       console.error('Error al crear/actualizar granja:', error);
       const errorMsg = error.message || 'Error al guardar la granja';
@@ -174,8 +140,12 @@ export default function FarmsPage() {
     try {
       await api.farms.delete(farmId);
       closeDeleteModal();
-      loadFarms();
       showModal('Granja eliminada correctamente');
+      
+      // Invalidar caché para que se reflejen los cambios
+      await invalidateCache('farms');
+      await invalidateCache('cattle');
+      await refreshFarms();
     } catch (error: any) {
       console.error('Error al eliminar granja:', error);
       Alert.alert('Error', 'No se pudo eliminar la granja');

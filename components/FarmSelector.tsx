@@ -54,13 +54,6 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
   const loading = userFarmsLoading || allFarmsLoading;
   const error = userFarmsError || allFarmsError;
 
-  // Seleccionar automáticamente la primera granja si no hay ninguna seleccionada
-  useEffect(() => {
-    if (!selectedFarm && farms && farms.length > 0) {
-      onSelectFarm(farms[0]);
-    }
-  }, [farms, selectedFarm, onSelectFarm]);
-
   // Refrescar datos cuando se abre el modal
   useEffect(() => {
     if (modalVisible && userInfo?.uid) {
@@ -68,6 +61,19 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
       refreshAllFarms();
     }
   }, [modalVisible, userInfo?.uid, refreshUserFarms, refreshAllFarms]);
+
+  // Efecto adicional para refrescar automáticamente cuando cambian los datos
+  useEffect(() => {
+    console.log('FarmSelector - Datos de granjas actualizados');
+    console.log('FarmSelector - Granjas de usuario:', userFarms?.length || 0);
+    console.log('FarmSelector - Todas las granjas:', allFarms?.length || 0);
+    
+    // Si no hay granja seleccionada y hay granjas disponibles, seleccionar la primera
+    if (!selectedFarm && farms && farms.length > 0) {
+      console.log('FarmSelector - Seleccionando primera granja automáticamente:', farms[0]);
+      onSelectFarm(farms[0]);
+    }
+  }, [userFarms, allFarms, farms, selectedFarm, onSelectFarm]);
 
   const handleSelectFarm = (farm: Farm): void => {
     onSelectFarm(farm);

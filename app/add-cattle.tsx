@@ -15,6 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
 import api from '../lib/services/api';
 import { supabase } from '../lib/config/supabase';
+import { useCacheManager } from '../hooks/useCachedData';
 
 interface Farm {
   _id: string;
@@ -48,6 +49,8 @@ export default function AddCattlePage() {
   
   const { userInfo } = useAuth();
   
+  const { invalidateCache } = useCacheManager();
+
   // Estado para el manejo de errores y advertencias
   const [showCattleWarning, setShowCattleWarning] = useState(false);
   const [cattleCount, setCattleCount] = useState(0);
@@ -341,89 +344,96 @@ export default function AddCattlePage() {
         return;
       }
 
-      try {
-        // Convertir selectedFarmId a número si es necesario
-        const farmIdNumeric = parseInt(selectedFarmId) || selectedFarmId;
+      // Convertir selectedFarmId a número si es necesario
+      const farmIdNumeric = parseInt(selectedFarmId) || selectedFarmId;
 
-        if (isEditMode) {
-          // Actualizar ganado existente usando la API
-          const updateData = {
-            identificationNumber: identifier,
-            name: name,
-            gender: gender,
-            weight: weight ? parseFloat(weight) : undefined,
-            notes: notes,
-            purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
-            healthStatus: healthStatus,
-            tipoProduccion: tipoProduccion,
-            farmId: farmIdNumeric.toString()
-          };
+      if (isEditMode) {
+        // Actualizar ganado existente usando la API directa
+        const updateData = {
+          identificationNumber: identifier,
+          name: name,
+          gender: gender,
+          weight: weight ? parseFloat(weight) : undefined,
+          notes: notes,
+          purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
+          healthStatus: healthStatus,
+          tipoProduccion: tipoProduccion,
+          farmId: farmIdNumeric.toString()
+        };
 
-          await api.cattle.update(cattleId!, updateData);
-          Alert.alert('Éxito', 'Ganado actualizado correctamente');
-        } else {
-          // Crear nuevo ganado
-          // Primero crear la información veterinaria
-          const { data: infoVetData, error: infoVetError } = await supabase
-            .from('informacion_veterinaria')
-            .insert({
-              fecha_tratamiento: new Date().toISOString(),
-              diagnostico: healthStatus === 'Enfermo' ? 'Requiere revisión' : 'Sin diagnóstico',
-              tratamiento: '',
-              nota: notes || ''
-            })
-            .select()
-            .single();
-
-          if (infoVetError) throw infoVetError;
-
-          // Crear estructura de datos para el ganado
-          const cattleData = {
-            nombre: name,
-            numero_identificacion: parseInt(identifier),
-            precio_compra: parseFloat(purchasePrice) || 0,
-            nota: notes || '',
-            id_finca: farmIdNumeric,
-            id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
-            id_genero: gender === 'Macho' ? 1 : 2,
-            id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
-            id_produccion: tipoProduccion === 'leche' ? 1 : 2
-          };
-          // Insertar en la tabla ganado
-          const { data, error } = await supabase
-            .from('ganado')
-            .insert([cattleData])
-            .select();
-
-          if (error) {
-            console.error('Error de Supabase al insertar ganado:', error);
-            throw error;
-          }
-          Alert.alert('Éxito', 'Ganado registrado correctamente');
-        }
-
+        await api.cattle.update(cattleId!, updateData);
+        Alert.alert('Éxito', 'Ganado actualizado correctamente');
+        
+        // Invalidar caché para que se reflejen los cambios
+        await invalidateCache('cattle');
+        await invalidateCache('farms');
+        
         router.back();
-      } catch (supabaseError: any) {
-        console.error('Error al registrar ganado:', supabaseError);
+      } else {
+        // Crear nuevo ganado usando Supabase directo (método original que funcionaba)
+        // Primero crear la información veterinaria
+        const { data: infoVetData, error: infoVetError } = await supabase
+          .from('informacion_veterinaria')
+          .insert({
+            fecha_tratamiento: new Date().toISOString(),
+            diagnostico: healthStatus === 'Enfermo' ? 'Requiere revisión' : 'Sin diagnóstico',
+            tratamiento: '',
+            nota: notes || ''
+          })
+          .select()
+          .single();
+
+        if (infoVetError) throw infoVetError;
+
+        // Crear estructura de datos para el ganado
+        const cattleData = {
+          nombre: name,
+          numero_identificacion: parseInt(identifier),
+          precio_compra: parseFloat(purchasePrice) || 0,
+          nota: notes || '',
+          id_finca: farmIdNumeric,
+          id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
+          id_genero: gender === 'Macho' ? 1 : 2,
+          id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
+          id_produccion: tipoProduccion === 'leche' ? 1 : 2
+        };
         
-        // Proporcionar mensajes de error más específicos
-        let errorMessage = 'No se pudo registrar el ganado. ';
-        
-        if (supabaseError.code === '23503') {
-          errorMessage += 'La granja seleccionada no es válida.';
-        } else if (supabaseError.code === '23505') {
-          errorMessage += 'El número de identificación ya existe.';
-        } else if (supabaseError.message) {
-          errorMessage += supabaseError.message;
-        } else {
-          errorMessage += 'Por favor, intente nuevamente.';
+        // Insertar en la tabla ganado
+        const { data, error } = await supabase
+          .from('ganado')
+          .insert([cattleData])
+          .select();
+
+        if (error) {
+          console.error('Error de Supabase al insertar ganado:', error);
+          throw error;
         }
         
-        Alert.alert('Error', errorMessage);
+        Alert.alert('Éxito', 'Ganado registrado correctamente');
+        
+        // Invalidar caché para que se reflejen los cambios
+        await invalidateCache('cattle');
+        await invalidateCache('farms');
+        
+        router.back();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al guardar ganado:', error);
-      Alert.alert('Error', 'No se pudo guardar el ganado. Inténtalo de nuevo.');
+      
+      // Proporcionar mensajes de error más específicos
+      let errorMessage = 'No se pudo registrar el ganado. ';
+      
+      if (error.code === '23503') {
+        errorMessage += 'La granja seleccionada no es válida.';
+      } else if (error.code === '23505') {
+        errorMessage += 'El número de identificación ya existe.';
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Por favor, intente nuevamente.';
+      }
+      
+      Alert.alert('Error', errorMessage);
     }
   };
 
@@ -448,16 +458,22 @@ export default function AddCattlePage() {
     try {
       if (!cattleId) return;
       
+      // Usar Supabase directo (método original que funcionaba)
       const { error } = await supabase
         .from('ganado')
         .delete()
         .eq('id_ganado', cattleId);
       
-    if (error) throw error;
+      if (error) throw error;
       
       Alert.alert('Éxito', 'Ganado eliminado correctamente');
+      
+      // Invalidar caché para que se reflejen los cambios
+      await invalidateCache('cattle');
+      await invalidateCache('farms');
+      
       router.back();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al eliminar ganado:', error);
       Alert.alert('Error', 'No se pudo eliminar el ganado. Inténtalo de nuevo.');
     }

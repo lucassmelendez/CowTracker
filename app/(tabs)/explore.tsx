@@ -96,19 +96,31 @@ export default function CattleTab() {
     }
   };
 
-  // Actualizar datos cuando cambia la granja seleccionada
+  // Refrescar datos cuando la pantalla obtiene foco
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Pantalla obtuvo foco, refrescando datos...');
+      // Refrescar inmediatamente sin esperar
+      const refreshData = async () => {
+        if (isShowingAllFarms) {
+          await Promise.all([refreshAllCattle(), refreshFarms()]);
+        } else {
+          await refreshFarmCattle();
+        }
+      };
+      
+      refreshData();
+    }, [selectedFarm, isShowingAllFarms, refreshAllCattle, refreshFarms, refreshFarmCattle])
+  );
+
+  // Agregar un efecto adicional para refrescar cuando cambian los datos del caché
   useEffect(() => {
-    console.log('Granja seleccionada:', selectedFarm);
-    console.log('Es todas las granjas:', isShowingAllFarms);
-    console.log('ID de granja seleccionada:', selectedFarmId);
-    
+    console.log('Datos del caché cambiaron, actualizando vista...');
     if (isShowingAllFarms) {
-      // Mostrar todo el ganado con información de granja
       console.log('Mostrando todo el ganado:', allCattleWithFarmInfo?.length || 0);
       console.log('Datos de todo el ganado:', allCattleWithFarmInfo);
       setCattle(allCattleWithFarmInfo || []);
     } else {
-      // Mostrar ganado de la granja específica
       console.log('Mostrando ganado de granja específica:', farmCattle?.length || 0);
       console.log('Datos del ganado de la granja:', farmCattle);
       
@@ -121,7 +133,25 @@ export default function CattleTab() {
       
       setCattle(farmCattle || []);
     }
-  }, [selectedFarm, allCattleWithFarmInfo, farmCattle, isShowingAllFarms, selectedFarmId]);
+  }, [allCattleWithFarmInfo, farmCattle, isShowingAllFarms]);
+
+  // Efecto separado para manejar cambios en la granja seleccionada
+  useEffect(() => {
+    console.log('Granja seleccionada cambió:', selectedFarm);
+    console.log('Es todas las granjas:', isShowingAllFarms);
+    console.log('ID de granja seleccionada:', selectedFarmId);
+    
+    // Refrescar datos cuando cambia la granja seleccionada
+    const refreshOnFarmChange = async () => {
+      if (isShowingAllFarms) {
+        await refreshAllCattle();
+      } else if (selectedFarmId) {
+        await refreshFarmCattle();
+      }
+    };
+    
+    refreshOnFarmChange();
+  }, [selectedFarm, selectedFarmId, isShowingAllFarms]);
 
   // Manejar errores
   useEffect(() => {
@@ -135,19 +165,6 @@ export default function CattleTab() {
       setError(null);
     }
   }, [dataError]);
-
-  // Refrescar datos cuando la pantalla obtiene foco
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log('Pantalla obtuvo foco, refrescando datos...');
-      if (isShowingAllFarms) {
-        refreshAllCattle();
-        refreshFarms();
-      } else {
-        refreshFarmCattle();
-      }
-    }, [selectedFarm, isShowingAllFarms, refreshAllCattle, refreshFarms, refreshFarmCattle])
-  );
 
   const onRefresh = async () => {
     console.log('Refrescando manualmente...');
@@ -240,7 +257,7 @@ export default function CattleTab() {
             <Text style={styles.statusText}>{healthStatusText}</Text>
           </View>
         </View>
-        
+
         <View style={styles.cattleDetails}>
           <Text style={styles.detailText}>Granja: {farmName}</Text>
           <Text style={styles.detailText}>Producción: {productionText}</Text>
@@ -273,14 +290,14 @@ export default function CattleTab() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={styles.container}>
+        <View style={styles.header}>
         <Text style={styles.title}>Ganado</Text>
         <Text style={styles.subtitle}>{getSubtitle()}</Text>
         {error && (
           <Text style={styles.errorText}>{error}</Text>
         )}
-      </View>
+        </View>
 
       <FlatList
         data={cattle}

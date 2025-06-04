@@ -1,4 +1,4 @@
-import { UserInfo, Farm, UserRoles } from '../index';
+import { UserInfo, Farm, UserRoles } from '../types';
 
 export const USER_ROLES = {
   ADMIN: 'admin' as const,       

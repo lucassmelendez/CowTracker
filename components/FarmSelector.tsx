@@ -10,8 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
-import api from '../lib/services/api';
 import { useRouter } from 'expo-router';
+import { useUserFarms, useAllFarms } from '../hooks/useCachedData';
 
 interface Farm {
   _id: string;
@@ -32,63 +32,42 @@ interface RenderFarmItemProps {
 const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm }) => {
   const { userInfo } = useAuth();
   const router = useRouter();
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState<number>(0);
+  
+  // Usar hooks con caché
+  const { 
+    data: userFarms, 
+    loading: userFarmsLoading, 
+    error: userFarmsError,
+    refresh: refreshUserFarms 
+  } = useUserFarms();
+  
+  const { 
+    data: allFarms, 
+    loading: allFarmsLoading, 
+    error: allFarmsError,
+    refresh: refreshAllFarms 
+  } = useAllFarms();
 
-  useEffect(() => { 
-    if (userInfo && userInfo.token) {
-      setLoading(true);
-      loadFarms();
-    } else {
-      if (retryCount < 3) {
-        const timer = setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-        }, 1000);
-        
-        return () => clearTimeout(timer);
-      } else if (retryCount === 3) {
-        setLoading(false);
-        setError('Fallo al cargar granjas');
-      }
+  // Determinar qué granjas mostrar y el estado de carga
+  const farms = userFarms && userFarms.length > 0 ? userFarms : (allFarms || []);
+  const loading = userFarmsLoading || allFarmsLoading;
+  const error = userFarmsError || allFarmsError;
+
+  // Seleccionar automáticamente la primera granja si no hay ninguna seleccionada
+  useEffect(() => {
+    if (!selectedFarm && farms && farms.length > 0) {
+      onSelectFarm(farms[0]);
     }
-  }, [userInfo, retryCount]);
+  }, [farms, selectedFarm, onSelectFarm]);
 
+  // Refrescar datos cuando se abre el modal
   useEffect(() => {
     if (modalVisible && userInfo?.uid) {
-      loadFarms();
+      refreshUserFarms();
+      refreshAllFarms();
     }
-  }, [modalVisible]);
-
-  const loadFarms = async (): Promise<void> => {
-    try {
-      if (!loading) setLoading(true);
-      setError(null);
-      
-      const farmsData = await api.farms.getUserFarms();
-      
-      if (!farmsData || farmsData.length === 0) {
-        const allFarmsData = await api.farms.getAll();
-        setFarms(allFarmsData || []);
-        
-        if (!selectedFarm && allFarmsData && allFarmsData.length > 0) {
-          onSelectFarm(allFarmsData[0]);
-        }
-      } else {
-        setFarms(farmsData);
-        
-        if (!selectedFarm && farmsData.length > 0) {
-          onSelectFarm(farmsData[0]);
-        }
-      }
-    } catch (err) {
-      setError('No se pudieron cargar las granjas');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [modalVisible, userInfo?.uid, refreshUserFarms, refreshAllFarms]);
 
   const handleSelectFarm = (farm: Farm): void => {
     onSelectFarm(farm);
@@ -98,6 +77,10 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
   const handleAddFarm = (): void => {
     setModalVisible(false);
     router.push('/farms');
+  };
+
+  const handleRefresh = async (): Promise<void> => {
+    await Promise.all([refreshUserFarms(), refreshAllFarms()]);
   };
 
   const renderFarmItem = ({ item }: RenderFarmItemProps) => {
@@ -142,7 +125,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
 
   if (error) {
     return (
-      <TouchableOpacity style={styles.selectorButton} onPress={loadFarms}>
+      <TouchableOpacity style={styles.selectorButton} onPress={handleRefresh}>
         <Ionicons name="alert-circle" size={18} color="#ffffff" />
         <Text style={styles.errorText}>Error</Text>
         <Ionicons name="refresh" size={16} color="#ffffff" />
@@ -206,8 +189,8 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
               style={styles.addFarmButton}
               onPress={handleAddFarm}
             >
-              <Text style={styles.addFarmButtonText}>Añadir nueva granja</Text>
-              <Ionicons name="add-circle" size={18} color="#fff" />
+              <Ionicons name="add" size={20} color="#ffffff" />
+              <Text style={styles.addFarmText}>Añadir nueva granja</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -271,6 +254,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  modalHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  refreshButton: {
+    padding: 5,
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -326,6 +317,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 15,
+  },
+  addFarmText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   addFarmButtonText: {
     color: '#fff',

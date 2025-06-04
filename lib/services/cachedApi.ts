@@ -1,0 +1,368 @@
+import api from './api';
+import cacheManager, { CacheConfig } from './cacheManager';
+import { 
+  Farm, 
+  CattleItem, 
+  UserInfo, 
+  MedicalRecord,
+  RegisterData,
+  LoginCredentials,
+  UpdateProfileData
+} from '../types';
+
+// Configuraciones de caché por tipo de datos
+const CACHE_CONFIGS: Record<string, CacheConfig> = {
+  farms: { ttl: 10 * 60 * 1000 }, // 10 minutos para granjas
+  cattle: { ttl: 5 * 60 * 1000 }, // 5 minutos para ganado
+  users: { ttl: 15 * 60 * 1000 }, // 15 minutos para usuarios
+  medical: { ttl: 30 * 60 * 1000 }, // 30 minutos para registros médicos
+};
+
+class CachedApiService {
+  // ==================== FARMS API ====================
+  
+  async getFarms(): Promise<Farm[]> {
+    const cacheKey = 'farms/all';
+    
+    // Intentar obtener del caché primero
+    const cachedData = await cacheManager.get<Farm[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // Si no está en caché, hacer petición a la API
+    const data = await api.farms.getAll();
+    
+    // Guardar en caché
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.farms);
+    
+    return data;
+  }
+
+  async getUserFarms(): Promise<Farm[]> {
+    const cacheKey = 'farms/user';
+    
+    const cachedData = await cacheManager.get<Farm[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.farms.getUserFarms();
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.farms);
+    
+    return data;
+  }
+
+  async getFarmById(id: string): Promise<Farm> {
+    const cacheKey = 'farms/by-id';
+    const params = { id };
+    
+    const cachedData = await cacheManager.get<Farm>(cacheKey, params);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.farms.getById(id);
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.farms, params);
+    
+    return data;
+  }
+
+  async createFarm(farmData: Partial<Farm>): Promise<Farm> {
+    const data = await api.farms.create(farmData);
+    
+    // Invalidar caché de granjas después de crear
+    await cacheManager.invalidate('farms');
+    
+    return data;
+  }
+
+  async updateFarm(id: string, farmData: Partial<Farm>): Promise<Farm> {
+    const data = await api.farms.update(id, farmData);
+    
+    // Invalidar caché de granjas después de actualizar
+    await cacheManager.invalidate('farms');
+    
+    return data;
+  }
+
+  async deleteFarm(id: string): Promise<void> {
+    await api.farms.delete(id);
+    
+    // Invalidar caché de granjas después de eliminar
+    await cacheManager.invalidate('farms');
+  }
+
+  // ==================== CATTLE API ====================
+
+  async getAllCattle(): Promise<CattleItem[]> {
+    const cacheKey = 'cattle/all';
+    
+    const cachedData = await cacheManager.get<CattleItem[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.cattle.getAll();
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.cattle);
+    
+    return data;
+  }
+
+  async getAllCattleWithFarmInfo(): Promise<CattleItem[]> {
+    const cacheKey = 'cattle/with-farm-info';
+    
+    const cachedData = await cacheManager.get<CattleItem[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.cattle.getAllWithFarmInfo();
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.cattle);
+    
+    return data;
+  }
+
+  async getCattleById(id: string | number): Promise<CattleItem> {
+    const cacheKey = 'cattle/by-id';
+    const params = { id: id.toString() };
+    
+    const cachedData = await cacheManager.get<CattleItem>(cacheKey, params);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.cattle.getById(id);
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.cattle, params);
+    
+    return data;
+  }
+
+  async getFarmCattle(farmId: string): Promise<CattleItem[]> {
+    const cacheKey = 'cattle/by-farm';
+    const params = { farmId };
+    
+    console.log('cachedApi.getFarmCattle - Buscando en caché para farmId:', farmId);
+    
+    const cachedData = await cacheManager.get<CattleItem[]>(cacheKey, params);
+    if (cachedData) {
+      console.log('cachedApi.getFarmCattle - Datos encontrados en caché:', cachedData.length, 'elementos');
+      console.log('cachedApi.getFarmCattle - Datos del caché:', cachedData);
+      return cachedData;
+    }
+
+    console.log('cachedApi.getFarmCattle - No hay datos en caché, consultando API...');
+    const response = await api.farms.getCattle(farmId);
+    console.log('cachedApi.getFarmCattle - Respuesta completa de la API:', response);
+    
+    // Extraer los datos del formato de respuesta de la API
+    let data: CattleItem[] = [];
+    if (Array.isArray(response)) {
+      data = response;
+    } else if (response && typeof response === 'object' && Array.isArray((response as any).data)) {
+      data = (response as any).data;
+    } else if (response && typeof response === 'object') {
+      // Intentar encontrar el array en diferentes propiedades posibles
+      const possibleArrays = ['data', 'cattle', 'items', 'results'];
+      for (const key of possibleArrays) {
+        if ((response as any)[key] && Array.isArray((response as any)[key])) {
+          data = (response as any)[key];
+          break;
+        }
+      }
+    }
+    
+    console.log('cachedApi.getFarmCattle - Datos extraídos para guardar en caché:', data?.length || 0, 'elementos');
+    console.log('cachedApi.getFarmCattle - Datos finales:', data);
+    
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.cattle, params);
+    
+    return data;
+  }
+
+  async createCattle(cattleData: Partial<CattleItem>): Promise<CattleItem> {
+    const data = await api.cattle.create(cattleData);
+    
+    // Invalidar caché de ganado después de crear
+    await cacheManager.invalidate('cattle');
+    
+    return data;
+  }
+
+  async updateCattle(id: string | number, cattleData: Partial<CattleItem>): Promise<CattleItem> {
+    const data = await api.cattle.update(id, cattleData);
+    
+    // Invalidar caché de ganado después de actualizar
+    await cacheManager.invalidate('cattle');
+    
+    return data;
+  }
+
+  async deleteCattle(id: string | number): Promise<void> {
+    await api.cattle.delete(id);
+    
+    // Invalidar caché de ganado después de eliminar
+    await cacheManager.invalidate('cattle');
+  }
+
+  // ==================== MEDICAL RECORDS API ====================
+
+  async getCattleMedicalRecords(cattleId: string | number): Promise<MedicalRecord[]> {
+    const cacheKey = 'medical/by-cattle';
+    const params = { cattleId: cattleId.toString() };
+    
+    const cachedData = await cacheManager.get<MedicalRecord[]>(cacheKey, params);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.cattle.getMedicalRecords(cattleId);
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.medical, params);
+    
+    return data;
+  }
+
+  async addMedicalRecord(cattleId: string | number, recordData: Partial<MedicalRecord>): Promise<MedicalRecord> {
+    const data = await api.cattle.addMedicalRecord(cattleId, recordData);
+    
+    // Invalidar caché de registros médicos después de agregar
+    await cacheManager.invalidate('medical');
+    
+    return data;
+  }
+
+  // ==================== USERS API ====================
+
+  async getAllUsers(): Promise<UserInfo[]> {
+    const cacheKey = 'users/all';
+    
+    const cachedData = await cacheManager.get<UserInfo[]>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.users.getAll();
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.users);
+    
+    return data;
+  }
+
+  async getUserProfile(): Promise<UserInfo> {
+    const cacheKey = 'users/profile';
+    
+    const cachedData = await cacheManager.get<UserInfo>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.users.getProfile();
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.users);
+    
+    return data;
+  }
+
+  async getFarmWorkers(farmId: string): Promise<UserInfo[]> {
+    const cacheKey = 'users/farm-workers';
+    const params = { farmId };
+    
+    const cachedData = await cacheManager.get<UserInfo[]>(cacheKey, params);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.farms.getWorkers(farmId);
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.users, params);
+    
+    return data;
+  }
+
+  async getFarmVeterinarians(farmId: string): Promise<UserInfo[]> {
+    const cacheKey = 'users/farm-vets';
+    const params = { farmId };
+    
+    const cachedData = await cacheManager.get<UserInfo[]>(cacheKey, params);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const data = await api.farms.getVeterinarians(farmId);
+    await cacheManager.set(cacheKey, data, CACHE_CONFIGS.users, params);
+    
+    return data;
+  }
+
+  // ==================== WRITE OPERATIONS (No cache, but invalidate) ====================
+
+  async registerUser(userData: RegisterData): Promise<any> {
+    const data = await api.users.register(userData);
+    await cacheManager.invalidate('users');
+    return data;
+  }
+
+  async loginUser(credentials: LoginCredentials): Promise<UserInfo> {
+    const data = await api.users.login(credentials);
+    // Limpiar caché al hacer login (nuevo usuario)
+    await cacheManager.clear();
+    return data;
+  }
+
+  async logoutUser(): Promise<void> {
+    await api.users.logout();
+    // Limpiar todo el caché al hacer logout
+    await cacheManager.clear();
+  }
+
+  async updateUserProfile(data: UpdateProfileData): Promise<UserInfo> {
+    const result = await api.users.updateProfile(data);
+    await cacheManager.invalidate('users');
+    return result;
+  }
+
+  async addFarmWorker(farmId: string, workerId: string): Promise<any> {
+    const data = await api.farms.addWorker(farmId, workerId);
+    await cacheManager.invalidate('users');
+    return data;
+  }
+
+  async removeFarmWorker(farmId: string, workerId: string): Promise<void> {
+    await api.farms.removeWorker(farmId, workerId);
+    await cacheManager.invalidate('users');
+  }
+
+  async addFarmVeterinarian(farmId: string, vetId: string): Promise<any> {
+    const data = await api.farms.addVeterinarian(farmId, vetId);
+    await cacheManager.invalidate('users');
+    return data;
+  }
+
+  async removeFarmVeterinarian(farmId: string, vetId: string): Promise<void> {
+    await api.farms.removeVeterinarian(farmId, vetId);
+    await cacheManager.invalidate('users');
+  }
+
+  // ==================== CACHE MANAGEMENT ====================
+
+  async clearCache(): Promise<void> {
+    await cacheManager.clear();
+  }
+
+  async invalidateCache(pattern: string): Promise<void> {
+    await cacheManager.invalidate(pattern);
+  }
+
+  async cleanupExpiredCache(): Promise<void> {
+    await cacheManager.cleanup();
+  }
+
+  getCacheStats() {
+    return cacheManager.getStats();
+  }
+
+  // ==================== DIRECT API ACCESS (for non-cached operations) ====================
+
+  get directApi() {
+    return api;
+  }
+}
+
+export default new CachedApiService(); 

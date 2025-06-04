@@ -311,15 +311,16 @@ export default function SalesPage() {
                   </Text>
                   <Ionicons name="calendar-outline" size={20} color="#666" />
                 </TouchableOpacity>
-                
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={formDate}
-                    mode="date"
-                    display="default"
-                    onChange={onChangeDate}
-                  />
-                )}
+                  <DateTimePickerModal
+                  isVisible={showDatePicker}
+                  mode="date"
+                  onConfirm={(date) => {
+                    setFormDate(date);
+                    setShowDatePicker(false);
+                  }}
+                  onCancel={() => setShowDatePicker(false)}
+                  date={formDate}
+                />
               </View>
               
               <View style={styles.formGroup}>

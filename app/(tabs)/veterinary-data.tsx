@@ -76,8 +76,10 @@ export default function VeterinaryDataPage() {
           farmName: selectedFarm.name
         }));
       }
-      
-      setCattle(cattleData);
+        // Filtrar elementos sin ID
+      const validCattleData = cattleData.filter(item => item && item._id);
+      console.log(`Datos filtrados: ${validCattleData.length} de ${cattleData.length}`);
+      setCattle(validCattleData);
       setDataLoaded(true);
     } catch (err) {
       console.error('Error cargando ganado:', err);
@@ -120,10 +122,9 @@ export default function VeterinaryDataPage() {
       return `Granja: ${item.farmId}`;
     };
 
-    return (
-      <TouchableOpacity
+    return (      <TouchableOpacity
         style={styles.cattleCard}
-        onPress={() => navigateToCattleDetail(item._id)}
+        onPress={() => item._id ? navigateToCattleDetail(item._id) : null}
       >
         <View style={styles.cattleHeader}>
           <Text style={styles.cattleIdentifier}>
@@ -153,11 +154,9 @@ export default function VeterinaryDataPage() {
             <Text style={styles.infoLabel}>Granja:</Text>
             <Text style={styles.infoValue}>{getFarmName()}</Text>
           </View>
-        </View>
-
-        <TouchableOpacity
+        </View>        <TouchableOpacity
           style={styles.addRecordButton}
-          onPress={() => navigateToAddVeterinaryRecord(item._id)}
+          onPress={() => item._id ? navigateToAddVeterinaryRecord(item._id) : null}
         >
           <Ionicons name="medical" size={16} color="#fff" />
           <Text style={styles.addRecordButtonText}>Agregar registro veterinario</Text>
@@ -222,11 +221,10 @@ export default function VeterinaryDataPage() {
           {getSubtitle()}
         </Text>
       </View>
-      
-      <FlatList
+        <FlatList
         data={cattle}
         renderItem={renderCattleItem}
-        keyExtractor={(item) => item._id.toString()}
+        keyExtractor={(item) => item._id ? item._id.toString() : Math.random().toString()}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={

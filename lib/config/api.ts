@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
-import { PROD_API_URL, isProd, LOCAL_IP } from './env';
 import { 
   ApiConfig,
   RegisterData, 
@@ -12,7 +11,17 @@ import {
   Farm, 
   MedicalRecord,
   ApiError,
-} from '../types';
+} from '../index';
+
+// ==================== CONFIGURACIÓN DE ENTORNO ====================
+// URL del backend en producción (Vercel) - desde variable de entorno
+const PROD_API_URL: string = process.env.EXPO_PUBLIC_PROD_API_URL || 'https://ct-backend-gray.vercel.app/api';
+
+// IP local para desarrollo - desde variable de entorno
+const LOCAL_IP: string = process.env.EXPO_PUBLIC_LOCAL_IP || '192.168.1.100';
+
+// Determinar si estamos en producción - desde variable de entorno
+const isProd: boolean = process.env.EXPO_PUBLIC_IS_PROD === 'true' || process.env.NODE_ENV === 'production';
 
 // ==================== CONFIGURACIÓN DE URL ====================
 let API_URL: string;
@@ -311,5 +320,6 @@ const apiService = {
   delete: (url: string, config?: any) => api.delete(url, config),
 };
 
-export { API_URL };
+// Exportar también las constantes de configuración
+export { API_URL, PROD_API_URL, LOCAL_IP, isProd };
 export default apiService; 

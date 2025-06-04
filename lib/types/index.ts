@@ -187,4 +187,35 @@ export interface FarmContextType {
   selectFarm: (farm: Farm) => void;
   clearSelectedFarm: () => void;
   loading: boolean;
+}
+
+// Tipos de informes
+export interface ReportData {
+  totalCattle: number;
+  totalFarms: number;
+  cattleByFarm: Record<string, number>;
+  cattleByHealth: Record<string, number>;
+  cattleByGender: Record<string, number>;
+  cattleByBreed: Record<string, number>;
+  medicalRecordsCount: number;
+  averageCattlePerFarm: number;
+}
+
+export interface CattleDetail {
+  id: string;
+  name: string;
+  identifier: string;
+  breed: string;
+  gender: string;
+  health: string;
+  farmName: string;
+  notes: string;
+}
+
+export interface CachedReportData {
+  reportData: ReportData;
+  cattleDetails: CattleDetail[];
+  farmId: string | null;
+  farmName: string;
+  timestamp: number;
 } 

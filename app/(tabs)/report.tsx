@@ -18,11 +18,13 @@ import {
   useUserFarms, 
   useAllCattle, 
   useAllCattleWithFarmInfo,
-  useFarmCattle 
+  useFarmCattle,
+  useReportData
 } from '../../hooks/useCachedData';
 import { useFarm } from '../../components/FarmContext';
 import api from '../../lib/services/api';
-import { ReportGenerator, ReportData, CattleDetail } from '../../lib/utils/reportGenerator';
+import { ReportGenerator } from '../../lib/utils/reportGenerator';
+import { ReportData, CattleDetail } from '../../lib/types';
 
 const { width } = Dimensions.get('window');
 
@@ -67,9 +69,6 @@ const reportTypes: ReportType[] = [
 
 export default function ReportPage() {
   const [selectedReportType, setSelectedReportType] = useState<string>('general');
-  const [reportData, setReportData] = useState<ReportData | null>(null);
-  const [cattleDetails, setCattleDetails] = useState<CattleDetail[]>([]);
-  const [loading, setLoading] = useState(false);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<string>('');
   const [exportModalVisible, setExportModalVisible] = useState(false);
@@ -77,42 +76,68 @@ export default function ReportPage() {
   // Usar el contexto de granja del header
   const { selectedFarm } = useFarm();
   
-  // Hooks para obtener datos
+  // Hooks para obtener datos base
   const { data: farms, loading: farmsLoading } = useUserFarms();
   const { data: allCattle, loading: cattleLoading } = useAllCattleWithFarmInfo();
   const { data: farmCattle, loading: farmCattleLoading, refresh: refreshFarmCattle } = useFarmCattle(selectedFarm?._id || null);
 
-  // Efecto para regenerar datos cuando cambia la granja seleccionada
+  // Hook para caché de informes
+  const {
+    reportData,
+    cattleDetails,
+    loading: reportLoading,
+    loadFromCache,
+    saveToCache,
+    invalidateCache,
+    isDataFresh,
+    setReportData,
+    setCattleDetails,
+    setLoading: setReportLoading,
+    setError: setReportError
+  } = useReportData(selectedFarm?._id || null);
+
+  // Efecto para cargar datos cuando cambia la granja
+  useEffect(() => {
+    const loadReportData = async () => {
+      // Intentar cargar desde caché primero
+      const cacheLoaded = await loadFromCache();
+      
+      if (cacheLoaded && isDataFresh()) {
+        console.log('Usando datos del caché (frescos)');
+        return;
+      }
+      
+      // Si no hay caché o los datos no están frescos, generar nuevos datos
+      console.log('Generando nuevos datos de informe');
+      await generateReportData();
+    };
+
+    if (farms && allCattle) {
+      // Esperar a que los datos de la granja específica estén listos
+      if (selectedFarm && farmCattleLoading) {
+        return;
+      }
+      loadReportData();
+    }
+  }, [farms, allCattle, farmCattle, selectedFarm, farmCattleLoading]);
+
+  // Efecto para refrescar datos de granja cuando cambia la selección
   useEffect(() => {
     if (selectedFarm?._id) {
-      // Refrescar datos de la granja específica
       refreshFarmCattle();
     }
   }, [selectedFarm?._id]);
 
-  // Efecto para generar datos del reporte cuando cambian los datos
-  useEffect(() => {
-    if (farms && allCattle) {
-      // Esperar a que los datos de la granja específica estén listos
-      if (selectedFarm && farmCattleLoading) {
-        return; // No generar datos hasta que terminen de cargar
-      }
-      generateReportData();
-    }
-  }, [farms, allCattle, farmCattle, selectedFarm, farmCattleLoading]);
-
   const generateReportData = async () => {
     if (!farms || !allCattle) return;
 
-    setLoading(true);
+    setReportLoading(true);
     try {
       // Usar los datos correctos según la granja seleccionada
       let cattleData;
       if (selectedFarm) {
-        // Si hay granja seleccionada, usar farmCattle (que puede estar cargando)
         cattleData = farmCattle || [];
       } else {
-        // Si no hay granja seleccionada, usar todos los datos
         cattleData = allCattle;
       }
       
@@ -138,7 +163,6 @@ export default function ReportPage() {
         farmName: cattle.finca?.nombre || cattle.farmName || 'Sin granja',
         notes: cattle.nota || cattle.notes || ''
       }));
-      setCattleDetails(details);
 
       // Agrupar ganado por granja
       if (selectedFarm) {
@@ -182,13 +206,26 @@ export default function ReportPage() {
       }
       data.medicalRecordsCount = totalMedicalRecords;
 
+      // Actualizar estado y guardar en caché
       setReportData(data);
+      setCattleDetails(details);
+      
+      const farmName = selectedFarm ? selectedFarm.name : 'Todas las granjas';
+      await saveToCache(data, details, farmName);
+      
     } catch (error) {
       console.error('Error generando datos del informe:', error);
+      setReportError('No se pudieron generar los datos del informe');
       Alert.alert('Error', 'No se pudieron generar los datos del informe');
     } finally {
-      setLoading(false);
+      setReportLoading(false);
     }
+  };
+
+  // Función para forzar actualización de datos
+  const refreshReportData = async () => {
+    await invalidateCache();
+    await generateReportData();
   };
 
   const generateReport = () => {
@@ -475,7 +512,7 @@ ${date}
         {/* Tipos de informe */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tipo de Informe</Text>
-          <FlatList
+      <FlatList
             data={reportTypes}
             renderItem={renderReportTypeItem}
             keyExtractor={item => item.id}
@@ -565,11 +602,11 @@ ${date}
         {/* Botones de acción */}
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.viewButton, loading && styles.disabledButton]}
+            style={[styles.actionButton, styles.viewButton, reportLoading && styles.disabledButton]}
             onPress={generateReport}
-            disabled={loading || !reportData}
+            disabled={reportLoading || !reportData}
           >
-            {loading ? (
+            {reportLoading ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
               <>
@@ -580,9 +617,9 @@ ${date}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, styles.exportButton, loading && styles.disabledButton]}
+            style={[styles.actionButton, styles.exportButton, reportLoading && styles.disabledButton]}
             onPress={() => setExportModalVisible(true)}
-            disabled={loading || !reportData}
+            disabled={reportLoading || !reportData}
           >
             <Ionicons name="download" size={20} color="#ffffff" />
             <Text style={styles.actionButtonText}>Exportar</Text>
@@ -652,13 +689,13 @@ ${date}
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+        <TouchableOpacity 
               style={styles.cancelExportButton} 
               onPress={() => setExportModalVisible(false)}
-            >
+        >
               <Text style={styles.cancelExportText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
+        </TouchableOpacity>
+      </View>
         </View>
       </Modal>
     </View>

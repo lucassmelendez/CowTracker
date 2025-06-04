@@ -85,8 +85,16 @@ export default function CattleDetailPage() {
 
   const handleDelete = async () => {
     try {
+      // Asegurar que cattleId sea del tipo correcto
+      const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
+      
+      if (!id) {
+        Alert.alert('Error', 'ID de ganado no válido');
+        return;
+      }
+
       // Usar el sistema de caché para eliminar la vaca
-      await cachedApi.deleteCattle(cattleId);
+      await cachedApi.deleteCattle(id);
 
       Alert.alert('Éxito', 'Ganado eliminado correctamente');
       router.back();

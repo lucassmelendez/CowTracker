@@ -91,7 +91,12 @@ export default function Admin() {
     
     setLoading(true);
     try {
-      const farmId = selectedFarm._id || selectedFarm.id_finca?.toString();
+      const farmId = (selectedFarm._id || selectedFarm.id_finca?.toString()) as string;
+      
+      if (!farmId) {
+        Alert.alert("Error", "ID de granja no válido");
+        return;
+      }
       
       if (selectedUser.type === 'worker') {
         // Usar cachedApi para eliminar trabajador (invalida caché automáticamente)

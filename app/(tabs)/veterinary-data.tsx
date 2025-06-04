@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import api from '../../lib/services/api';
+import api from '../../lib/config/api';
 import { useFarm } from '../../components/FarmContext';
 import { useFocusEffect } from '@react-navigation/native';
 

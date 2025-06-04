@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from './AuthContext';
-import api from '../lib/services/api';
+import api from '../lib/config/api';
 import { useRouter } from 'expo-router';
 
 interface Farm {

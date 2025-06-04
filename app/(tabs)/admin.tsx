@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../components/AuthContext';
 import { useFarm } from '../../components/FarmContext';
-import api from '../../lib/services/api';
+import api from '../../lib/config/api';
 
 export default function Admin() {
   const { userInfo } = useAuth();

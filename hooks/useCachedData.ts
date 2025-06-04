@@ -256,4 +256,82 @@ export function useCacheManager() {
     cleanupExpiredCache,
     getCacheStats,
   };
+}
+
+// Hook específico para datos de informes con caché
+export function useReportData(farmId: string | null) {
+  const [reportData, setReportData] = useState<import('../lib/types').ReportData | null>(null);
+  const [cattleDetails, setCattleDetails] = useState<import('../lib/types').CattleDetail[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+
+  // Función para cargar datos del caché
+  const loadFromCache = useCallback(async () => {
+    try {
+      const cachedData = await cachedApi.getCachedReportData(farmId);
+      if (cachedData) {
+        setReportData(cachedData.reportData);
+        setCattleDetails(cachedData.cattleDetails);
+        setLastUpdated(cachedData.timestamp);
+        console.log('Datos de informe cargados desde caché');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error al cargar datos del caché:', err);
+      return false;
+    }
+  }, [farmId]);
+
+  // Función para guardar datos en caché
+  const saveToCache = useCallback(async (
+    reportData: import('../lib/types').ReportData,
+    cattleDetails: import('../lib/types').CattleDetail[],
+    farmName: string
+  ) => {
+    try {
+      await cachedApi.setCachedReportData(farmId, reportData, cattleDetails, farmName);
+      setLastUpdated(Date.now());
+      console.log('Datos de informe guardados en caché');
+    } catch (err) {
+      console.error('Error al guardar datos en caché:', err);
+    }
+  }, [farmId]);
+
+  // Función para invalidar caché
+  const invalidateCache = useCallback(async () => {
+    try {
+      await cachedApi.invalidateReportCache(farmId);
+      setReportData(null);
+      setCattleDetails([]);
+      setLastUpdated(null);
+      console.log('Caché de informes invalidado');
+    } catch (err) {
+      console.error('Error al invalidar caché:', err);
+    }
+  }, [farmId]);
+
+  // Función para verificar si los datos están frescos (menos de 5 minutos)
+  const isDataFresh = useCallback(() => {
+    if (!lastUpdated) return false;
+    const fiveMinutes = 5 * 60 * 1000;
+    return (Date.now() - lastUpdated) < fiveMinutes;
+  }, [lastUpdated]);
+
+  return {
+    reportData,
+    cattleDetails,
+    loading,
+    error,
+    lastUpdated,
+    loadFromCache,
+    saveToCache,
+    invalidateCache,
+    isDataFresh,
+    setReportData,
+    setCattleDetails,
+    setLoading,
+    setError
+  };
 } 

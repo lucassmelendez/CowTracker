@@ -7,7 +7,10 @@ import {
   MedicalRecord,
   RegisterData,
   LoginCredentials,
-  UpdateProfileData
+  UpdateProfileData,
+  ReportData,
+  CattleDetail,
+  CachedReportData
 } from '../types';
 
 // Configuraciones de caché por tipo de datos
@@ -16,6 +19,7 @@ const CACHE_CONFIGS: Record<string, CacheConfig> = {
   cattle: { ttl: 5 * 60 * 1000 }, // 5 minutos para ganado
   users: { ttl: 15 * 60 * 1000 }, // 15 minutos para usuarios
   medical: { ttl: 30 * 60 * 1000 }, // 30 minutos para registros médicos
+  reports: { ttl: 5 * 60 * 1000 }, // 5 minutos para datos de informes
 };
 
 class CachedApiService {
@@ -356,6 +360,57 @@ class CachedApiService {
 
   getCacheStats() {
     return cacheManager.getStats();
+  }
+
+  // ==================== REPORTS CACHE ====================
+
+  async getCachedReportData(farmId: string | null): Promise<CachedReportData | null> {
+    const cacheKey = 'reports/data';
+    const params = { farmId: farmId || 'all' };
+    
+    const cachedData = await cacheManager.get<CachedReportData>(cacheKey, params);
+    if (cachedData) {
+      console.log('Datos de informe encontrados en caché para granja:', farmId || 'todas');
+      return cachedData;
+    }
+    
+    console.log('No hay datos de informe en caché para granja:', farmId || 'todas');
+    return null;
+  }
+
+  async setCachedReportData(
+    farmId: string | null, 
+    reportData: ReportData, 
+    cattleDetails: CattleDetail[],
+    farmName: string
+  ): Promise<void> {
+    const cacheKey = 'reports/data';
+    const params = { farmId: farmId || 'all' };
+    
+    const cachedReportData: CachedReportData = {
+      reportData,
+      cattleDetails,
+      farmId,
+      farmName,
+      timestamp: Date.now()
+    };
+    
+    await cacheManager.set(cacheKey, cachedReportData, CACHE_CONFIGS.reports, params);
+    console.log('Datos de informe guardados en caché para granja:', farmId || 'todas');
+  }
+
+  async invalidateReportCache(farmId?: string | null): Promise<void> {
+    if (farmId) {
+      // Invalidar caché específico de una granja
+      const cacheKey = 'reports/data';
+      const params = { farmId };
+      await cacheManager.invalidateKey(cacheKey, params);
+      console.log('Caché de informes invalidado para granja:', farmId);
+    } else {
+      // Invalidar todo el caché de informes
+      await cacheManager.invalidate('reports');
+      console.log('Todo el caché de informes invalidado');
+    }
   }
 
   // ==================== DIRECT API ACCESS (for non-cached operations) ====================

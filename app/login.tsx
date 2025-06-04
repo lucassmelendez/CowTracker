@@ -18,17 +18,55 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleLogin = async () => {
     if (!email || !password) {
       setLocalError('Por favor complete todos los campos');
       return;
     }
 
+    if (!validateEmail(email)) {
+      setLocalError('Por favor ingrese un email válido');
+      return;
+    }
+
+    if (password.length < 6) {
+      setLocalError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     setLocalError('');
+    
+    try {
+      await login(email, password);
+      // Navegar a la pantalla principal después del login exitoso
+      router.push('/(tabs)');
+    } catch (error: any) {
+      console.error('Error en login:', error);
+      setLocalError(error.message || 'Error al iniciar sesión. Por favor, inténtalo de nuevo.');
+    }
   };
 
   const navigateToRegister = () => {
     router.push('/register');
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    if (localError || error) {
+      setLocalError('');
+    }
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    if (localError || error) {
+      setLocalError('');
+    }
   };
 
   return (
@@ -36,7 +74,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollView}>
         <View style={styles.logoContainer}>
           <Text style={styles.logoEmoji}>🐄</Text>
-          <Text style={styles.title}>CowTracker</Text>
+          <Text style={styles.title}>Agro Control</Text>
           <Text style={styles.subtitle}>Gestión Inteligente de Ganado</Text>
         </View>
 
@@ -46,9 +84,10 @@ export default function LoginScreen() {
             style={styles.input}
             placeholder="Ingrese su email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoCorrect={false}
           />
 
           <Text style={styles.label}>Contraseña</Text>
@@ -56,8 +95,12 @@ export default function LoginScreen() {
             style={styles.input}
             placeholder="Ingrese su contraseña"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={handlePasswordChange}
             secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            onSubmitEditing={handleLogin}
+            returnKeyType="done"
           />
 
           {(localError || error) && (
@@ -65,7 +108,10 @@ export default function LoginScreen() {
           )}
 
           <TouchableOpacity 
-            style={styles.loginButton} 
+            style={[
+              styles.loginButton,
+              loading && styles.loginButtonDisabled
+            ]} 
             onPress={handleLogin}
             disabled={loading}
           >
@@ -118,6 +164,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   label: {
     fontSize: 16,
@@ -133,6 +187,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+    fontSize: 16,
   },
   loginButton: {
     backgroundColor: '#27ae60',
@@ -141,6 +196,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 15,
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#95a5a6',
+    opacity: 0.7,
   },
   loginButtonText: {
     color: '#ffffff',
@@ -166,5 +225,6 @@ const styles = StyleSheet.create({
     color: '#e74c3c',
     marginBottom: 10,
     textAlign: 'center',
+    fontSize: 14,
   },
 });

@@ -13,10 +13,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../components/AuthContext';
 import { useFarm } from '../../components/FarmContext';
 import api from '../../lib/services/api';
+import { useFarmWorkers, useFarmVeterinarians, useCacheManager } from '../../hooks/useCachedData';
+import cachedApi from '../../lib/services/cachedApi';
 
 export default function Admin() {
   const { userInfo } = useAuth();
   const { selectedFarm } = useFarm();
+  const { invalidateCache } = useCacheManager();
   
   const [loading, setLoading] = useState(true);
   const [generatingCode, setGeneratingCode] = useState(false);
@@ -31,54 +34,52 @@ export default function Admin() {
   const [generatedCode, setGeneratedCode] = useState('');
   const [codeExpiration, setCodeExpiration] = useState('');
   const [codeType, setCodeType] = useState('');
-  
+
+  // Determinar el ID de la granja seleccionada
+  const selectedFarmId = selectedFarm ? (selectedFarm.id_finca || selectedFarm._id) : null;
+
+  // Hooks de caché para trabajadores y veterinarios
+  const { 
+    data: cachedWorkers, 
+    loading: workersLoading, 
+    error: workersError,
+    refresh: refreshWorkers 
+  } = useFarmWorkers(selectedFarmId?.toString() || null);
+
+  const { 
+    data: cachedVeterinarians, 
+    loading: vetsLoading, 
+    error: vetsError,
+    refresh: refreshVeterinarians 
+  } = useFarmVeterinarians(selectedFarmId?.toString() || null);
+
+  // Actualizar estados locales cuando cambien los datos del caché
   useEffect(() => {
-    if (selectedFarm) {
-      const fincaId = selectedFarm.id_finca || selectedFarm._id;
-      loadPersonnel();
-    }
-  }, [selectedFarm]);
-  
-  const loadPersonnel = async () => {
-    if (!selectedFarm) return;
-    
-    setLoading(true);
-    try {
-      const fincaId = selectedFarm.id_finca || selectedFarm._id;
-      
-      // Cargar trabajadores
-      const workersResponse = await api.farms.getWorkers(fincaId);
-      
-      // Asegurarse de que workersResponse sea un array (ya no necesita .data)
-      const workersData = Array.isArray(workersResponse) ? workersResponse : [];
-      
-      setWorkers(workersData.map((worker: any) => ({
+    if (cachedWorkers) {
+      setWorkers(cachedWorkers.map((worker: any) => ({
         _id: worker.id_usuario || worker._id,
         name: worker.nombre_completo || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim(),
         email: worker.correo || 'Sin correo',
         role: 'trabajador'
       })));
-      
-      // Cargar veterinarios
-      const vetsResponse = await api.farms.getVeterinarians(fincaId);
-      
-      // Asegurarse de que vetsResponse sea un array (ya no necesita .data)
-      const vetsData = Array.isArray(vetsResponse) ? vetsResponse : [];
-      
-      setVets(vetsData.map((vet: any) => ({
+    }
+  }, [cachedWorkers]);
+
+  useEffect(() => {
+    if (cachedVeterinarians) {
+      setVets(cachedVeterinarians.map((vet: any) => ({
         _id: vet.id_usuario || vet._id,
         name: vet.nombre_completo || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim(),
         email: vet.correo || 'Sin correo',
         role: 'veterinario'
       })));
-
-    } catch (error) {
-      console.error("Error cargando personal:", error);
-      Alert.alert("Error", "No se pudo cargar la lista de personal");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [cachedVeterinarians]);
+
+  // Actualizar estado de carga
+  useEffect(() => {
+    setLoading(workersLoading || vetsLoading);
+  }, [workersLoading, vetsLoading]);
   
   const handleDelete = (person: any, type: string) => {
     setSelectedUser({ ...person, type });
@@ -90,12 +91,16 @@ export default function Admin() {
     
     setLoading(true);
     try {
+      const farmId = selectedFarm._id || selectedFarm.id_finca?.toString();
+      
       if (selectedUser.type === 'worker') {
-        await api.farms.removeWorker(selectedFarm._id, selectedUser._id);
-        setWorkers(workers.filter(w => w._id !== selectedUser._id));
+        // Usar cachedApi para eliminar trabajador (invalida caché automáticamente)
+        await cachedApi.removeFarmWorker(farmId, selectedUser._id);
+        await refreshWorkers();
       } else {
-        await api.farms.removeVeterinarian(selectedFarm._id, selectedUser._id);
-        setVets(vets.filter(v => v._id !== selectedUser._id));
+        // Usar cachedApi para eliminar veterinario (invalida caché automáticamente)
+        await cachedApi.removeFarmVeterinarian(farmId, selectedUser._id);
+        await refreshVeterinarians();
       }
       Alert.alert("Éxito", "Personal eliminado correctamente");
     } catch (error) {

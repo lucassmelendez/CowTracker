@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/services/api';
 import { supabase } from '../../lib/config/supabase';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
+import { useUserProfile, useCacheManager } from '../../hooks/useCachedData';
+import cachedApi from '../../lib/services/cachedApi';
 
 interface UserData {
   email: string;
@@ -24,6 +26,7 @@ interface UserData {
 export default function ProfilePage() {
   const { currentUser, userInfo, updateProfile, logout } = useAuth();
   const router = useRouter();
+  const { invalidateCache } = useCacheManager();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -40,14 +43,33 @@ export default function ProfilePage() {
   });
   const [formData, setFormData] = useState<UserData>({...userData});
 
+  // Hook de caché para el perfil del usuario
+  const { 
+    data: cachedUserProfile, 
+    loading: profileLoading, 
+    error: profileError,
+    refresh: refreshProfile 
+  } = useUserProfile();
+
   // Cargar datos del perfil al montar el componente
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
         setIsLoading(true);
-        // Obtener datos del usuario desde la API
-        const userResponse = await api.users.getProfile();
-        const userData = userResponse || userResponse;
+        
+        // Usar datos del caché si están disponibles
+        let userData = cachedUserProfile;
+        
+        // Si no hay datos en caché, intentar cargar desde la API
+        if (!userData) {
+          try {
+            userData = await cachedApi.getUserProfile();
+          } catch (error) {
+            console.error('Error al cargar perfil desde caché:', error);
+            // Fallback a la API directa
+            userData = await api.users.getProfile();
+          }
+        }
         
         if (userData) {
           const processedData: UserData = {
@@ -93,7 +115,12 @@ export default function ProfilePage() {
     };
 
     loadUserProfile();
-  }, [currentUser, userInfo]);
+  }, [cachedUserProfile, currentUser, userInfo]);
+
+  // Actualizar estado de carga basado en el hook de caché
+  useEffect(() => {
+    setIsLoading(profileLoading);
+  }, [profileLoading]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -119,8 +146,13 @@ export default function ProfilePage() {
       };
 
       setIsLoading(true);
+      
       // Usar la función correcta del contexto de autenticación
       await updateProfile(updateData);
+      
+      // Invalidar caché de usuarios para refrescar los datos
+      await invalidateCache('users');
+      await refreshProfile();
       
       // Actualizar los datos locales con los mismos valores
       setUserData({

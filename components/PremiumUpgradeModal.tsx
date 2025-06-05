@@ -69,6 +69,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
   // Estado para el modal de felicitaciones
   const [showCongratulations, setShowCongratulations] = useState<boolean>(false);
   const [congratulationsData, setCongratulationsData] = useState<any>(null);
+  const [isActivatingPremium, setIsActivatingPremium] = useState<boolean>(false);
 
   // Función para obtener la conversión de precio
   const fetchPriceConversion = async (): Promise<void> => {
@@ -209,6 +210,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
   const handlePaymentSuccess = async (paymentData: any) => {
     setShowWebView(false);
     setIsWebViewLoading(true);
+    setIsActivatingPremium(true);
     
     try {
       console.log('🔄 Iniciando proceso de activación Premium...');
@@ -218,26 +220,22 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       
       console.log('✅ Premium activado, iniciando navegación...');
       
-      // Cerrar el modal actual
-      onClose();
-      
       // Limpiar caché para que se cargue el nuevo estado
       console.log('🗑️ Limpiando caché...');
       await invalidateCache('users/profile');
       await invalidateCache('farms');
       
-      // Navegar al perfil
-      console.log('🧭 Navegando al perfil...');
-      router.push('/(tabs)/profile');
+      // Mostrar modal de felicitaciones inmediatamente
+      setCongratulationsData(paymentData);
+      setShowCongratulations(true);
+      setIsActivatingPremium(false);
       
-      // Mostrar modal de felicitaciones después de un breve delay
-      setTimeout(() => {
-        setCongratulationsData(paymentData);
-        setShowCongratulations(true);
-      }, 1000);
+      // Cerrar el modal de pago
+      onClose();
       
     } catch (error) {
       console.error('❌ Error al activar Premium:', error);
+      setIsActivatingPremium(false);
       Alert.alert(
         'Pago Procesado',
         'Tu pago fue procesado exitosamente, pero hubo un problema al activar Premium automáticamente. Por favor, contacta a soporte.',
@@ -258,6 +256,19 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
     setShowCongratulations(false);
     setCongratulationsData(null);
     console.log('🎊 Usuario confirmó modal de felicitaciones');
+    
+    // Navegar al perfil cuando el usuario cierre las felicitaciones
+    console.log('🧭 Navegando al perfil después de felicitaciones...');
+    try {
+      router.replace('/(tabs)/profile');
+    } catch (navError) {
+      console.error('❌ Error en navegación, intentando alternativa:', navError);
+      try {
+        router.push('/(tabs)/profile');
+      } catch (pushError) {
+        console.error('❌ Error en navegación alternativa:', pushError);
+      }
+    }
   };
 
   // Función para activar la cuenta Premium
@@ -393,7 +404,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       <Modal
         animationType="slide"
         transparent={true}
-        visible={visible && !showWebView}
+        visible={visible && !showWebView && !isActivatingPremium}
         onRequestClose={onClose}
       >
         <View style={styles.modalOverlay}>
@@ -572,6 +583,27 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
               }}
             />
           )}
+        </View>
+      </Modal>
+
+      {/* Modal de Activando Premium */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isActivatingPremium}
+        onRequestClose={() => {}} // No permitir cerrar
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.activatingContainer}>
+            <ActivityIndicator size="large" color="#27ae60" />
+            <Text style={styles.activatingTitle}>¡Pago Exitoso!</Text>
+            <Text style={styles.activatingText}>
+              Activando tu cuenta Premium...
+            </Text>
+            <Text style={styles.activatingSubtext}>
+              Por favor espera un momento
+            </Text>
+          </View>
         </View>
       </Modal>
 
@@ -777,6 +809,38 @@ const styles = StyleSheet.create({
   },
   webView: {
     flex: 1,
+  },
+  // Estilos para el modal de activación
+  activatingContainer: {
+    backgroundColor: '#fff',
+    padding: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+    minWidth: 280,
+  },
+  activatingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    marginTop: 20,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  activatingText: {
+    fontSize: 18,
+    color: '#2c3e50',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  activatingSubtext: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
   },
 });
 

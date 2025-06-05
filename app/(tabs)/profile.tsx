@@ -81,7 +81,7 @@ export default function ProfilePage() {
     workerText: createStyles('text-white text-xs font-bold'),
     upgradeButton: createStyles('bg-yellow-500 py-2 px-4 rounded-lg mt-2'),
     upgradeButtonText: createStyles('text-white text-sm font-semibold'),
-    infoText: createStyles('text-sm text-gray-600 text-center mt-2'),
+    helperText: createStyles('text-sm text-gray-600 text-center mt-2'),
   };
 
   // Cargar datos del perfil al montar el componente
@@ -107,10 +107,10 @@ export default function ProfilePage() {
         if (userData) {
           const processedData: UserData = {
             email: userData.email || '',
-            role: userData.rol?.nombre_rol || '',
-            roleDisplay: userData.rol?.nombre_rol === 'admin' ? 'Ganadero' : 
-                       userData.rol?.nombre_rol === 'trabajador' ? 'Trabajador' : 
-                       userData.rol?.nombre_rol === 'veterinario' ? 'Veterinario' : userData.rol?.nombre_rol || '',
+            role: userData.id_rol?.toString() || '',
+            roleDisplay: userData.id_rol === 1 ? 'Ganadero' : 
+                       userData.id_rol === 2 ? 'Trabajador' : 
+                       userData.id_rol === 3 ? 'Veterinario' : 'Usuario',
             primer_nombre: userData.primer_nombre || '',
             segundo_nombre: userData.segundo_nombre || '',
             primer_apellido: userData.primer_apellido || '',
@@ -128,16 +128,16 @@ export default function ProfilePage() {
         if (userInfo) {
           const fallbackData: UserData = {
             email: userInfo.email || currentUser?.email || '',
-            role: userInfo.rol?.nombre_rol || '',
-            roleDisplay: userInfo.rol?.nombre_rol === 'admin' ? 'Administrador' : 
-                  userInfo.rol?.nombre_rol === 'veterinario' ? 'Veterinario' :
-                  userInfo.rol?.nombre_rol === 'user' || userInfo.rol?.nombre_rol === 'trabajador' ? 'Trabajador' : 'Usuario',
+            role: userInfo.id_rol?.toString() || '',
+            roleDisplay: userInfo.id_rol === 1 ? 'Ganadero' : 
+                  userInfo.id_rol === 2 ? 'Trabajador' :
+                  userInfo.id_rol === 3 ? 'Veterinario' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
             segundo_nombre: userInfo.segundo_nombre || '',
             primer_apellido: userInfo.primer_apellido || '',
             segundo_apellido: userInfo.segundo_apellido || '',
-            id_premium: userInfo.id_rol || 1,
-            premium_type: userInfo.id_rol === 2 ? 'Premium' : 'Free'
+            id_premium: userInfo.id_premium || 1,
+            premium_type: userInfo.id_premium === 2 ? 'Premium' : 'Free'
           };
           setUserData(fallbackData);
           setFormData(fallbackData);
@@ -213,6 +213,48 @@ export default function ProfilePage() {
     setFormData({...userData});
   };
 
+  const handleRefreshProfile = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Limpiar todo el caché
+      await invalidateCache('users');
+      
+      // Forzar recarga desde la API
+      const freshUserData = await api.users.getProfile();
+      
+      if (freshUserData) {
+        console.log('Datos frescos del backend:', freshUserData);
+        console.log('id_rol recibido:', freshUserData.id_rol);
+        
+        const processedData: UserData = {
+          email: freshUserData.email || '',
+          role: freshUserData.id_rol?.toString() || '',
+          roleDisplay: freshUserData.id_rol === 1 ? 'Ganadero' : 
+                     freshUserData.id_rol === 2 ? 'Trabajador' : 
+                     freshUserData.id_rol === 3 ? 'Veterinario' : 'Usuario',
+          primer_nombre: freshUserData.primer_nombre || '',
+          segundo_nombre: freshUserData.segundo_nombre || '',
+          primer_apellido: freshUserData.primer_apellido || '',
+          segundo_apellido: freshUserData.segundo_apellido || '',
+          id_premium: freshUserData.id_premium || 1,
+          premium_type: freshUserData.premium_type || 'Free'
+        };
+        
+        console.log('Rol procesado:', processedData.roleDisplay);
+        setUserData(processedData);
+        setFormData(processedData);
+        
+        Alert.alert('Éxito', 'Perfil actualizado con datos frescos del servidor');
+      }
+    } catch (error) {
+      console.error('Error al refrescar perfil:', error);
+      Alert.alert('Error', 'No se pudo refrescar el perfil');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert(
       'Cerrar sesión',
@@ -283,7 +325,7 @@ export default function ProfilePage() {
               </TouchableOpacity>
             )}
             {userData.id_premium === 3 && (
-              <Text style={styles.infoText}>
+              <Text style={styles.helperText}>
                 Solo el administrador puede gestionar la suscripción Premium
               </Text>
             )}

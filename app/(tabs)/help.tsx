@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Stack } from 'expo-router';
+// import { Stack } from 'expo-router'; // Removido para usar el header del layout
 import { Ionicons } from '@expo/vector-icons';
 
 interface FAQItem {
@@ -67,7 +67,8 @@ export default function Help() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ headerTitle: 'Ayuda y Soporte' }} />
+      {/* <Stack.Screen options={{ headerTitle: 'Ayuda y Soporte' }} /> */}
+      {/* Header manejado por el layout */}
       
       <View style={styles.container}>
         <View style={styles.header}>
@@ -225,4 +226,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
   },
-}); 
+});
+
+ 

@@ -5,14 +5,15 @@ import {
   FlatList, 
   TouchableOpacity, 
   ActivityIndicator,
-  RefreshControl,
-  StyleSheet
+  RefreshControl
 } from 'react-native';
 import api from '../../lib/services/api';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFarm } from '../../components/FarmContext';
+import { useAuth } from '../../components/AuthContext';
 import { useAllFarms, useFarmCattle, useAllCattleWithFarmInfo, useCacheManager } from '../../hooks/useCachedData';
+import { createStyles, tw } from '../../styles/tailwind';
 
 interface CattleItem {
   id_ganado?: string | number;
@@ -50,6 +51,7 @@ interface CattleItem {
 export default function CattleTab() {
   const router = useRouter();
   const { selectedFarm } = useFarm();
+  const { isAdmin, isTrabajador } = useAuth();
   const [cattle, setCattle] = useState<CattleItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { invalidateCache } = useCacheManager();
@@ -83,6 +85,34 @@ export default function CattleTab() {
   // Determinar el estado de carga y datos a mostrar
   const loading = isShowingAllFarms ? (farmsLoading || allCattleLoading) : farmCattleLoading;
   const dataError = isShowingAllFarms ? (farmsError || allCattleError) : farmCattleError;
+
+  const styles = {
+    container: createStyles(tw.container),
+    loadingContainer: createStyles(tw.loadingContainer),
+    loadingText: createStyles(tw.loadingText),
+    header: createStyles('bg-white p-5 border-b border-gray-200'),
+    title: createStyles('text-2xl font-bold text-gray-800 mb-1'),
+    subtitle: createStyles('text-sm text-gray-600'),
+    errorText: createStyles('text-xs text-red-500 mt-1'),
+    debugText: createStyles('text-xs text-gray-400 mt-1'),
+    listContainer: createStyles('p-4'),
+    cattleItem: createStyles(tw.listItem),
+    cattleHeader: createStyles('flex-row justify-between items-center mb-2'),
+    cattleName: createStyles(tw.listItemTitle + ' flex-1'),
+    statusBadge: createStyles('px-2 py-1 rounded-full'),
+    statusText: createStyles('text-white text-xs font-bold'),
+    cattleDetails: createStyles('gap-1'),
+    detailText: createStyles('text-sm text-gray-600'),
+    notesText: createStyles('text-xs text-gray-500 mt-1'),
+    emptyContainer: createStyles('flex-1 justify-center items-center py-12'),
+    emptyText: createStyles('text-base text-gray-600 text-center mb-5'),
+    addButton: createStyles('bg-green-600 px-5 py-2 rounded-full'),
+    addButtonText: createStyles('text-white text-base font-bold'),
+    fab: createStyles('absolute bottom-5 right-5 w-14 h-14 rounded-full bg-green-600 justify-center items-center shadow-lg'),
+    fabText: createStyles('text-white text-2xl font-bold'),
+    debugButton: createStyles('bg-green-600 px-5 py-2 rounded-full mt-2'),
+    debugButtonText: createStyles('text-white text-base font-bold'),
+  };
 
   // Función para limpiar caché corrupto
   const clearCorruptedCache = async () => {
@@ -187,10 +217,10 @@ export default function CattleTab() {
     // Función auxiliar para obtener el color del estado de salud
     const getStatusColor = (status: number) => {
       switch (status) {
-        case 1: return '#27ae60'; // Saludable
-        case 2: return '#f39c12'; // En tratamiento
-        case 3: return '#e74c3c'; // Enfermo
-        case 4: return '#95a5a6'; // Muerto
+        case 1: return tw.colors.success; // Saludable
+        case 2: return tw.colors.warning; // En tratamiento
+        case 3: return tw.colors.error; // Enfermo
+        case 4: return tw.colors.secondary; // Muerto
         default: return '#bdc3c7';
       }
     };
@@ -206,7 +236,6 @@ export default function CattleTab() {
       }
     };
 
-    // Función auxiliar para formatear el tipo de producción
     const formatProduccion = (id_produccion: number) => {
       switch (id_produccion) {
         case 1: return 'Leche';
@@ -216,7 +245,6 @@ export default function CattleTab() {
       }
     };
 
-    // Función auxiliar para formatear el género
     const formatGenero = (id_genero: number) => {
       switch (id_genero) {
         case 1: return 'Macho';
@@ -225,65 +253,64 @@ export default function CattleTab() {
       }
     };
 
-    // Obtener ID del animal
-    const animalId = item.id_ganado || item._id;
-    
-    // Obtener nombre del animal
-    const animalName = item.nombre || item.identificationNumber || item.numero_identificacion || `Animal ${animalId}`;
-    
-    // Obtener nombre de la granja
+    const cattleId = item.id_ganado || item._id;
+    const cattleName = item.nombre || `Ganado ${item.numero_identificacion || item.identificationNumber || cattleId}`;
     const farmName = item.finca?.nombre || item.farmName || 'Granja no especificada';
-    
-    // Obtener estado de salud
-    const healthStatus = item.id_estado_salud || 1;
-    const healthStatusText = item.estado_salud?.descripcion || formatStatus(healthStatus);
-    
-    // Obtener tipo de producción
-    const productionType = item.id_produccion || 1;
-    const productionText = item.produccion?.descripcion || formatProduccion(productionType);
-    
-    // Obtener género
-    const gender = item.id_genero || 1;
-    const genderText = item.genero?.descripcion || formatGenero(gender);
+    const notes = item.nota || item.notes;
 
     return (
       <TouchableOpacity 
-        style={styles.cattleItem}
-        onPress={() => navigateToDetail(animalId?.toString() || '')}
+        style={styles.cattleItem} 
+        onPress={() => navigateToDetail(cattleId?.toString() || '')}
       >
         <View style={styles.cattleHeader}>
-          <Text style={styles.cattleName}>{animalName}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(healthStatus) }]}>
-            <Text style={styles.statusText}>{healthStatusText}</Text>
+          <Text style={styles.cattleName}>{cattleName}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.id_estado_salud || 0) }]}>
+            <Text style={styles.statusText}>
+              {item.estado_salud?.descripcion || formatStatus(item.id_estado_salud || 0)}
+            </Text>
           </View>
         </View>
-
+        
         <View style={styles.cattleDetails}>
-          <Text style={styles.detailText}>Granja: {farmName}</Text>
-          <Text style={styles.detailText}>Producción: {productionText}</Text>
-          <Text style={styles.detailText}>Género: {genderText}</Text>
-          {item.nota && (
-            <Text style={styles.notesText} numberOfLines={2}>
-              Notas: {item.nota}
+          <Text style={styles.detailText}>
+            ID: {item.numero_identificacion || item.identificationNumber || 'No especificado'}
+          </Text>
+          <Text style={styles.detailText}>
+            Género: {item.genero?.descripcion || formatGenero(item.id_genero || 0)}
+          </Text>
+          <Text style={styles.detailText}>
+            Producción: {item.produccion?.descripcion || formatProduccion(item.id_produccion || 0)}
+          </Text>
+          {isShowingAllFarms && (
+            <Text style={styles.detailText}>Granja: {farmName}</Text>
+          )}
+          {item.precio_compra && (
+            <Text style={styles.detailText}>
+              Precio: ${item.precio_compra.toLocaleString()}
             </Text>
           )}
         </View>
+        
+        {notes && (
+          <Text style={styles.notesText}>Notas: {notes}</Text>
+        )}
       </TouchableOpacity>
     );
   };
 
   const getSubtitle = () => {
     if (isShowingAllFarms) {
-      return `Mostrando ganado de todas las granjas (${cattle.length} animales)`;
+      return `${cattle.length} animales en todas las granjas`;
     } else {
-      return `Granja: ${selectedFarm?.name || 'Sin seleccionar'} (${cattle.length} animales)`;
+      return `${cattle.length} animales en ${selectedFarm?.name || 'granja seleccionada'}`;
     }
   };
 
-  if (loading) {
+  if (loading && cattle.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#27ae60" />
+        <ActivityIndicator size="large" color={tw.colors.primary} />
         <Text style={styles.loadingText}>Cargando ganado...</Text>
       </View>
     );
@@ -307,7 +334,7 @@ export default function CattleTab() {
           <RefreshControl
             refreshing={loading}
             onRefresh={onRefresh}
-            colors={['#27ae60']}
+            colors={[tw.colors.primary]}
           />
         }
         contentContainerStyle={styles.listContainer}
@@ -319,166 +346,20 @@ export default function CattleTab() {
                 : `No hay ganado en la granja "${selectedFarm?.name || 'seleccionada'}"`
               }
             </Text>
-            <TouchableOpacity style={styles.addButton} onPress={navigateToAdd}>
-              <Text style={styles.addButtonText}>Agregar Ganado</Text>
-            </TouchableOpacity>
+            {(isAdmin() || isTrabajador()) && (
+              <TouchableOpacity style={styles.addButton} onPress={navigateToAdd}>
+                <Text style={styles.addButtonText}>Agregar Ganado</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={navigateToAdd}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      {(isAdmin() || isTrabajador()) && (
+        <TouchableOpacity style={styles.fab} onPress={navigateToAdd}>
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#e74c3c',
-    marginTop: 5,
-  },
-  debugText: {
-    fontSize: 10,
-    color: '#999',
-    marginTop: 5,
-    fontStyle: 'italic',
-  },
-  listContainer: {
-    padding: 15,
-  },
-  cattleItem: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  cattleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  cattleName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  cattleDetails: {
-    gap: 5,
-  },
-  detailText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  notesText: {
-    fontSize: 12,
-    color: '#888',
-    fontStyle: 'italic',
-    marginTop: 5,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  addButton: {
-    backgroundColor: '#27ae60',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#27ae60',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  fabText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  debugButton: {
-    backgroundColor: '#27ae60',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  debugButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});

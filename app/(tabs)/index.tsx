@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
+import { createStyles, tw } from '../../styles/tailwind';
 
 export default function TabOneScreen() {
   const { isAdmin, isTrabajador, isVeterinario, userInfo } = useAuth();
@@ -79,6 +80,25 @@ export default function TabOneScreen() {
 
   const navigateTo = (route: any) => {
     router.push(route);
+  };
+
+  const styles = {
+    container: createStyles(tw.container),
+    header: createStyles(`${tw.header} p-5 pt-10 items-center`),
+    welcomeText: createStyles('text-xl font-bold text-white mb-1'),
+    roleText: createStyles('text-sm text-white opacity-90'),
+    menuContainer: createStyles('flex-1 p-4'),
+    menuGrid: createStyles('flex-row flex-wrap justify-between mb-5'),
+    menuItem: createStyles('bg-white w-48% p-5 rounded-lg mb-4 items-center shadow-sm'),
+    menuIcon: createStyles('text-3xl mb-2'),
+    menuTitle: createStyles('text-lg font-bold text-gray-800 mb-1'),
+    menuDescription: createStyles('text-xs text-gray-600 text-center'),
+    statsContainer: createStyles('bg-white rounded-lg p-4 mb-5 shadow-sm'),
+    statsTitle: createStyles('text-lg font-bold text-gray-800 mb-4'),
+    statsRow: createStyles('flex-row justify-between mb-4'),
+    statItem: createStyles('w-48% bg-gray-50 p-4 rounded-lg items-center'),
+    statValue: createStyles('text-xl font-bold text-green-600 mb-1'),
+    statLabel: createStyles('text-xs text-gray-600 text-center'),
   };
 
   // Componente HomeScreenAdmin
@@ -174,13 +194,6 @@ export default function TabOneScreen() {
         description: 'Gestiona todo el ganado'
       },
       {
-        id: 'informe',
-        title: 'Informes',
-        icon: '📊',
-        route: '/(tabs)/report',
-        description: 'Generar informes de ganado'
-      },
-      {
         id: 'production',
         title: 'Producción',
         icon: '🥩',
@@ -243,10 +256,10 @@ export default function TabOneScreen() {
     const veterinarioMenuItems = [
       {
         id: 'cattle',
-        title: 'Mi Ganado',
+        title: 'Ganado',
         icon: '🐄',
         route: '/(tabs)/explore',
-        description: 'Gestiona todo tu ganado'
+        description: 'Gestiona todo el ganado'
       },
       {
         id: 'vet',
@@ -325,95 +338,3 @@ export default function TabOneScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    padding: 20,
-    paddingTop: 40,
-    alignItems: 'center',
-  },
-  welcomeText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 5,
-  },
-  roleText: {
-    fontSize: 14,
-    color: '#ffffff',
-    opacity: 0.9,
-  },
-  menuContainer: {
-    flex: 1,
-    padding: 15,
-  },
-  menuGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  menuItem: {
-    backgroundColor: '#ffffff',
-    width: '48%',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  menuIcon: {
-    fontSize: 30,
-    marginBottom: 10,
-  },
-  menuTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 5,
-  },
-  menuDescription: {
-    fontSize: 12,
-    color: '#777777',
-    textAlign: 'center',
-  },
-  statsContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-  },
-  statsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginBottom: 15,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  statItem: {
-    width: '48%',
-    backgroundColor: '#f9f9f9',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#27ae60',
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#777777',
-    textAlign: 'center',
-  },
-});

@@ -2,19 +2,20 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   TouchableOpacity,
   Alert,
   TextInput,
   Modal,
-  ActivityIndicator,
-  ScrollView
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
+import { useAuth } from '../../components/AuthContext';
+import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 import api from '../../lib/services/api';
+import { createStyles } from '../../styles/tailwind';
 
 interface Farm {
   _id: string;
@@ -24,29 +25,9 @@ interface Farm {
   cattleCount?: number;
 }
 
-interface Worker {
-  _id: string;
-  name: string;
-  email?: string;
-}
-
-interface Veterinarian {
-  _id: string;
-  name: string;
-  email?: string;
-}
-
 export default function FarmsPage() {
   const router = useRouter();
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
-  const [farmWorkers, setFarmWorkers] = useState<Worker[]>([]);
-  const [farmVeterinarians, setFarmVeterinarians] = useState<Veterinarian[]>([]);
-  const [farmCattle, setFarmCattle] = useState<any[]>([]);
-  const [availableWorkers, setAvailableWorkers] = useState<Worker[]>([]);
-  const [availableVeterinarians, setAvailableVeterinarians] = useState<Veterinarian[]>([]);
-  const [managingStaff, setManagingStaff] = useState(false);
-  const [loadingStaff, setLoadingStaff] = useState(false);
+  const { isAdmin, userInfo } = useAuth();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -58,9 +39,7 @@ export default function FarmsPage() {
 
   const [modalMessage, setModalMessage] = useState('');
   const [messageModalVisible, setMessageModalVisible] = useState(false);
-
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [farmToDelete, setFarmToDelete] = useState<string | null>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Usar hooks con caché
   const { 
@@ -70,10 +49,7 @@ export default function FarmsPage() {
     refresh: refreshFarms 
   } = useUserFarms();
 
-  // Ya no necesitamos los hooks de mutación, solo el invalidateCache
   const { invalidateCache } = useCacheManager();
-
-  // Estado de carga simplificado
   const loading = farmsLoading;
 
   const showModal = (message: string) => {
@@ -84,11 +60,6 @@ export default function FarmsPage() {
   const closeModal = () => {
     setMessageModalVisible(false);
     setModalMessage('');
-  };
-
-  const closeDeleteModal = () => {
-    setDeleteModalVisible(false);
-    setFarmToDelete(null);
   };
 
   useEffect(() => {
@@ -103,7 +74,16 @@ export default function FarmsPage() {
         return;
       }
 
-      // Adaptar datos al formato que espera el backend
+      // Verificar límite de granjas para usuarios no premium
+      if (!editingFarm) { // Solo validar al crear, no al editar
+        const isPremium = userInfo?.id_premium === 2 || userInfo?.id_premium === 3; // 2 = Premium, 3 = Empleado
+        
+        if (!isPremium && farms && farms.length >= 1) {
+          setShowPremiumModal(true);
+          return;
+        }
+      }
+
       const farmData = {
         name: formData.name.trim(),
         nombre: formData.name.trim(),
@@ -111,20 +91,17 @@ export default function FarmsPage() {
         tamano: formData.size ? parseInt(formData.size) : 0,
       };
 
-      let response;
       if (editingFarm) {
-        response = await api.farms.update(editingFarm._id, farmData);
+        await api.farms.update(editingFarm._id, farmData);
         showModal('Granja actualizada correctamente');
       } else {
-        // Crear nueva granja
-        response = await api.farms.create(farmData);
+        await api.farms.create(farmData);
         showModal('Granja creada correctamente');
       }
       
       setModalVisible(false);
       resetForm();
       
-      // Invalidar caché para que se reflejen los cambios
       await invalidateCache('farms');
       await invalidateCache('cattle');
       await refreshFarms();
@@ -139,10 +116,8 @@ export default function FarmsPage() {
   const handleDeleteFarm = async (farmId: string) => {
     try {
       await api.farms.delete(farmId);
-      closeDeleteModal();
       showModal('Granja eliminada correctamente');
       
-      // Invalidar caché para que se reflejen los cambios
       await invalidateCache('farms');
       await invalidateCache('cattle');
       await refreshFarms();
@@ -183,139 +158,6 @@ export default function FarmsPage() {
     });
     setModalVisible(true);
   };
-
-  const handleManageStaff = async (farm: Farm) => {
-    setSelectedFarm(farm);
-    setLoadingStaff(true);
-    
-    try {
-      // Cargar trabajadores y veterinarios de la granja
-      const workers = await api.farms.getWorkers(farm._id);
-      const vets = await api.farms.getVeterinarians(farm._id);
-      
-      // Mapear UserInfo a Worker/Veterinarian con _id
-      setFarmWorkers(Array.isArray(workers) ? workers.map((worker: any) => ({
-        _id: worker.id || worker._id || worker.uid || `worker-${Math.random()}`,
-        name: worker.name || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: worker.email || 'Sin email'
-      })) : []);
-      
-      setFarmVeterinarians(Array.isArray(vets) ? vets.map((vet: any) => ({
-        _id: vet.id || vet._id || vet.uid || `vet-${Math.random()}`,
-        name: vet.name || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: vet.email || 'Sin email'
-      })) : []);
-      
-      // Cargar todos los usuarios y filtrar por rol
-      const allUsers = await api.users.getAll();
-      const allWorkers = Array.isArray(allUsers) ? allUsers.filter((user: any) => 
-        user.rol?.nombre_rol === 'trabajador' || user.role === 'trabajador'
-      ) : [];
-      const allVets = Array.isArray(allUsers) ? allUsers.filter((user: any) => 
-        user.rol?.nombre_rol === 'veterinario' || user.role === 'veterinario'
-      ) : [];
-      
-      // Filtrar los que no están ya asignados a esta granja
-      setAvailableWorkers(allWorkers.filter((worker: any) =>
-        !Array.isArray(workers) || !workers.some((w: any) => (w.id || w._id || w.uid) === (worker.id || worker._id || worker.uid))
-      ).map((worker: any) => ({
-        _id: worker.id || worker._id || worker.uid || `worker-${Math.random()}`,
-        name: worker.name || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: worker.email || 'Sin email'
-      })));
-      
-      setAvailableVeterinarians(allVets.filter((vet: any) =>
-        !Array.isArray(vets) || !vets.some((v: any) => (v.id || v._id || v.uid) === (vet.id || vet._id || vet.uid))
-      ).map((vet: any) => ({
-        _id: vet.id || vet._id || vet.uid || `vet-${Math.random()}`,
-        name: vet.name || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: vet.email || 'Sin email'
-      })));
-      
-      setManagingStaff(true);
-    } catch (error) {
-      console.error('Error loading staff:', error);
-      Alert.alert('Error', 'No se pudo cargar el personal');
-    } finally {
-      setLoadingStaff(false);
-    }
-  };
-  
-  const handleAddWorker = async (workerId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.addWorker(selectedFarm._id, workerId);
-      
-      const worker = availableWorkers.find(w => w._id === workerId);
-      if (worker) {
-        setFarmWorkers([...farmWorkers, worker]);
-        setAvailableWorkers(availableWorkers.filter(w => w._id !== workerId));
-      }
-      
-      showModal('Éxito: Trabajador añadido a la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al añadir trabajador:', error);
-      showModal('Error: No se pudo añadir el trabajador a la granja');
-    }
-  };
-  
-  const handleRemoveWorker = async (workerId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.removeWorker(selectedFarm._id, workerId);
-      
-      const worker = farmWorkers.find(w => w._id === workerId);
-      if (worker) {
-        setAvailableWorkers([...availableWorkers, worker]);
-        setFarmWorkers(farmWorkers.filter(w => w._id !== workerId));
-      }
-      
-      showModal('Éxito: Trabajador eliminado de la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al eliminar trabajador:', error);
-      showModal('Error: No se pudo eliminar el trabajador de la granja');
-    }
-  };
-  
-  const handleAddVeterinarian = async (vetId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.addVeterinarian(selectedFarm._id, vetId);
-      
-      const vet = availableVeterinarians.find(v => v._id === vetId);
-      if (vet) {
-        setFarmVeterinarians([...farmVeterinarians, vet]);
-        setAvailableVeterinarians(availableVeterinarians.filter(v => v._id !== vetId));
-      }
-      
-      showModal('Éxito: Veterinario añadido a la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al añadir veterinario:', error);
-      showModal('Error: No se pudo añadir el veterinario a la granja');
-    }
-  };
-  
-  const handleRemoveVeterinarian = async (vetId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.removeVeterinarian(selectedFarm._id, vetId);
-      
-      const vet = farmVeterinarians.find(v => v._id === vetId);
-      if (vet) {
-        setAvailableVeterinarians([...availableVeterinarians, vet]);
-        setFarmVeterinarians(farmVeterinarians.filter(v => v._id !== vetId));
-      }
-      
-      showModal('Éxito: Veterinario eliminado de la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al eliminar veterinario:', error);
-      showModal('Error: No se pudo eliminar el veterinario de la granja');
-    }
-  };
   
   const handleViewCattle = (farm: Farm) => {
     router.push({
@@ -324,526 +166,75 @@ export default function FarmsPage() {
     });
   };
 
-  const openDeleteModal = (farmId: string) => {
-    setFarmToDelete(farmId);
-    setDeleteModalVisible(true);
-  };
-
   const renderItem = ({ item }: { item: Farm }) => (
-    <View style={styles.farmItem}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.farmName}>{item.name}</Text>
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => openEditModal(item)}
-          >
-            <Ionicons name="create-outline" size={20} color="#27ae60" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => openDeleteModal(item._id)}
-          >
-            <Ionicons name="trash-outline" size={20} color="#e74c3c" />
-          </TouchableOpacity>
+    <View style={createStyles('bg-white rounded-lg mx-4 my-2 p-4 shadow-sm')}>
+      <View style={createStyles('flex-row justify-between items-center mb-3')}>
+        <Text style={createStyles('text-lg font-bold text-gray-800')}>{item.name}</Text>
+        {isAdmin() && (
+          <View style={createStyles('flex-row items-center')}>
+            <TouchableOpacity 
+              style={createStyles('p-2 ml-2')} 
+              onPress={() => openEditModal(item)}
+            >
+              <Ionicons name="create-outline" size={20} color="#16a34a" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={createStyles('p-2 ml-2')} 
+              onPress={() => confirmDelete(item)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      <View style={createStyles('mb-4')}>
+        {item.location && (
+          <View style={createStyles('flex-row items-center mb-2')}>
+            <Ionicons name="location-outline" size={16} color="#6b7280" />
+            <Text style={createStyles('text-sm text-gray-600 ml-2')}>{item.location}</Text>
+          </View>
+        )}
+        <View style={createStyles('flex-row items-center mb-2')}>
+          <Ionicons name="resize-outline" size={16} color="#6b7280" />
+          <Text style={createStyles('text-sm text-gray-600 ml-2')}>{item.size || 0} hectáreas</Text>
+        </View>
+        <View style={createStyles('flex-row items-center mb-2')}>
+          <Ionicons name="browsers-outline" size={16} color="#6b7280" />
+          <Text style={createStyles('text-sm text-gray-600 ml-2')}>{item.cattleCount || 0} animales</Text>
         </View>
       </View>
 
-      <View style={styles.infoContainer}>
-        <View style={styles.infoItem}>
-          <Ionicons name="location-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>{item.location}</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="resize-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>{item.size} hectáreas</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="browsers-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>{item.cattleCount || 0} animales</Text>
-        </View>
-      </View>
+      <TouchableOpacity 
+        style={createStyles('flex-row items-center justify-center bg-blue-500 py-3 px-4 rounded-lg')}
+        onPress={() => handleViewCattle(item)}
+      >
+        <Ionicons name="eye-outline" size={16} color="#ffffff" />
+        <Text style={createStyles('text-white text-sm font-medium ml-2')}>Ver Ganado</Text>
+      </TouchableOpacity>
     </View>
   );
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f5f5f5',
-    },
-    header: {
-      backgroundColor: '#27ae60',
-      padding: 20,
-      paddingTop: 40,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#ffffff',
-    },
-    subtitle: {
-      fontSize: 16,
-      color: 'rgba(255,255,255,0.8)',
-      marginTop: 5,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    loadingText: {
-      fontSize: 16,
-      color: '#777777',
-      marginTop: 10,
-    },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    emptyText: {
-      fontSize: 18,
-      color: '#777777',
-      textAlign: 'center',
-      marginTop: 10,
-    },
-    emptySubtext: {
-      fontSize: 16,
-      color: '#777777',
-      textAlign: 'center',
-      marginTop: 5,
-    },
-    listContainer: {
-      padding: 10,
-      paddingBottom: 80,
-    },
-    farmItem: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      marginHorizontal: 10,
-      marginVertical: 6,
-      padding: 15,
-    },
-    cardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    farmName: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#333333',
-    },
-    actionsContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    actionButton: {
-      marginLeft: 10,
-      padding: 5,
-    },
-    infoContainer: {
-      marginTop: 5,
-    },
-    infoItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 5,
-    },
-    infoText: {
-      fontSize: 14,
-      color: '#777777',
-      marginLeft: 8,
-    },
-    buttonContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 10,
-    },
-    manageButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#27ae60',
-      padding: 10,
-      borderRadius: 8,
-      marginRight: 5,
-    },
-    viewButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#3498db',
-      padding: 10,
-      borderRadius: 8,
-      marginLeft: 5,
-    },
-    buttonText: {
-      color: '#ffffff',
-      fontSize: 12,
-      marginLeft: 5,
-    },
-    addButton: {
-      position: 'absolute',
-      right: 20,
-      bottom: 20,
-      backgroundColor: '#27ae60',
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    modalContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: 20,
-    },
-    modalContent: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 20,
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#333333',
-      marginBottom: 20,
-      textAlign: 'center',
-    },
-    modalText: {
-      fontSize: 16,
-      color: '#333333',
-      textAlign: 'center',
-      marginVertical: 15,
-    },
-    label: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: '#333333',
-      marginBottom: 5,
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: '#dddddd',
-      borderRadius: 5,
-      padding: 10,
-      marginBottom: 15,
-      fontSize: 16,
-    },
-    modalButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 10,
-    },
-    saveButton: {
-      flex: 1,
-      backgroundColor: '#27ae60',
-      padding: 12,
-      borderRadius: 5,
-      alignItems: 'center',
-      marginLeft: 5,
-    },
-    cancelButton: {
-      flex: 1,
-      backgroundColor: '#f5f5f5',
-      padding: 12,
-      borderRadius: 5,
-      alignItems: 'center',
-      marginRight: 5,
-      borderWidth: 1,
-      borderColor: '#dddddd',
-    },
-    saveButtonText: {
-      color: '#ffffff',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    cancelButtonText: {
-      color: '#333333',
-      fontSize: 16,
-    },
-    confirmButton: {
-      flex: 1,
-      backgroundColor: '#e74c3c',
-      padding: 12,
-      borderRadius: 5,
-      alignItems: 'center',
-      marginLeft: 5,
-    },
-    confirmButtonText: {
-      color: '#ffffff',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    modalOverlay: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    modalButton: {
-      backgroundColor: '#27ae60',
-      padding: 12,
-      borderRadius: 5,
-      alignItems: 'center',
-      marginTop: 10,
-      width: '100%',
-    },
-    modalButtonText: {
-      color: '#ffffff',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    errorContainer: {
-      backgroundColor: '#ffebee',
-      padding: 10,
-      margin: 10,
-      borderRadius: 5,
-      borderLeftWidth: 4,
-      borderLeftColor: '#e74c3c',
-    },
-    errorText: {
-      color: '#e74c3c',
-      fontSize: 14,
-    },
-    // Estilos para la sección de personal
-    staffContainer: {
-      flex: 1,
-      backgroundColor: '#f5f5f5',
-    },
-    staffHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#27ae60',
-      padding: 15,
-    },
-    backButton: {
-      marginRight: 10,
-    },
-    staffTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#ffffff',
-      flex: 1,
-    },
-    staffScrollView: {
-      padding: 10,
-    },
-    staffSection: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 10,
-      marginBottom: 15,
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#333333',
-      marginBottom: 10,
-      marginLeft: 5,
-    },
-    staffCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 10,
-      borderRadius: 8,
-      backgroundColor: '#f9f9f9',
-      marginBottom: 8,
-    },
-    staffInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-    },
-    staffName: {
-      fontSize: 15,
-      color: '#333333',
-      marginLeft: 10,
-    },
-    removeButton: {
-      padding: 5,
-    },
-    addStaffButton: {
-      padding: 5,
-    },
-    addStaffSection: {
-      marginTop: 15,
-      paddingTop: 15,
-      borderTopWidth: 1,
-      borderTopColor: '#dddddd',
-    },
-    addStaffTitle: {
-      fontSize: 15,
-      color: '#333333',
-      marginBottom: 10,
-      marginLeft: 5,
-    },
-    emptyStaffText: {
-      fontSize: 14,
-      color: '#777777',
-      textAlign: 'center',
-      marginVertical: 10,
-      fontStyle: 'italic',
-    },
-    viewCattleButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f5f5f5',
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#27ae60',
-    },
-    viewCattleButtonText: {
-      color: '#27ae60',
-      fontSize: 15,
-      marginRight: 8,
-    },
-  });
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mis Granjas</Text>
-        <Text style={styles.subtitle}>Gestiona tus propiedades</Text>
+    <View style={createStyles('flex-1 bg-gray-50')}>
+      {/* Header */}
+      <View style={createStyles('bg-green-600 pt-10 pb-6 px-5')}>
+        <Text style={createStyles('text-2xl font-bold text-white mb-1')}>Granjas</Text>
+        <Text style={createStyles('text-base text-white opacity-90')}>
+          Gestiona tus granjas y visualiza el ganado
+        </Text>
       </View>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#27ae60" />
-          <Text style={styles.loadingText}>Cargando granjas...</Text>
-        </View>
-      ) : managingStaff ? (
-        <View style={styles.staffContainer}>
-          <View style={styles.staffHeader}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => setManagingStaff(false)}
-            >
-              <Ionicons name="arrow-back" size={24} color="#27ae60" />
-            </TouchableOpacity>
-            <Text style={styles.staffTitle}>Gestionar Personal - {selectedFarm?.name}</Text>
-          </View>
-          
-          {loadingStaff ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#27ae60" />
-              <Text style={styles.loadingText}>Cargando personal...</Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.staffScrollView}>
-              <View style={styles.staffSection}>
-                <Text style={styles.sectionTitle}>Trabajadores</Text>
-                
-                {farmWorkers.length > 0 ? (
-                  farmWorkers.map(worker => (
-                    <View key={worker._id} style={styles.staffCard}>
-                      <View style={styles.staffInfo}>
-                        <Ionicons name="person" size={20} color="#555" />
-                        <Text style={styles.staffName}>{worker.name}</Text>
-                      </View>
-                      <TouchableOpacity 
-                        style={styles.removeButton}
-                        onPress={() => handleRemoveWorker(worker._id)}
-                      >
-                        <Ionicons name="close-circle" size={20} color="#e74c3c" />
-                      </TouchableOpacity>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyStaffText}>No hay trabajadores asignados</Text>
-                )}
-                
-                {availableWorkers.length > 0 && (
-                  <View style={styles.addStaffSection}>
-                    <Text style={styles.addStaffTitle}>Añadir Trabajador:</Text>
-                    {availableWorkers.map(worker => (
-                      <View key={worker._id} style={styles.staffCard}>
-                        <View style={styles.staffInfo}>
-                          <Ionicons name="person-add" size={20} color="#555" />
-                          <Text style={styles.staffName}>{worker.name}</Text>
-                        </View>
-                        <TouchableOpacity 
-                          style={styles.addStaffButton}
-                          onPress={() => handleAddWorker(worker._id)}
-                        >
-                          <Ionicons name="add-circle" size={20} color="#27ae60" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-              
-              <View style={styles.staffSection}>
-                <Text style={styles.sectionTitle}>Veterinarios</Text>
-                
-                {farmVeterinarians.length > 0 ? (
-                  farmVeterinarians.map(vet => (
-                    <View key={vet._id} style={styles.staffCard}>
-                      <View style={styles.staffInfo}>
-                        <Ionicons name="medkit" size={20} color="#555" />
-                        <Text style={styles.staffName}>{vet.name}</Text>
-                      </View>
-                      <TouchableOpacity 
-                        style={styles.removeButton}
-                        onPress={() => handleRemoveVeterinarian(vet._id)}
-                      >
-                        <Ionicons name="close-circle" size={20} color="#e74c3c" />
-                      </TouchableOpacity>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyStaffText}>No hay veterinarios asignados</Text>
-                )}
-                
-                {availableVeterinarians.length > 0 && (
-                  <View style={styles.addStaffSection}>
-                    <Text style={styles.addStaffTitle}>Añadir Veterinario:</Text>
-                    {availableVeterinarians.map(vet => (
-                      <View key={vet._id} style={styles.staffCard}>
-                        <View style={styles.staffInfo}>
-                          <Ionicons name="medkit" size={20} color="#555" />
-                          <Text style={styles.staffName}>{vet.name}</Text>
-                        </View>
-                        <TouchableOpacity 
-                          style={styles.addStaffButton}
-                          onPress={() => handleAddVeterinarian(vet._id)}
-                        >
-                          <Ionicons name="add-circle" size={20} color="#27ae60" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.staffSection}>
-                <Text style={styles.sectionTitle}>Ganado</Text>
-                
-                <TouchableOpacity 
-                  style={styles.viewCattleButton}
-                  onPress={() => handleViewCattle(selectedFarm!)}
-                >
-                  <Text style={styles.viewCattleButtonText}>Ver y Gestionar Ganado</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#27ae60" />
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          )}
+        <View style={createStyles('flex-1 justify-center items-center')}>
+          <ActivityIndicator size="large" color="#16a34a" />
+          <Text style={createStyles('text-gray-600 mt-3')}>Cargando granjas...</Text>
         </View>
       ) : (
         <>
           {errorMessage ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{errorMessage}</Text>
+            <View style={createStyles('bg-red-50 border-l-4 border-red-500 p-4 mx-4 mt-4')}>
+              <Text style={createStyles('text-red-700 text-sm')}>{errorMessage}</Text>
             </View>
           ) : null}
 
@@ -851,19 +242,40 @@ export default function FarmsPage() {
             data={farms}
             renderItem={renderItem}
             keyExtractor={item => item._id}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={createStyles('py-4')}
+            showsVerticalScrollIndicator={false}
             ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="leaf-outline" size={60} color="#ddd" />
-                <Text style={styles.emptyText}>No tienes granjas registradas</Text>
-                <Text style={styles.emptySubtext}>Agrega una nueva granja para comenzar</Text>
+              <View style={createStyles('flex-1 justify-center items-center py-20')}>
+                <Ionicons name="leaf-outline" size={64} color="#d1d5db" />
+                <Text style={createStyles('text-xl text-gray-500 mt-4 text-center')}>
+                  No tienes granjas registradas
+                </Text>
+                <Text style={createStyles('text-base text-gray-400 mt-2 text-center')}>
+                  {(userInfo?.id_premium === 2 || userInfo?.id_premium === 3)
+                    ? 'Agrega una nueva granja para comenzar'
+                    : 'Agrega tu primera granja (máximo 1 para usuarios no premium)'
+                  }
+                </Text>
               </View>
             }
           />
 
-          <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-            <Ionicons name="add" size={30} color="#fff" />
-          </TouchableOpacity>
+          {/* Botón flotante para agregar - Solo para administradores */}
+          {isAdmin() && (
+            <TouchableOpacity 
+              style={createStyles('absolute bottom-5 right-5 bg-green-600 w-14 h-14 rounded-full justify-center items-center shadow-lg')}
+              onPress={() => {
+                const isPremium = userInfo?.id_premium === 2 || userInfo?.id_premium === 3; // 2 = Premium, 3 = Empleado
+                if (!isPremium && farms && farms.length >= 1) {
+                  setShowPremiumModal(true);
+                } else {
+                  setModalVisible(true);
+                }
+              }}
+            >
+              <Ionicons name="add" size={28} color="#ffffff" />
+            </TouchableOpacity>
+          )}
         </>
       )}
 
@@ -874,49 +286,51 @@ export default function FarmsPage() {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+        <View style={createStyles('flex-1 justify-center bg-black bg-opacity-50 px-5')}>
+          <View style={createStyles('bg-white rounded-lg p-6')}>
+            <Text style={createStyles('text-xl font-bold text-gray-800 mb-6 text-center')}>
               {editingFarm ? 'Editar Granja' : 'Agregar Granja'}
             </Text>
 
-            <Text style={styles.label}>Nombre</Text>
+            <Text style={createStyles('text-base font-medium text-gray-700 mb-2')}>Nombre</Text>
             <TextInput 
-              style={styles.input}
+              style={createStyles('border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base')}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
               placeholder="Nombre de la granja"
+              placeholderTextColor="#9ca3af"
             />
 
-            <Text style={styles.label}>Tamaño</Text>
+            <Text style={createStyles('text-base font-medium text-gray-700 mb-2')}>Tamaño (hectáreas)</Text>
             <TextInput 
-              style={styles.input}
+              style={createStyles('border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base')}
               value={formData.size}
               onChangeText={(text) => setFormData({ ...formData, size: text })}
-              placeholder="Ej. 150 hectáreas"
+              placeholder="Ej. 150"
+              placeholderTextColor="#9ca3af"
               keyboardType="numeric"
             />
 
             {errorMessage ? (
-              <Text style={styles.errorText}>{errorMessage}</Text>
+              <Text style={createStyles('text-red-500 text-sm text-center mb-4')}>{errorMessage}</Text>
             ) : null}
 
-            <View style={styles.modalButtons}>
+            <View style={createStyles('flex-row justify-between')}>
               <TouchableOpacity 
-                style={styles.cancelButton} 
+                style={createStyles('flex-1 bg-gray-100 py-3 px-4 rounded-lg mr-2 border border-gray-300')}
                 onPress={() => {
                   setModalVisible(false);
                   resetForm();
                   setErrorMessage('');
                 }}
               >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                <Text style={createStyles('text-gray-700 text-center font-medium')}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={styles.saveButton}
+                style={createStyles('flex-1 bg-green-600 py-3 px-4 rounded-lg ml-2')}
                 onPress={handleCreateFarm}
               >
-                <Text style={styles.saveButtonText}>Guardar</Text>
+                <Text style={createStyles('text-white text-center font-medium')}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -930,50 +344,26 @@ export default function FarmsPage() {
         visible={messageModalVisible}
         onRequestClose={closeModal}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalText}>{modalMessage}</Text>
-            <TouchableOpacity style={styles.modalButton} onPress={closeModal}>
-              <Text style={styles.modalButtonText}>Cerrar</Text>
+        <View style={createStyles('flex-1 justify-center items-center bg-black bg-opacity-50 px-5')}>
+          <View style={createStyles('bg-white rounded-lg p-6 max-w-sm w-full')}>
+            <Text style={createStyles('text-base text-gray-800 text-center mb-6')}>{modalMessage}</Text>
+            <TouchableOpacity 
+              style={createStyles('bg-green-600 py-3 px-4 rounded-lg')} 
+              onPress={closeModal}
+            >
+              <Text style={createStyles('text-white text-center font-medium')}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Modal de confirmación de eliminación */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={deleteModalVisible}
-        onRequestClose={closeDeleteModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Confirmar eliminación</Text>
-            <Text style={styles.modalText}>
-              ¿Estás seguro de que deseas eliminar esta granja?
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={closeDeleteModal}
-              >
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={() => {
-                  if (farmToDelete) {
-                    handleDeleteFarm(farmToDelete);
-                  }
-                }}
-              >
-                <Text style={styles.confirmButtonText}>Eliminar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* Modal de Premium */}
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="¡Actualiza tu cuenta a Premium!"
+        subtitle="Los usuarios no premium solo pueden tener máximo 1 granja. Actualiza a premium para agregar granjas ilimitadas."
+      />
     </View>
   );
 } 

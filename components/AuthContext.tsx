@@ -317,13 +317,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const hasRole = (role: string): boolean => {
-    if (!userInfo || !userInfo.rol) return false;
+    if (!userInfo || !userInfo.id_rol) return false;
     
     // Manejar admin: el admin puede hacer todo
-    if (userInfo.rol.nombre_rol === 'admin') return true;
+    if (userInfo.id_rol === 1) return true;
     
-    // Comprobar rol específico
-    return userInfo.rol.nombre_rol === role;
+    // Comprobar rol específico por nombre
+    switch (role) {
+      case 'admin':
+        return userInfo.id_rol === 1;
+      case 'trabajador':
+        return userInfo.id_rol === 2;
+      case 'veterinario':
+        return userInfo.id_rol === 3;
+      default:
+        return false;
+    }
   };
 
   const updateUserProfile = async (data: UpdateProfileData): Promise<UserInfo> => {
@@ -374,9 +383,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     updateProfile: updateUserProfile,
     hasRole,
-    isAdmin: () => userInfo?.id_rol === 1 || userInfo?.rol?.nombre_rol === 'admin',
-    isTrabajador: () => userInfo?.id_rol === 2 || userInfo?.rol?.nombre_rol === 'user',
-    isVeterinario: () => userInfo?.id_rol === 3 || userInfo?.rol?.nombre_rol === 'veterinario',
+    isAdmin: () => userInfo?.id_rol === 1,
+    isTrabajador: () => userInfo?.id_rol === 2,
+    isVeterinario: () => userInfo?.id_rol === 3,
   };
 
   return (

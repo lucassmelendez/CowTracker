@@ -7,10 +7,10 @@ import {
   ScrollView,
   Alert,
   Modal,
-  StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
+import { createStyles, tw } from '../styles/tailwind';
 
 interface Role {
   id: string;
@@ -129,6 +129,35 @@ export default function RegisterScreen() {
   const getSelectedRoleName = () => {
     const selectedRole = roles.find(role => role.id === formData.role);
     return selectedRole ? selectedRole.name : 'Seleccionar rol';
+  };
+
+  const styles = {
+    container: createStyles(tw.container),
+    scrollView: createStyles(tw.scrollContainer),
+    headerContainer: createStyles('mb-8'),
+    headerTitle: createStyles(tw.title),
+    headerSubtitle: createStyles(tw.subtitle),
+    formContainer: createStyles(tw.formContainer),
+    label: createStyles(tw.label),
+    input: createStyles(tw.input),
+    selectorButton: createStyles(`${tw.input} justify-center`),
+    selectorText: createStyles('text-gray-800 text-base'),
+    button: createStyles(tw.primaryButton),
+    buttonText: createStyles(tw.primaryButtonText),
+    errorText: createStyles(tw.errorText),
+    loginContainer: createStyles('flex-row justify-center mt-4'),
+    loginText: createStyles('text-gray-600'),
+    loginLink: createStyles('text-blue-500 font-semibold'),
+    modalOverlay: createStyles(tw.modalOverlay),
+    modalContent: createStyles(`${tw.modalContent} rounded-t-lg`),
+    modalTitle: createStyles(tw.modalTitle),
+    roleItem: createStyles('py-4 border-b border-gray-100'),
+    roleItemSelected: createStyles('bg-green-50'),
+    roleItemText: createStyles('text-base text-gray-800 text-center'),
+    roleItemTextSelected: createStyles('font-bold text-green-600'),
+    roleDescription: createStyles('text-xs text-gray-600 text-center mt-1'),
+    cancelButton: createStyles(`${tw.secondaryButton} mt-4`),
+    cancelButtonText: createStyles(tw.secondaryButtonText),
   };
 
   return (
@@ -269,7 +298,7 @@ export default function RegisterScreen() {
                 >
                   {role.name}
                 </Text>
-                <Text style={{ fontSize: 12, color: '#7f8c8d', textAlign: 'center', marginTop: 2 }}>
+                <Text style={styles.roleDescription}>
                   {role.description}
                 </Text>
               </TouchableOpacity>
@@ -287,139 +316,3 @@ export default function RegisterScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollView: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  headerContainer: {
-    marginVertical: 30,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#7f8c8d',
-  },
-  formContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 20,
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 5,
-  },
-  input: {
-    backgroundColor: '#f9f9f9',
-    height: 50,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  selectorButton: {
-    backgroundColor: '#f9f9f9',
-    height: 50,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    justifyContent: 'center',
-  },
-  selectorText: {
-    color: '#333',
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#27ae60',
-    height: 50,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  errorText: {
-    color: '#e74c3c',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 15,
-  },
-  loginText: {
-    color: '#7f8c8d',
-  },
-  loginLink: {
-    color: '#3498db',
-    fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  roleItem: {
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
-  },
-  roleItemSelected: {
-    backgroundColor: '#e8f7f0',
-  },
-  roleItemText: {
-    fontSize: 16,
-    color: '#2c3e50',
-    textAlign: 'center',
-  },
-  roleItemTextSelected: {
-    fontWeight: 'bold',
-    color: '#27ae60',
-  },
-  cancelButton: {
-    marginTop: 15,
-    paddingVertical: 15,
-    backgroundColor: '#ecf0f1',
-    borderRadius: 8,
-  },
-  cancelButtonText: {
-    color: '#7f8c8d',
-    fontSize: 16,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-});

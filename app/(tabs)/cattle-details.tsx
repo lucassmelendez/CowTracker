@@ -24,7 +24,7 @@ export default function CattleDetailPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = params?.id;
-  const { userInfo } = useAuth();
+  const { userInfo, isAdmin, isTrabajador } = useAuth();
   
   const [cattle, setCattle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -267,35 +267,39 @@ export default function CattleDetailPage() {
           </View>
         )}
 
-        {/* Botones de Acción */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={handleEdit}
-          >
-            <Ionicons name="create-outline" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Editar</Text>
-          </TouchableOpacity>
+        {/* Botones de Acción - Solo para administradores y trabajadores */}
+        {(isAdmin() || isTrabajador()) && (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={handleEdit}
+            >
+              <Ionicons name="create-outline" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Editar</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.deleteButton}
-            onPress={() => setDeleteModalVisible(true)}
-          >
-            <Ionicons name="trash-outline" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Eliminar</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity 
+              style={styles.deleteButton}
+              onPress={() => setDeleteModalVisible(true)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-        {/* Botón QR */}
-        <View style={styles.qrButtonContainer}>
-          <TouchableOpacity 
-            style={styles.qrButton}
-            onPress={() => setQrModalVisible(true)}
-          >
-            <Ionicons name="qr-code-outline" size={24} color="#fff" />
-            <Text style={styles.buttonText}>Generar QR</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Botón QR - Solo para administradores y trabajadores */}
+        {(isAdmin() || isTrabajador()) && (
+          <View style={styles.qrButtonContainer}>
+            <TouchableOpacity 
+              style={styles.qrButton}
+              onPress={() => setQrModalVisible(true)}
+            >
+              <Ionicons name="qr-code-outline" size={24} color="#fff" />
+              <Text style={styles.buttonText}>Generar QR</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
 
       {/* Modal de Confirmación de Eliminación */}

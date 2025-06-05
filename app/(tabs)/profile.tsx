@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,9 @@ import { supabase } from '../../lib/config/supabase';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 import { useUserProfile, useCacheManager } from '../../hooks/useCachedData';
 import cachedApi from '../../lib/services/cachedApi';
+import { createStyles, tw } from '../../styles/tailwind';
+import CongratulationsModal from '../../components/CongratulationsModal';
+import { PremiumNotificationService } from '../../lib/services/premiumNotifications';
 
 interface UserData {
   email: string;
@@ -30,6 +33,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [congratulationsData, setCongratulationsData] = useState<any>(null);
   const [userData, setUserData] = useState<UserData>({
     email: '',
     role: '',
@@ -50,6 +55,52 @@ export default function ProfilePage() {
     error: profileError,
     refresh: refreshProfile 
   } = useUserProfile();
+
+  const styles = {
+    container: createStyles(tw.container),
+    header: createStyles(`${tw.header} p-5 pt-10`),
+    title: createStyles('text-2xl font-bold text-white'),
+    subtitle: createStyles('text-base text-white opacity-80 mt-1'),
+    card: createStyles('bg-white m-5 rounded-lg p-5'),
+    avatarContainer: createStyles('items-center mb-5'),
+    avatar: createStyles('w-20 h-20 rounded-full bg-green-600 justify-center items-center mb-2'),
+    avatarText: createStyles('text-2xl font-bold text-white'),
+    role: createStyles('text-base text-gray-600 font-semibold'),
+    infoContainer: createStyles('mb-5'),
+    label: createStyles(tw.label + ' mt-2'),
+    infoText: createStyles('text-base text-gray-600 mb-2 py-2 px-3 bg-gray-50 rounded-lg'),
+    input: createStyles(tw.input),
+    buttonContainer: createStyles('gap-4'),
+    button: createStyles('py-3 px-5 rounded-lg items-center'),
+    editButton: createStyles(tw.primaryButton + ' py-3 px-5'),
+    saveButton: createStyles(tw.primaryButton + ' py-3 px-5'),
+    cancelButton: createStyles('bg-gray-100 py-3 px-5 rounded-lg items-center border border-gray-300'),
+    logoutButton: createStyles('bg-red-500 py-3 px-5 rounded-lg items-center mt-4'),
+    buttonText: createStyles('text-white text-base font-semibold'),
+    cancelText: createStyles('text-gray-800 text-base font-semibold'),
+    loadingContainer: createStyles(tw.loadingContainer),
+    premiumBadge: createStyles('bg-yellow-500 px-2 py-1 rounded-full'),
+    premiumText: createStyles('text-white text-xs font-bold'),
+    workerBadge: createStyles('bg-blue-500 px-2 py-1 rounded-full'),
+    workerText: createStyles('text-white text-xs font-bold'),
+    upgradeButton: createStyles('bg-yellow-500 py-2 px-4 rounded-lg mt-2'),
+    upgradeButtonText: createStyles('text-white text-sm font-semibold'),
+    helperText: createStyles('text-sm text-gray-600 text-center mt-2'),
+  };
+
+  // Verificar felicitaciones Premium al cargar
+  useEffect(() => {
+    const checkPremiumActivation = async () => {
+      const pendingActivation = await PremiumNotificationService.getPendingActivation();
+      if (pendingActivation) {
+        console.log('🎊 Activación Premium detectada en perfil:', pendingActivation);
+        setCongratulationsData(pendingActivation);
+        setShowCongratulations(true);
+      }
+    };
+
+    checkPremiumActivation();
+  }, []);
 
   // Cargar datos del perfil al montar el componente
   useEffect(() => {
@@ -74,10 +125,10 @@ export default function ProfilePage() {
         if (userData) {
           const processedData: UserData = {
             email: userData.email || '',
-            role: userData.rol?.nombre_rol || '',
-            roleDisplay: userData.rol?.nombre_rol === 'admin' ? 'Ganadero' : 
-                       userData.rol?.nombre_rol === 'trabajador' ? 'Trabajador' : 
-                       userData.rol?.nombre_rol === 'veterinario' ? 'Veterinario' : userData.rol?.nombre_rol || '',
+            role: userData.id_rol?.toString() || '',
+            roleDisplay: userData.id_rol === 1 ? 'Ganadero' : 
+                       userData.id_rol === 2 ? 'Trabajador' : 
+                       userData.id_rol === 3 ? 'Veterinario' : 'Usuario',
             primer_nombre: userData.primer_nombre || '',
             segundo_nombre: userData.segundo_nombre || '',
             primer_apellido: userData.primer_apellido || '',
@@ -95,16 +146,16 @@ export default function ProfilePage() {
         if (userInfo) {
           const fallbackData: UserData = {
             email: userInfo.email || currentUser?.email || '',
-            role: userInfo.rol?.nombre_rol || '',
-            roleDisplay: userInfo.rol?.nombre_rol === 'admin' ? 'Administrador' : 
-                  userInfo.rol?.nombre_rol === 'veterinario' ? 'Veterinario' :
-                  userInfo.rol?.nombre_rol === 'user' || userInfo.rol?.nombre_rol === 'trabajador' ? 'Trabajador' : 'Usuario',
+            role: userInfo.id_rol?.toString() || '',
+            roleDisplay: userInfo.id_rol === 1 ? 'Ganadero' : 
+                  userInfo.id_rol === 2 ? 'Trabajador' :
+                  userInfo.id_rol === 3 ? 'Veterinario' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
             segundo_nombre: userInfo.segundo_nombre || '',
             primer_apellido: userInfo.primer_apellido || '',
             segundo_apellido: userInfo.segundo_apellido || '',
-            id_premium: userInfo.id_rol || 1,
-            premium_type: userInfo.id_rol === 2 ? 'Premium' : 'Free'
+            id_premium: userInfo.id_premium || 1,
+            premium_type: userInfo.id_premium === 2 ? 'Premium' : 'Free'
           };
           setUserData(fallbackData);
           setFormData(fallbackData);
@@ -180,6 +231,48 @@ export default function ProfilePage() {
     setFormData({...userData});
   };
 
+  const handleRefreshProfile = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Limpiar todo el caché
+      await invalidateCache('users');
+      
+      // Forzar recarga desde la API
+      const freshUserData = await api.users.getProfile();
+      
+      if (freshUserData) {
+        console.log('Datos frescos del backend:', freshUserData);
+        console.log('id_rol recibido:', freshUserData.id_rol);
+        
+        const processedData: UserData = {
+          email: freshUserData.email || '',
+          role: freshUserData.id_rol?.toString() || '',
+          roleDisplay: freshUserData.id_rol === 1 ? 'Ganadero' : 
+                     freshUserData.id_rol === 2 ? 'Trabajador' : 
+                     freshUserData.id_rol === 3 ? 'Veterinario' : 'Usuario',
+          primer_nombre: freshUserData.primer_nombre || '',
+          segundo_nombre: freshUserData.segundo_nombre || '',
+          primer_apellido: freshUserData.primer_apellido || '',
+          segundo_apellido: freshUserData.segundo_apellido || '',
+          id_premium: freshUserData.id_premium || 1,
+          premium_type: freshUserData.premium_type || 'Free'
+        };
+        
+        console.log('Rol procesado:', processedData.roleDisplay);
+        setUserData(processedData);
+        setFormData(processedData);
+        
+        Alert.alert('Éxito', 'Perfil actualizado con datos frescos del servidor');
+      }
+    } catch (error) {
+      console.error('Error al refrescar perfil:', error);
+      Alert.alert('Error', 'No se pudo refrescar el perfil');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert(
       'Cerrar sesión',
@@ -200,23 +293,23 @@ export default function ProfilePage() {
     );
   };
 
+  const handleCloseCongratulations = () => {
+    setShowCongratulations(false);
+    setCongratulationsData(null);
+    console.log('🎊 Felicitaciones cerradas en perfil');
+  };
+
   const getInitials = () => {
-    const primerNombre = userData.primer_nombre || '';
-    const primerApellido = userData.primer_apellido || '';
-    
-    if (!primerNombre && !primerApellido) return '?';
-    
-    const inicialNombre = primerNombre ? primerNombre.charAt(0) : '';
-    const inicialApellido = primerApellido ? primerApellido.charAt(0) : '';
-    
-    return (inicialNombre + inicialApellido).toUpperCase();
+    const firstName = userData.primer_nombre || '';
+    const lastName = userData.primer_apellido || '';
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#27ae60" />
-        <Text style={{ marginTop: 10 }}>Cargando perfil...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={tw.colors.primary} />
+        <Text style={styles.subtitle}>Cargando perfil...</Text>
       </View>
     );
   }
@@ -234,82 +327,80 @@ export default function ProfilePage() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials()}</Text>
             </View>
-            <Text style={styles.role}>{userData.roleDisplay}</Text>
+            <View style={createStyles('flex-row items-center justify-center')}>
+              {userData.id_premium === 2 && (
+                <View style={styles.premiumBadge}>
+                  <Text style={styles.premiumText}>PREMIUM</Text>
+                </View>
+              )}
+              {userData.id_premium === 3 && (
+                <View style={styles.workerBadge}>
+                  <Text style={styles.workerText}>TRABAJADOR</Text>
+                </View>
+              )}
+            </View>
+            {userData.id_premium === 1 && (
+              <TouchableOpacity 
+                style={styles.upgradeButton}
+                onPress={() => setShowPremiumModal(true)}
+              >
+                <Text style={styles.upgradeButtonText}>Actualizar a Premium</Text>
+              </TouchableOpacity>
+            )}
+            {userData.id_premium === 3 && (
+              <Text style={styles.helperText}>
+                Solo el administrador puede gestionar la suscripción Premium
+              </Text>
+            )}
           </View>
           
           <View style={styles.infoContainer}>
+            <Text style={styles.label}>Primer nombre</Text>
             {isEditing ? (
-              <>
-                <Text style={styles.label}>Primer nombre</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.primer_nombre}
-                  onChangeText={(text) => setFormData({...formData, primer_nombre: text})}
-                  placeholder="Primer nombre"
-                />
-                
-                <Text style={styles.label}>Segundo nombre</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.segundo_nombre}
-                  onChangeText={(text) => setFormData({...formData, segundo_nombre: text})}
-                  placeholder="Segundo nombre (opcional)"
-                />
-                
-                <Text style={styles.label}>Primer apellido</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.primer_apellido}
-                  onChangeText={(text) => setFormData({...formData, primer_apellido: text})}
-                  placeholder="Primer apellido"
-                />
-                
-                <Text style={styles.label}>Segundo apellido</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.segundo_apellido}
-                  onChangeText={(text) => setFormData({...formData, segundo_apellido: text})}
-                  placeholder="Segundo apellido (opcional)"
-                />    
-
-                <Text style={styles.label}>Suscripción</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.premium_type || (formData.id_premium === 2 ? 'Premium' : 'Free')}
-                  editable={false}
-                />
-
-              </>
+              <TextInput
+                style={styles.input}
+                value={formData.primer_nombre}
+                onChangeText={(text) => setFormData({...formData, primer_nombre: text})}
+                placeholder="Primer nombre"
+              />
             ) : (
-              <>
-                <Text style={styles.label}>Primer nombre</Text>
-                <Text style={styles.infoText}>{userData.primer_nombre || 'No especificado'}</Text>
-                
-                <Text style={styles.label}>Segundo nombre</Text>
-                <Text style={styles.infoText}>{userData.segundo_nombre || 'No especificado'}</Text>
-                
-                <Text style={styles.label}>Primer apellido</Text>
-                <Text style={styles.infoText}>{userData.primer_apellido || 'No especificado'}</Text>
-                
-                <Text style={styles.label}>Segundo apellido</Text>
-                <Text style={styles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
-
-                <Text style={styles.label}>Suscripción</Text>
-                <Text style={styles.infoText}>
-                  {userData.premium_type || (userData.id_premium === 2 ? 'Premium' : 'Free')}
-                </Text>
-                
-                {userData.id_premium !== 2 && (
-                  <TouchableOpacity 
-                    style={[styles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
-                    onPress={() => setShowPremiumModal(true)}
-                  >
-                    <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
-                      Actualizar a Premium
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </>
+              <Text style={styles.infoText}>{userData.primer_nombre}</Text>
+            )}
+            
+            <Text style={styles.label}>Segundo nombre</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.segundo_nombre}
+                onChangeText={(text) => setFormData({...formData, segundo_nombre: text})}
+                placeholder="Segundo nombre (opcional)"
+              />
+            ) : (
+              <Text style={styles.infoText}>{userData.segundo_nombre || 'No especificado'}</Text>
+            )}
+            
+            <Text style={styles.label}>Primer apellido</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.primer_apellido}
+                onChangeText={(text) => setFormData({...formData, primer_apellido: text})}
+                placeholder="Primer apellido"
+              />
+            ) : (
+              <Text style={styles.infoText}>{userData.primer_apellido}</Text>
+            )}
+            
+            <Text style={styles.label}>Segundo apellido</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.segundo_apellido}
+                onChangeText={(text) => setFormData({...formData, segundo_apellido: text})}
+                placeholder="Segundo apellido (opcional)"
+              />
+            ) : (
+              <Text style={styles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
             )}
             
             <Text style={styles.label}>Correo electrónico</Text>
@@ -376,134 +467,13 @@ export default function ProfilePage() {
         title="¡Actualiza tu cuenta a Premium!"
         subtitle="Desbloquea todas las funcionalidades de CowTracker"
       />
+      
+      {/* Modal de Felicitaciones */}
+      <CongratulationsModal
+        visible={showCongratulations}
+        onClose={handleCloseCongratulations}
+        paymentData={congratulationsData}
+      />
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    padding: 20,
-    paddingTop: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 5,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    margin: 20,
-    borderRadius: 10,
-    padding: 20,
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#27ae60',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  role: {
-    fontSize: 16,
-    color: '#777777',
-    fontWeight: '600',
-  },
-  infoContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 5,
-    marginTop: 10,
-  },
-  infoText: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#dddddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#ffffff',
-    marginBottom: 10,
-  },
-  buttonContainer: {
-    gap: 10,
-  },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  editButton: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  saveButton: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#dddddd',
-  },
-  logoutButton: {
-    backgroundColor: '#e74c3c',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelText: {
-    color: '#333333',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-}); 
+} 

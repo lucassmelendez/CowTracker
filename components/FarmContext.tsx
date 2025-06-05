@@ -12,6 +12,7 @@ interface FarmContextType {
   selectedFarm: Farm | null;
   selectFarm: (farm: Farm) => void;
   clearSelectedFarm: () => void;
+  clearAllFarmData: () => Promise<void>;
   loading: boolean;
 }
 
@@ -76,10 +77,34 @@ export const FarmProvider: React.FC<FarmProviderProps> = ({ children }) => {
     setSelectedFarm(null);
   };
 
+  const clearAllFarmData = async (): Promise<void> => {
+    try {
+      console.log('Limpiando todos los datos de granjas...');
+      setSelectedFarm(null);
+      await AsyncStorage.removeItem('selectedFarm');
+      
+      // Limpiar cualquier otro dato relacionado con granjas
+      const allKeys = await AsyncStorage.getAllKeys();
+      const farmKeys = allKeys.filter(key => 
+        key.includes('farm_') || 
+        key.includes('selectedFarm') ||
+        key.includes('farmPreferences')
+      );
+      
+      if (farmKeys.length > 0) {
+        await AsyncStorage.multiRemove(farmKeys);
+        console.log('Datos de granjas limpiados:', farmKeys.length);
+      }
+    } catch (error) {
+      console.error('Error al limpiar datos de granjas:', error);
+    }
+  };
+
   const value: FarmContextType = {
     selectedFarm,
     selectFarm,
     clearSelectedFarm,
+    clearAllFarmData,
     loading
   };
 

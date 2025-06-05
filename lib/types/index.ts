@@ -186,6 +186,7 @@ export interface FarmContextType {
   selectedFarm: Farm | null;
   selectFarm: (farm: Farm) => void;
   clearSelectedFarm: () => void;
+  clearAllFarmData: () => Promise<void>;
   loading: boolean;
 }
 

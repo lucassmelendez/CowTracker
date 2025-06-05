@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../lib/services/api';
 import { supabase } from '../lib/config/supabase';
+import { useCacheCleanup } from '../hooks/useCacheCleanup';
 
 interface UserRole {
   id_rol: number;
@@ -83,6 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const isWeb = Platform.OS === 'web';
   const router = useRouter();
+  const { clearAllUserData } = useCacheCleanup();
 
   // Función segura para verificar y cargar la sesión de usuario
   const loadUserSession = async (): Promise<void> => {
@@ -237,6 +239,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
       
+      // Limpiar datos del usuario anterior antes de hacer login
+      await clearAllUserData();
+      console.log('Datos del usuario anterior limpiados');
+      
       // Iniciar sesión con Supabase primero
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
@@ -282,10 +288,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     try {
       setLoading(true);
+      console.log('Iniciando proceso de logout...');
       
       // Cerrar sesión en Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      console.log('Sesión cerrada en Supabase');
       
       // Limpiar el estado local
       setCurrentUser(null);
@@ -293,6 +301,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Limpiar el token de la API
       api.clearAuthToken();
+      console.log('Token de API limpiado');
+      
+      // Limpiar completamente todos los datos del usuario
+      await clearAllUserData();
+      
+      console.log('Logout completado exitosamente');
     } catch (error: any) {
       console.error('Error al cerrar sesión:', error);
       setError(error.message || 'Error al cerrar sesión');

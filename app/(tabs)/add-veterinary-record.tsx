@@ -60,10 +60,7 @@ export default function AddVeterinaryRecordPage() {
   }, [cattleId]);
   
   const handleSubmit = async () => {
-    if (!diagnostico.trim()) {
-      Alert.alert('Campo requerido', 'Por favor, ingresa un diagnóstico');
-      return;
-    }
+
     
     if (!cattleId) {
       Alert.alert('Error', 'No se pudo identificar el ganado');
@@ -82,12 +79,12 @@ export default function AddVeterinaryRecordPage() {
       // Datos ajustados según lo que espera el backend (ver supabaseGanadoModel.js líneas 620-625)
       const recordData = {
         fecha: fechaTratamiento.toISOString(), // El backend busca 'fecha', no 'fecha_tratamiento'
-        diagnostico: diagnostico.trim(),
+        diagnostico: diagnostico.trim() || '', // Permitir diagnóstico vacío
         tratamiento: tratamiento.trim() || '',
         nota: nota.trim() || '',
         // También incluir campos alternativos que el backend puede usar
         fecha_tratamiento: fechaTratamiento.toISOString(),
-        descripcion: diagnostico.trim(), // Campo alternativo para diagnóstico
+        descripcion: diagnostico.trim() || '', // Campo alternativo para diagnóstico (puede estar vacío)
         notas: nota.trim() || '' // Campo alternativo para notas
       };
       
@@ -218,10 +215,10 @@ export default function AddVeterinaryRecordPage() {
           
           {/* Diagnóstico */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Diagnóstico <Text style={styles.required}>*</Text></Text>
+            <Text style={styles.label}>Diagnóstico</Text>
             <TextInput
-              style={[styles.inputLarge, diagnostico.trim() === '' && { borderColor: '#e74c3c' }]}
-              placeholder="Ingrese el diagnóstico del animal"
+              style={styles.inputLarge}
+              placeholder="Ingrese el diagnóstico del animal (opcional)"
               value={diagnostico}
               onChangeText={setDiagnostico}
               multiline
@@ -268,10 +265,10 @@ export default function AddVeterinaryRecordPage() {
             <TouchableOpacity
               style={[
                 styles.submitButton,
-                (submitting || diagnostico.trim() === '') && { opacity: 0.7 }
+                submitting && { opacity: 0.7 }
               ]}
               onPress={handleSubmit}
-              disabled={submitting || diagnostico.trim() === ''}
+              disabled={submitting}
             >
               {submitting ? (
                 <ActivityIndicator size="small" color="#fff" />

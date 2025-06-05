@@ -317,10 +317,12 @@ export default function VeterinaryDataPage() {
             </View>
             
             {/* Diagnóstico */}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Diagnóstico:</Text>
-              <Text style={styles.infoValue}>{vetInfo?.diagnostico || 'No especificado'}</Text>
-            </View>
+            {vetInfo?.diagnostico && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Diagnóstico:</Text>
+                <Text style={styles.infoValue}>{vetInfo.diagnostico}</Text>
+              </View>
+            )}
             
             {/* Tratamiento */}
             {vetInfo?.tratamiento && (

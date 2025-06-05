@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View, StyleSheet, TouchableOpacity, Modal, Platform } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import FarmSelector from '../../components/FarmSelector';
 import { useFarm } from '../../components/FarmContext';
-import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 
 // Header simple solo con título y botón de volver atrás
@@ -40,22 +39,10 @@ function SimpleHeader({ title }: { title: string }) {
 
 function CustomHeader({ title, showBackButton = false }: { title: string; showBackButton?: boolean }) {
   const { selectedFarm, selectFarm } = useFarm();
-  const { userInfo, logout } = useAuth();
   const router = useRouter();
-  const [profileMenuVisible, setProfileMenuVisible] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setProfileMenuVisible(false);
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
 
   const handleNavigateToProfile = () => {
-    setProfileMenuVisible(false);
-    router.push('/profile');
+    router.push('/(tabs)/profile');
   };
 
   const handleGoBack = () => {
@@ -93,63 +80,10 @@ function CustomHeader({ title, showBackButton = false }: { title: string; showBa
         
         <TouchableOpacity 
           style={styles.profileButton}
-          onPress={() => setProfileMenuVisible(true)}
+          onPress={handleNavigateToProfile}
         >
           <Ionicons name="person" size={24} color="#ffffff" />
         </TouchableOpacity>
-
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={profileMenuVisible}
-          onRequestClose={() => setProfileMenuVisible(false)}
-        >
-          <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setProfileMenuVisible(false)}
-          >
-            <View style={styles.profileMenuContainer}>
-              <View style={styles.profileHeader}>
-                <Text style={styles.profileName}>
-                  {userInfo?.name || userInfo?.displayName || 'Usuario'}
-                </Text>
-                <Text style={styles.profileEmail}>
-                  {userInfo?.email || ''}
-                </Text>
-              </View>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={handleNavigateToProfile}
-              >
-                <Ionicons name="person" size={18} color="#333" />
-                <Text style={styles.menuItemText}>Mi Perfil</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => {
-                  router.push('/farms');
-                  setProfileMenuVisible(false);
-                }}
-              >
-                <Ionicons name="business" size={18} color="#333" />
-                <Text style={styles.menuItemText}>Granjas</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.menuDivider} />
-              
-              <TouchableOpacity 
-                style={[styles.menuItem, styles.logoutItem]}
-                onPress={handleLogout}
-              >
-                <Ionicons name="log-out" size={18} color="#e74c3c" />
-                <Text style={[styles.menuItemText, styles.logoutText]}>Cerrar sesión</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
       </View>
     </View>
   );

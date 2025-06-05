@@ -3,9 +3,41 @@ import { Stack, useRouter } from 'expo-router';
 import { AuthProvider, useAuth } from '../components/AuthContext';
 import { FarmProvider } from '../components/FarmContext';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, ActivityIndicator } from 'react-native';
+import { Text, View, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import CustomHeader from '../components/CustomHeader';
 import { createStyles, tw } from '../styles/tailwind';
+import { Ionicons } from '@expo/vector-icons';
+
+// Header simple solo con título y botón de volver atrás
+function SimpleHeader({ title }: { title: string }) {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
+  const handleTitlePress = () => {
+    router.replace('/(tabs)');
+  };
+
+  return (
+    <View style={simpleHeaderStyles.simpleHeaderContainer}>
+      <TouchableOpacity 
+        style={simpleHeaderStyles.backButton}
+        onPress={handleGoBack}
+      >
+        <Ionicons name="arrow-back" size={24} color="#ffffff" />
+      </TouchableOpacity>
+      <TouchableOpacity onPress={handleTitlePress} style={simpleHeaderStyles.simpleTitleContainer}>
+        <Text style={simpleHeaderStyles.simpleHeaderTitle}>{title}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();
@@ -76,15 +108,7 @@ function RootLayoutNav() {
                 gestureEnabled: false,
               }} 
             />
-            <Stack.Screen 
-              name="qr-scanner" 
-              options={{ 
-                headerShown: true,
-                headerTitle: () => <CustomHeader title="Escáner QR" />,
-                headerBackVisible: false,
-                gestureEnabled: false,
-              }} 
-            />
+
             <Stack.Screen 
               name="farms" 
               options={{ 
@@ -134,6 +158,34 @@ function RootLayoutNav() {
     </View>
   );
 }
+
+const simpleHeaderStyles = StyleSheet.create({
+  simpleHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingRight: 5,
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: 5,
+    marginRight: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  simpleTitleContainer: {
+    flex: 1,
+  },
+  simpleHeaderTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#ffffff',
+  },
+});
 
 export default function RootLayout() {
   return (

@@ -143,7 +143,7 @@ export default function TabOneScreen() {
         id: 'qr',
         title: 'Escanear QR',
         icon: '📷',
-        route: '/qr-scanner',
+        route: '/(tabs)/qr-scanner',
         description: 'Escanear códigos QR'
       },
       {
@@ -211,7 +211,7 @@ export default function TabOneScreen() {
         id: 'qr',
         title: 'Escanear QR',
         icon: '📷',
-        route: '/qr-scanner',
+        route: '/(tabs)/qr-scanner',
         description: 'Escanear códigos QR'
       },
       {
@@ -279,7 +279,7 @@ export default function TabOneScreen() {
         id: 'qr',
         title: 'Escanear QR',
         icon: '📷',
-        route: '/qr-scanner',
+        route: '/(tabs)/qr-scanner',
         description: 'Escanear códigos QR'
       },
       {

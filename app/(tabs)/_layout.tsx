@@ -315,6 +315,15 @@ export default function TabLayout() {
           headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
+      <Stack.Screen
+        name="qr-scanner"
+        options={{
+          headerTitle: () => <SimpleHeader title="Escáner QR" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
     </Stack>
   );
 }

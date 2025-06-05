@@ -77,8 +77,11 @@ export default function ProfilePage() {
     loadingContainer: createStyles(tw.loadingContainer),
     premiumBadge: createStyles('bg-yellow-500 px-2 py-1 rounded-full'),
     premiumText: createStyles('text-white text-xs font-bold'),
+    workerBadge: createStyles('bg-blue-500 px-2 py-1 rounded-full'),
+    workerText: createStyles('text-white text-xs font-bold'),
     upgradeButton: createStyles('bg-yellow-500 py-2 px-4 rounded-lg mt-2'),
     upgradeButtonText: createStyles('text-white text-sm font-semibold'),
+    infoText: createStyles('text-sm text-gray-600 text-center mt-2'),
   };
 
   // Cargar datos del perfil al montar el componente
@@ -265,6 +268,11 @@ export default function ProfilePage() {
                   <Text style={styles.premiumText}>PREMIUM</Text>
                 </View>
               )}
+              {userData.id_premium === 3 && (
+                <View style={styles.workerBadge}>
+                  <Text style={styles.workerText}>TRABAJADOR</Text>
+                </View>
+              )}
             </View>
             {userData.id_premium === 1 && (
               <TouchableOpacity 
@@ -273,6 +281,11 @@ export default function ProfilePage() {
               >
                 <Text style={styles.upgradeButtonText}>Actualizar a Premium</Text>
               </TouchableOpacity>
+            )}
+            {userData.id_premium === 3 && (
+              <Text style={styles.infoText}>
+                Solo el administrador puede gestionar la suscripción Premium
+              </Text>
             )}
           </View>
           

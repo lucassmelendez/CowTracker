@@ -88,7 +88,7 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({ title }) => {
                 onPress={handleNavigateToFarms}
               >
                 <Ionicons name="business" size={18} color="#333" />
-                <Text style={styles.menuItemText}>Mis Granjas</Text>
+                <Text style={styles.menuItemText}>Granjas</Text>
               </TouchableOpacity>
               
               <View style={styles.menuDivider} />

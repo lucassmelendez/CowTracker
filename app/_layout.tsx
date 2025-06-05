@@ -79,7 +79,7 @@ function RootLayoutNav() {
               name="farms" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Mis Granjas" /> 
+                headerTitle: () => <CustomHeader title="Granjas" /> 
               }} 
             />
             <Stack.Screen 

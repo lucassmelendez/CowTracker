@@ -81,7 +81,7 @@ function CustomHeader({ title }: { title: string }) {
                 }}
               >
                 <Ionicons name="business" size={18} color="#333" />
-                <Text style={styles.menuItemText}>Mis Granjas</Text>
+                <Text style={styles.menuItemText}>Granjas</Text>
               </TouchableOpacity>
               
               <View style={styles.menuDivider} />
@@ -124,7 +124,7 @@ export default function TabLayout() {
       <Stack.Screen
         name="explore"
         options={{
-          headerTitle: () => <CustomHeader title="Mi Ganado" />,
+          headerTitle: () => <CustomHeader title="Ganado" />,
         }}
       />
       <Stack.Screen

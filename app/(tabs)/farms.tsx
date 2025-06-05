@@ -711,8 +711,8 @@ export default function FarmsPage() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mis Granjas</Text>
-        <Text style={styles.subtitle}>Gestiona tus propiedades</Text>
+        <Text style={styles.title}>Granjas</Text>
+        <Text style={styles.subtitle}>Gestiona tus Granjas o Granjas a las que perteneces</Text>
       </View>
 
       {loading ? (

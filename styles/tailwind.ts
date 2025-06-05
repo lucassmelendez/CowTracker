@@ -328,6 +328,9 @@ export const createStyles = (classes: string) => {
       case 'bg-gray-300':
         styles.backgroundColor = '#d1d5db';
         break;
+      case 'bg-blue-500':
+        styles.backgroundColor = '#3b82f6';
+        break;
       case 'bg-black':
         styles.backgroundColor = '#000000';
         break;

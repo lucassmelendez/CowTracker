@@ -194,13 +194,6 @@ export default function TabOneScreen() {
         description: 'Gestiona todo el ganado'
       },
       {
-        id: 'informe',
-        title: 'Informes',
-        icon: '📊',
-        route: '/(tabs)/report',
-        description: 'Generar informes de ganado'
-      },
-      {
         id: 'production',
         title: 'Producción',
         icon: '🥩',
@@ -263,10 +256,10 @@ export default function TabOneScreen() {
     const veterinarioMenuItems = [
       {
         id: 'cattle',
-        title: 'Mi Ganado',
+        title: 'Ganado',
         icon: '🐄',
         route: '/(tabs)/explore',
-        description: 'Gestiona todo tu ganado'
+        description: 'Gestiona todo el ganado'
       },
       {
         id: 'vet',

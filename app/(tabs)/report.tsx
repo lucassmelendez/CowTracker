@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   Modal,
   ActivityIndicator,
   ScrollView,
@@ -25,6 +24,7 @@ import { useFarm } from '../../components/FarmContext';
 import api from '../../lib/services/api';
 import { ReportGenerator } from '../../lib/utils/reportGenerator';
 import { ReportData, CattleDetail } from '../../lib/types';
+import { useCustomModal } from '../../components/CustomModal';
 
 const { width } = Dimensions.get('window');
 
@@ -72,6 +72,9 @@ export default function ReportPage() {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<string>('');
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  
+  // Hook para modales personalizados
+  const { showError, ModalComponent } = useCustomModal();
 
   // Usar el contexto de granja del header
   const { selectedFarm } = useFarm();
@@ -216,7 +219,7 @@ export default function ReportPage() {
     } catch (error) {
       console.error('Error generando datos del informe:', error);
       setReportError('No se pudieron generar los datos del informe');
-      Alert.alert('Error', 'No se pudieron generar los datos del informe');
+      showError('Error', 'No se pudieron generar los datos del informe');
     } finally {
       setReportLoading(false);
     }
@@ -230,7 +233,7 @@ export default function ReportPage() {
 
   const generateReport = () => {
     if (!reportData) {
-      Alert.alert('Error', 'No hay datos disponibles para generar el informe');
+      showError('Error', 'No hay datos disponibles para generar el informe');
       return;
     }
 
@@ -698,6 +701,9 @@ ${date}
       </View>
         </View>
       </Modal>
+      
+      {/* Modal personalizado */}
+      <ModalComponent />
     </View>
   );
 }

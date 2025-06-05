@@ -4,7 +4,6 @@ import {
   Text, 
   TouchableOpacity, 
   StyleSheet, 
-  Alert, 
   Modal,
   ActivityIndicator,
   Clipboard
@@ -15,11 +14,15 @@ import { useFarm } from '../../components/FarmContext';
 import api from '../../lib/services/api';
 import { useFarmWorkers, useFarmVeterinarians, useCacheManager } from '../../hooks/useCachedData';
 import cachedApi from '../../lib/services/cachedApi';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function Admin() {
   const { userInfo } = useAuth();
   const { selectedFarm } = useFarm();
   const { invalidateCache } = useCacheManager();
+  
+  // Hook para modales personalizados
+  const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
   
   const [loading, setLoading] = useState(true);
   const [generatingCode, setGeneratingCode] = useState(false);
@@ -94,7 +97,7 @@ export default function Admin() {
       const farmId = (selectedFarm._id || selectedFarm.id_finca?.toString()) as string;
       
       if (!farmId) {
-        Alert.alert("Error", "ID de granja no válido");
+        showError("Error", "ID de granja no válido");
         return;
       }
       
@@ -107,10 +110,10 @@ export default function Admin() {
         await cachedApi.removeFarmVeterinarian(farmId, selectedUser._id);
         await refreshVeterinarians();
       }
-      Alert.alert("Éxito", "Personal eliminado correctamente");
+      showSuccess("Éxito", "Personal eliminado correctamente");
     } catch (error) {
       console.error("Error eliminando personal:", error);
-      Alert.alert("Error", "No se pudo eliminar al personal seleccionado");
+      showError("Error", "No se pudo eliminar al personal seleccionado");
     } finally {
       setLoading(false);
       setDeleteModalVisible(false);
@@ -120,7 +123,7 @@ export default function Admin() {
   
   const handleAddNewStaff = async (tipo: string) => {
     if (!selectedFarm) {
-      Alert.alert("Error", "Selecciona primero una finca");
+      showError("Error", "Selecciona primero una finca");
       return;
     }
     
@@ -128,7 +131,7 @@ export default function Admin() {
     const idFinca = selectedFarm.id_finca || selectedFarm._id;
     
     if (!idFinca) {
-      Alert.alert("Error", "La finca seleccionada no tiene un ID válido");
+      showError("Error", "La finca seleccionada no tiene un ID válido");
       return;
     }
     
@@ -193,7 +196,7 @@ export default function Admin() {
         mensaje += `: ${error.message}`;
       }
       
-      Alert.alert("Error", mensaje);
+      showError("Error", mensaje);
     } finally {
       setGeneratingCode(false);
     }
@@ -203,9 +206,9 @@ export default function Admin() {
   const handleCopyCode = async () => {
     try {
       await Clipboard.setString(generatedCode);
-      Alert.alert("¡Código copiado!", "El código se ha copiado al portapapeles. Compártelo con el colaborador.");
+      showSuccess("¡Código copiado!", "El código se ha copiado al portapapeles. Compártelo con el colaborador.");
     } catch (error) {
-      Alert.alert("Error", "No se pudo copiar el código");
+      showError("Error", "No se pudo copiar el código");
     }
   };
   
@@ -441,6 +444,9 @@ export default function Admin() {
             </View>
           </View>
         </Modal>
+        
+        {/* Modal personalizado */}
+        <ModalComponent />
       </View>
     </View>
   );

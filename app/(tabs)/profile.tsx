@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import cachedApi from '../../lib/services/cachedApi';
 import { createStyles, tw } from '../../styles/tailwind';
 import CongratulationsModal from '../../components/CongratulationsModal';
 import { PremiumNotificationService } from '../../lib/services/premiumNotifications';
+import { useCustomModal } from '../../components/CustomModal';
 
 interface UserData {
   email: string;
@@ -30,6 +31,9 @@ export default function ProfilePage() {
   const { currentUser, userInfo, updateProfile, logout } = useAuth();
   const router = useRouter();
   const { invalidateCache } = useCacheManager();
+  
+  // Hook para modales personalizados
+  const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -181,7 +185,7 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       if (formData.password && formData.password !== formData.confirmPassword) {
-        Alert.alert('Error', 'Las contraseñas no coinciden');
+        showError('Error', 'Las contraseñas no coinciden');
         return;
       }
 
@@ -216,11 +220,12 @@ export default function ProfilePage() {
         id_premium: formData.id_premium
       });
       
-      Alert.alert('Éxito', 'Perfil actualizado correctamente');
-      setIsEditing(false);
+      showSuccess('Éxito', 'Perfil actualizado correctamente', () => {
+        setIsEditing(false);
+      });
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
-      Alert.alert('Error', 'No se pudo actualizar el perfil. Por favor, intenta de nuevo.');
+      showError('Error', 'No se pudo actualizar el perfil. Por favor, intenta de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -263,33 +268,25 @@ export default function ProfilePage() {
         setUserData(processedData);
         setFormData(processedData);
         
-        Alert.alert('Éxito', 'Perfil actualizado con datos frescos del servidor');
+        showSuccess('Éxito', 'Perfil actualizado con datos frescos del servidor');
       }
     } catch (error) {
       console.error('Error al refrescar perfil:', error);
-      Alert.alert('Error', 'No se pudo refrescar el perfil');
+      showError('Error', 'No se pudo refrescar el perfil');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert(
+    showConfirm(
       'Cerrar sesión',
       '¿Está seguro que desea cerrar sesión?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Cerrar sesión',
-          onPress: () => {
-            logout();
-          },
-          style: 'destructive',
-        },
-      ]
+      () => {
+        logout();
+      },
+      'Cerrar sesión',
+      'Cancelar'
     );
   };
 
@@ -474,6 +471,9 @@ export default function ProfilePage() {
         onClose={handleCloseCongratulations}
         paymentData={congratulationsData}
       />
+      
+      {/* Modal personalizado */}
+      <ModalComponent />
     </View>
   );
 } 

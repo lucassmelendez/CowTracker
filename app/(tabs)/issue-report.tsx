@@ -5,7 +5,6 @@ import {
   ScrollView, 
   TouchableOpacity, 
   TextInput, 
-  Alert, 
   KeyboardAvoidingView, 
   Platform, 
   Linking,
@@ -15,12 +14,16 @@ import {
 } from 'react-native';
 // import { Stack } from 'expo-router'; // Removido para usar el header del layout
 import { useAuth } from '../../components/AuthContext';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function IssueReport() {
   const [reportText, setReportText] = useState('');
   const [reportType, setReportType] = useState('problema'); // 'problema' o 'sugerencia'
   const { userInfo } = useAuth();
   const supportEmail = 'soporte@cowtracker.cl';
+  
+  // Hook para modales personalizados
+  const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
 
   // Función para obtener información del dispositivo de manera segura
   const getDeviceInfo = async () => {
@@ -62,7 +65,7 @@ export default function IssueReport() {
 
   const handleSendReport = async () => {
     if (reportText.trim() === '') {
-      Alert.alert('Error', 'Por favor escribe tu reporte antes de enviarlo.');
+      showError('Error', 'Por favor escribe tu reporte antes de enviarlo.');
       return;
     }
     
@@ -129,71 +132,62 @@ export default function IssueReport() {
           // Abrir la aplicación de correo predeterminada
           await Linking.openURL(mailtoLink);
           
-          Alert.alert(
+          showSuccess(
             'Reporte Preparado', 
             'Se ha preparado un correo electrónico con tu reporte. Completa el envío desde tu aplicación de correo.',
-            [{ text: 'OK', onPress: () => setReportText('') }]
+            () => setReportText('')
           );
         } else {
           // Si no se puede abrir el cliente de correo, ofrecer opciones alternativas
-          Alert.alert(
+          showConfirm(
             'No se pudo abrir la aplicación de correo', 
-            'Tu reporte no pudo ser enviado automáticamente. ¿Qué deseas hacer?',
-            [
-              { 
-                text: 'Copiar reporte', 
-                onPress: async () => {
-                  await Clipboard.setString(fullMessage);
-                  Alert.alert(
-                    'Reporte copiado', 
-                    `Tu reporte ha sido copiado al portapapeles. Puedes pegarlo en un correo a: ${supportEmail}`,
-                    [{ text: 'OK', onPress: () => setReportText('') }]
-                  );
-                }
-              },
-              { text: 'Cancelar', style: 'cancel' }
-            ]
+            'Tu reporte no pudo ser enviado automáticamente. ¿Deseas copiar el reporte al portapapeles?',
+            async () => {
+              await Clipboard.setString(fullMessage);
+              showSuccess(
+                'Reporte copiado', 
+                `Tu reporte ha sido copiado al portapapeles. Puedes pegarlo en un correo a: ${supportEmail}`,
+                () => setReportText('')
+              );
+            },
+            'Copiar reporte',
+            'Cancelar'
           );
         }
       } catch (linkingError) {
         console.error('Error al abrir enlace:', linkingError);
         
         // Fallback: copiar al portapapeles
-        Alert.alert(
+        showConfirm(
           'Error al enviar', 
           'No se pudo abrir la aplicación de correo. ¿Deseas copiar el reporte al portapapeles?',
-          [
-            { 
-              text: 'Copiar', 
-              onPress: async () => {
-                await Clipboard.setString(fullMessage);
-                Alert.alert(
-                  'Reporte copiado', 
-                  `Tu reporte ha sido copiado al portapapeles. Puedes pegarlo en un correo a: ${supportEmail}`,
-                  [{ text: 'OK', onPress: () => setReportText('') }]
-                );
-              }
-            },
-            { text: 'Cancelar', style: 'cancel' }
-          ]
+          async () => {
+            await Clipboard.setString(fullMessage);
+            showSuccess(
+              'Reporte copiado', 
+              `Tu reporte ha sido copiado al portapapeles. Puedes pegarlo en un correo a: ${supportEmail}`,
+              () => setReportText('')
+            );
+          },
+          'Copiar',
+          'Cancelar'
         );
       }
     } catch (error) {
       console.error('Error al preparar el reporte:', error);
-      Alert.alert('Error', 'Hubo un problema al preparar tu reporte. Por favor intenta de nuevo.');
+      showError('Error', 'Hubo un problema al preparar tu reporte. Por favor intenta de nuevo.');
     }
   };
 
   const handleHelpPress = () => {
-    Alert.alert(
+    showSuccess(
       'Ayuda para reportar problemas',
       'Para reportar un problema o sugerencia:\n\n' +
       '1. Selecciona el tipo de reporte\n' +
       '2. Describe detalladamente el problema o sugerencia\n' +
       '3. Presiona "Enviar Reporte"\n' +
       '4. Se abrirá tu aplicación de correo con toda la información\n\n' +
-      'Incluye toda la información posible para ayudarnos a resolver tu problema más rápido.',
-      [{ text: 'Entendido' }]
+      'Incluye toda la información posible para ayudarnos a resolver tu problema más rápido.'
     );
   };
 
@@ -310,6 +304,9 @@ export default function IssueReport() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      
+      {/* Modal personalizado */}
+      <ModalComponent />
     </View>
   );
 }

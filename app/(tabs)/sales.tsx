@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   Modal,
   TextInput,
   ScrollView,
@@ -14,9 +13,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function SalesPage() {
   const router = useRouter();
+  
+  // Hook para modales personalizados
+  const { showSuccess, showError, ModalComponent } = useCustomModal();
   const [sales, setSales] = useState([
     { 
       id: '1', 
@@ -97,7 +100,7 @@ export default function SalesPage() {
 
   const handleSave = () => {
     if (!customer || selectedCattle.length === 0) {
-      Alert.alert('Error', 'Por favor complete todos los campos y seleccione al menos un animal');
+      showError('Error', 'Por favor complete todos los campos y seleccione al menos un animal');
       return;
     }
 
@@ -114,7 +117,7 @@ export default function SalesPage() {
 
     setSales([newSale, ...sales]);
     setAddModalVisible(false);
-    Alert.alert('Éxito', 'Venta registrada correctamente');
+    showSuccess('Éxito', 'Venta registrada correctamente');
   };
 
   const filteredSales = filterMonth === 'Todos' 
@@ -417,6 +420,9 @@ export default function SalesPage() {
           </View>
         </View>
       </Modal>
+      
+      {/* Modal personalizado */}
+      <ModalComponent />
     </View>
   );
 }

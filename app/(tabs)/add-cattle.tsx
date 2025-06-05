@@ -6,7 +6,6 @@ import {
   TextInput, 
   TouchableOpacity, 
   ScrollView, 
-  Alert,
   ActivityIndicator,
   Modal
 } from 'react-native';
@@ -16,6 +15,7 @@ import { useAuth } from '../../components/AuthContext';
 import api from '../../lib/services/api';
 import { supabase } from '../../lib/config/supabase';
 import { useCacheManager } from '../../hooks/useCachedData';
+import { useCustomModal } from '../../components/CustomModal';
 
 interface Farm {
   _id: string;
@@ -50,6 +50,9 @@ export default function AddCattlePage() {
   const { userInfo } = useAuth();
   
   const { invalidateCache } = useCacheManager();
+  
+  // Hook para modales personalizados
+  const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
 
   // Estado para el manejo de errores y advertencias
   const [showCattleWarning, setShowCattleWarning] = useState(false);
@@ -271,7 +274,7 @@ export default function AddCattlePage() {
         }
       } catch (error) {
         console.error('Error al cargar datos del ganado:', error);
-        Alert.alert('Error', 'No se pudieron cargar los datos del ganado');
+        showError('Error', 'No se pudieron cargar los datos del ganado');
       } finally {
         setLoadingCattle(false);
       }
@@ -286,10 +289,7 @@ export default function AddCattlePage() {
     setErrorMessage(customMessage);
     
     // Mostrar mensaje en UI
-    Alert.alert('Error', 
-      `${customMessage}. ${error?.message || 'Por favor intenta nuevamente.'}`,
-      [{ text: 'OK' }]
-    );
+    showError('Error', `${customMessage}. ${error?.message || 'Por favor intenta nuevamente.'}`);
   };
 
   const handleCancel = () => {
@@ -324,23 +324,23 @@ export default function AddCattlePage() {
 
       // Validaciones con mensajes específicos
       if (!identifier) {
-        Alert.alert('Campo requerido', 'Por favor, ingresa un número de identificación para el ganado');
+        showError('Campo requerido', 'Por favor, ingresa un número de identificación para el ganado');
         return;
       }
       
       if (!name) {
-        Alert.alert('Campo requerido', 'Por favor, ingresa un nombre para el ganado');
+        showError('Campo requerido', 'Por favor, ingresa un nombre para el ganado');
         return;
       }
       
       if (!selectedFarmId) {
-        Alert.alert('Granja requerida', 'Por favor, selecciona una granja para asignar el ganado');
+        showError('Granja requerida', 'Por favor, selecciona una granja para asignar el ganado');
         return;
       }
 
       // Verificar que el usuario esté autenticado
       if (!userInfo || !userInfo.uid) {
-        Alert.alert('Error de sesión', 'No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.');
+        showError('Error de sesión', 'No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.');
         return;
       }
 
@@ -362,13 +362,12 @@ export default function AddCattlePage() {
         };
 
         await api.cattle.update(cattleId!, updateData);
-        Alert.alert('Éxito', 'Ganado actualizado correctamente');
-        
-        // Invalidar caché para que se reflejen los cambios
-        await invalidateCache('cattle');
-        await invalidateCache('farms');
-        
-        router.back();
+        showSuccess('Éxito', 'Ganado actualizado correctamente', () => {
+          // Invalidar caché para que se reflejen los cambios
+          invalidateCache('cattle');
+          invalidateCache('farms');
+          router.back();
+        });
       } else {
         // Crear nuevo ganado usando Supabase directo (método original que funcionaba)
         // Primero crear la información veterinaria
@@ -409,13 +408,12 @@ export default function AddCattlePage() {
           throw error;
         }
         
-        Alert.alert('Éxito', 'Ganado registrado correctamente');
-        
-        // Invalidar caché para que se reflejen los cambios
-        await invalidateCache('cattle');
-        await invalidateCache('farms');
-        
-        router.back();
+        showSuccess('Éxito', 'Ganado registrado correctamente', () => {
+          // Invalidar caché para que se reflejen los cambios
+          invalidateCache('cattle');
+          invalidateCache('farms');
+          router.back();
+        });
       }
     } catch (error: any) {
       console.error('Error al guardar ganado:', error);
@@ -433,7 +431,7 @@ export default function AddCattlePage() {
         errorMessage += 'Por favor, intente nuevamente.';
       }
       
-      Alert.alert('Error', errorMessage);
+      showError('Error', errorMessage);
     }
   };
 
@@ -448,7 +446,7 @@ export default function AddCattlePage() {
       
     } catch (error) {
       console.error('Error al procesar el pago premium:', error);
-      Alert.alert('Error', 'No se pudo procesar la actualización a Premium. Inténtalo de nuevo.');
+      showError('Error', 'No se pudo procesar la actualización a Premium. Inténtalo de nuevo.');
     } finally {
       setIsProcessingPayment(false);
     }
@@ -466,16 +464,15 @@ export default function AddCattlePage() {
       
       if (error) throw error;
       
-      Alert.alert('Éxito', 'Ganado eliminado correctamente');
-      
-      // Invalidar caché para que se reflejen los cambios
-      await invalidateCache('cattle');
-      await invalidateCache('farms');
-      
-      router.back();
+      showSuccess('Éxito', 'Ganado eliminado correctamente', () => {
+        // Invalidar caché para que se reflejen los cambios
+        invalidateCache('cattle');
+        invalidateCache('farms');
+        router.back();
+      });
     } catch (error: any) {
       console.error('Error al eliminar ganado:', error);
-      Alert.alert('Error', 'No se pudo eliminar el ganado. Inténtalo de nuevo.');
+      showError('Error', 'No se pudo eliminar el ganado. Inténtalo de nuevo.');
     }
   };
 
@@ -633,7 +630,7 @@ export default function AddCattlePage() {
                       router.push('/(tabs)/farms');
                     } catch (e) {
                       console.error('Error al navegar a granjas:', e);
-                      Alert.alert('Error', 'No se pudo navegar a la pantalla de granjas');
+                      showError('Error', 'No se pudo navegar a la pantalla de granjas');
                     }
                   }}
                 >
@@ -809,6 +806,9 @@ export default function AddCattlePage() {
           </View>
         </Modal>
       </View>
+      
+      {/* Modal personalizado */}
+      <ModalComponent />
     </ScrollView>
   );
 }

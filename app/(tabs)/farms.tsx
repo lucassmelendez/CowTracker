@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  Alert,
   TextInput,
   Modal,
   ActivityIndicator
@@ -16,6 +15,7 @@ import { useAuth } from '../../components/AuthContext';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 import api from '../../lib/services/api';
 import { createStyles } from '../../styles/tailwind';
+import { useCustomModal } from '../../components/CustomModal';
 
 interface Farm {
   _id: string;
@@ -28,6 +28,9 @@ interface Farm {
 export default function FarmsPage() {
   const router = useRouter();
   const { isAdmin, userInfo } = useAuth();
+  
+  // Hook para modales personalizados
+  const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -109,7 +112,7 @@ export default function FarmsPage() {
       console.error('Error al crear/actualizar granja:', error);
       const errorMsg = error.message || 'Error al guardar la granja';
       setErrorMessage(errorMsg);
-      Alert.alert('Error', errorMsg);
+      showError('Error', errorMsg);
     }
   };
 
@@ -123,22 +126,17 @@ export default function FarmsPage() {
       await refreshFarms();
     } catch (error: any) {
       console.error('Error al eliminar granja:', error);
-      Alert.alert('Error', 'No se pudo eliminar la granja');
+      showError('Error', 'No se pudo eliminar la granja');
     }
   };
 
   const confirmDelete = (farm: Farm) => {
-    Alert.alert(
+    showConfirm(
       'Confirmar eliminación',
       `¿Estás seguro de que quieres eliminar la granja "${farm.name}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Eliminar', 
-          style: 'destructive',
-          onPress: () => handleDeleteFarm(farm._id)
-        }
-      ]
+      () => handleDeleteFarm(farm._id),
+      'Eliminar',
+      'Cancelar'
     );
   };
 
@@ -364,6 +362,9 @@ export default function FarmsPage() {
         title="¡Actualiza tu cuenta a Premium!"
         subtitle="Los usuarios no premium solo pueden tener máximo 1 granja. Actualiza a premium para agregar granjas ilimitadas."
       />
+      
+      {/* Modal personalizado */}
+      <ModalComponent />
     </View>
   );
 } 

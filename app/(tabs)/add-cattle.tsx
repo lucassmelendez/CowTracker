@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
   TextInput, 
   TouchableOpacity, 
   ScrollView, 
@@ -12,33 +11,21 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../components/AuthContext';
-import api from '../../lib/services/api';
-import { supabase } from '../../lib/config/supabase';
-import { useCacheManager } from '../../hooks/useCachedData';
+import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
 import { useCustomModal } from '../../components/CustomModal';
+import { createStyles, tw } from '../../styles/tailwind';
+import api from '../../lib/services/api';
 
-interface Farm {
-  _id: string;
-  id_finca: number;
+interface CattleFormData {
+  identificationNumber: string;
   name: string;
-  nombre: string;
-  tamano?: number;
-}
-
-interface CattleData {
-  identificationNumber?: string;
-  name?: string;
-  gender?: string;
-  weight?: number;
-  notes?: string;
-  purchasePrice?: number;
-  status?: string;
-  healthStatus?: string;
-  tipoProduccion?: string;
-  birthDate?: any;
-  purchaseDate?: any;
-  location?: any;
-  farmId?: string;
+  gender: string;
+  weight: string;
+  notes: string;
+  purchasePrice: string;
+  farmId: string;
+  healthStatus: string;
+  tipoProduccion: string;
 }
 
 export default function AddCattlePage() {
@@ -48,160 +35,87 @@ export default function AddCattlePage() {
   const isEditMode = !!cattleId;
   
   const { userInfo } = useAuth();
-  
   const { invalidateCache } = useCacheManager();
-  
-  // Hook para modales personalizados
   const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
-
-  // Estado para el manejo de errores
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  
+  // Usar hook para obtener granjas
+  const { data: farms, loading: loadingFarms } = useUserFarms();
 
   // Estados del formulario
-  const [identifier, setIdentifier] = useState('');
-  const [name, setName] = useState('');
-  const [gender, setGender] = useState('');
-  const [weight, setWeight] = useState('');
-  const [location, setLocation] = useState('');
-  const [notes, setNotes] = useState('');
-  const [purchasePrice, setPurchasePrice] = useState('');
-  const [selectedFarmId, setSelectedFarmId] = useState('');
-  const [healthStatus, setHealthStatus] = useState('Saludable');
-  const [status, setStatus] = useState('activo');
-  const [tipoProduccion, setTipoProduccion] = useState('leche');
-  
-  // Estados para carga
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [loadingFarms, setLoadingFarms] = useState(false);
+  const [formData, setFormData] = useState<CattleFormData>({
+    identificationNumber: '',
+    name: '',
+    gender: '',
+    weight: '',
+    notes: '',
+    purchasePrice: '',
+    farmId: '',
+    healthStatus: 'Saludable',
+    tipoProduccion: 'leche'
+  });
+
+  const [loading, setLoading] = useState(false);
   const [loadingCattle, setLoadingCattle] = useState(isEditMode);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
-  // Función para cargar granjas de manera segura
-  const loadFarms = async () => {
-    try {
-      setLoadingFarms(true);
-      
-      // Verificar si el usuario está autenticado
-      if (!userInfo || !userInfo.uid) {
-        console.warn('No hay información de usuario disponible');
-        setFarms([]);
-        return;
-      }
-      
-      try {
-        // Obtener el ID numérico del usuario
-        const { data: userNumericData, error: userNumericError } = await supabase
-          .from('usuario')
-          .select('id_usuario')
-          .eq('id_autentificar', userInfo.uid)
-          .single();
-
-        if (userNumericError) throw userNumericError;
-
-        // Obtener las granjas del usuario a través de la tabla usuario_finca
-        const { data: userFarms, error: farmsError } = await supabase
-          .from('usuario_finca')
-          .select(`
-            id_finca,
-            finca:finca(
-              id_finca,
-              nombre,
-              tamano
-            )
-          `)
-          .eq('id_usuario', userNumericData.id_usuario);
-
-        if (farmsError) throw farmsError;
-
-        let finalFarms: Farm[] = [];
-        
-        if (userFarms && userFarms.length > 0) {
-          // Procesar y normalizar los datos de las granjas
-          finalFarms = userFarms
-            .filter((userFarm: any) => userFarm.finca) // Filtrar solo las que tienen datos de finca
-            .map((userFarm: any, index: number) => {
-              const farmArray = userFarm.finca;
-              // Si finca es un array, tomar el primer elemento
-              const farm = Array.isArray(farmArray) ? farmArray[0] : farmArray;
-              const farmId = farm?.id_finca;
-              const farmName = farm?.nombre || `Granja ${index + 1}`;
-              
-              return {
-                _id: farmId?.toString() || '',
-                id_finca: farmId || 0,
-                name: farmName,
-                nombre: farmName,
-                tamano: farm?.tamano || 0
-              };
-            });
-          
-        } else {
-        }
-        
-        setFarms(finalFarms);
-        
-        // Si hay granjas disponibles, establecer la primera como seleccionada
-        if (finalFarms.length > 0 && !selectedFarmId) {
-          setSelectedFarmId(finalFarms[0].id_finca.toString());
-        }
-        
-      } catch (apiError) {
-        console.error('Error en la consulta de granjas:', apiError);
-        setFarms([]);
-      }
-    } catch (error) {
-      console.error('Error general al cargar granjas:', error);
-      setFarms([]);
-    } finally {
-      setLoadingFarms(false);
-    }
+  // Estilos usando Tailwind
+  const styles = {
+    container: createStyles('flex-1 bg-gray-50'),
+    header: createStyles('bg-green-600 pt-12 pb-6 px-5'),
+    title: createStyles('text-2xl font-bold text-white text-center'),
+    content: createStyles('p-5'),
+    section: createStyles('mb-6'),
+    sectionTitle: createStyles('text-lg font-bold text-gray-800 mb-3'),
+    label: createStyles('text-base font-medium text-gray-700 mb-2'),
+    input: createStyles('bg-white border border-gray-300 rounded-lg px-4 py-3 text-base'),
+    textArea: createStyles('bg-white border border-gray-300 rounded-lg px-4 py-3 text-base h-24'),
+    optionsContainer: createStyles('flex-row flex-wrap'),
+    optionButton: createStyles('px-4 py-2 rounded-full border border-gray-300 bg-white mr-2 mb-2'),
+    selectedOption: createStyles('bg-green-600 border-green-600'),
+    optionText: createStyles('text-sm text-gray-700'),
+    selectedOptionText: createStyles('text-white'),
+    farmSelector: createStyles('space-y-2'),
+    farmOption: createStyles('p-4 border border-gray-300 rounded-lg bg-white'),
+    selectedFarm: createStyles('border-green-600 bg-green-50'),
+    farmText: createStyles('text-base text-gray-800'),
+    selectedFarmText: createStyles('text-green-800 font-medium'),
+    buttonsContainer: createStyles('flex-row justify-between mt-6'),
+    button: createStyles('flex-1 py-3 rounded-lg mx-1'),
+    cancelButton: createStyles('bg-gray-500'),
+    saveButton: createStyles('bg-green-600'),
+    deleteButton: createStyles('bg-red-600 mt-4'),
+    buttonText: createStyles('text-white text-center font-medium text-base'),
+    loadingContainer: createStyles('flex-1 justify-center items-center'),
+    loadingText: createStyles('text-gray-600 mt-3'),
+    modalOverlay: createStyles('flex-1 justify-center items-center bg-black bg-opacity-50'),
+    modalContent: createStyles('bg-white rounded-lg p-6 mx-5 w-4/5'),
+    modalTitle: createStyles('text-lg font-bold text-center mb-3'),
+    modalText: createStyles('text-gray-600 text-center mb-6'),
+    modalButtons: createStyles('flex-row justify-between'),
+    modalButton: createStyles('flex-1 py-3 rounded-lg mx-1'),
   };
 
-  useEffect(() => {
-    if (userInfo) {
-      loadFarms();
-    }
-  }, [userInfo]);
-  
+  // Cargar datos del ganado en modo edición
   useEffect(() => {
     const loadCattleData = async () => {
       if (!isEditMode || !cattleId) return;
       
       try {
         setLoadingCattle(true);
-        // Usar la API para obtener los detalles del ganado
-        const cattleData: CattleData = await api.cattle.getById(cattleId);
+        const cattleData = await api.cattle.getById(cattleId);
         
         if (cattleData) {
-          // Establecer todos los valores del formulario desde los datos del ganado
-          setIdentifier(cattleData.identificationNumber || '');
-          setName(cattleData.name || '');
-          setGender(cattleData.gender || '');
-          setWeight(cattleData.weight ? cattleData.weight.toString() : '');
-          setNotes(cattleData.notes || '');
-          setPurchasePrice(cattleData.purchasePrice ? cattleData.purchasePrice.toString() : '');
-          setStatus(cattleData.status || 'activo');
-          setHealthStatus(cattleData.healthStatus || 'Saludable');
-          setTipoProduccion(cattleData.tipoProduccion || 'leche');
-          
-          // Establecer la ubicación
-          if (cattleData.location) {
-            if (cattleData.location.area) {
-              setLocation(cattleData.location.area);
-            }
-            
-            if (cattleData.location.farm) {
-              if (typeof cattleData.location.farm === 'object' && cattleData.location.farm._id) {
-                setSelectedFarmId(cattleData.location.farm._id);
-              } else if (cattleData.farmId) {
-                setSelectedFarmId(cattleData.farmId);
-              }
-            } else if (cattleData.farmId) {
-              setSelectedFarmId(cattleData.farmId);
-            }
-          } else if (cattleData.farmId) {
-            setSelectedFarmId(cattleData.farmId);
-          }
+          setFormData({
+            identificationNumber: cattleData.identificationNumber || cattleData.numero_identificacion || '',
+            name: cattleData.name || cattleData.nombre || '',
+            gender: cattleData.gender || (cattleData.id_genero === 1 ? 'Macho' : cattleData.id_genero === 2 ? 'Hembra' : ''),
+            weight: '', // No hay campo de peso en CattleItem
+            notes: cattleData.notes || cattleData.nota || '',
+            purchasePrice: cattleData.precio_compra?.toString() || '',
+            farmId: cattleData.farmId || '',
+            healthStatus: cattleData.healthStatus || (cattleData.id_estado_salud === 1 ? 'Saludable' : cattleData.id_estado_salud === 2 ? 'Enfermo' : 'En tratamiento'),
+            tipoProduccion: cattleData.id_produccion === 1 ? 'leche' : cattleData.id_produccion === 2 ? 'carne' : 'leche'
+          });
         }
       } catch (error) {
         console.error('Error al cargar datos del ganado:', error);
@@ -214,180 +128,118 @@ export default function AddCattlePage() {
     loadCattleData();
   }, [cattleId, isEditMode]);
 
-  // Función para manejar errores de manera consistente
-  const handleError = (error: any, customMessage = 'Se produjo un error') => {
-    console.error(customMessage, error);
-    setErrorMessage(customMessage);
-    
-    // Mostrar mensaje en UI
-    showError('Error', `${customMessage}. ${error?.message || 'Por favor intenta nuevamente.'}`);
+  // Establecer granja por defecto
+  useEffect(() => {
+    if (farms && farms.length > 0 && !formData.farmId && !isEditMode) {
+      setFormData(prev => ({ ...prev, farmId: farms[0]._id }));
+    }
+  }, [farms, formData.farmId, isEditMode]);
+
+  const updateFormData = (field: keyof CattleFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleCancel = () => {
-    try {
-      // Intentar diferentes métodos de navegación según disponibilidad
-      if (typeof router.back === 'function') {
-        router.back();
-      } else if (typeof router.navigate === 'function') {
-        router.navigate('/(tabs)');
-      } else {
-        // Intento alternativo para web
-        router.push('/(tabs)');
-      }
-    } catch (navError) {
-      console.error('Error durante la navegación en handleCancel:', navError);
-      try {
-        // Último intento
-        router.push('/');
-      } catch (e) {
-        console.error('No se pudo navegar:', e);
-      }
-    }
+    router.back();
   };
 
   const handleSave = async () => {
     try {
-      // Validaciones con mensajes específicos
-      if (!identifier) {
-        showError('Campo requerido', 'Por favor, ingresa un número de identificación para el ganado');
+      // Validaciones
+      if (!formData.identificationNumber.trim()) {
+        showError('Campo requerido', 'Por favor, ingresa un número de identificación');
         return;
       }
       
-      if (!name) {
+      if (!formData.name.trim()) {
         showError('Campo requerido', 'Por favor, ingresa un nombre para el ganado');
         return;
       }
       
-      if (!selectedFarmId) {
-        showError('Granja requerida', 'Por favor, selecciona una granja para asignar el ganado');
+      if (!formData.farmId) {
+        showError('Granja requerida', 'Por favor, selecciona una granja');
         return;
       }
 
-      // Verificar que el usuario esté autenticado
-      if (!userInfo || !userInfo.uid) {
-        showError('Error de sesión', 'No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente.');
-        return;
-      }
+      setLoading(true);
 
-      // Convertir selectedFarmId a número si es necesario
-      const farmIdNumeric = parseInt(selectedFarmId) || selectedFarmId;
+      const cattleData = {
+        identificationNumber: formData.identificationNumber.trim(),
+        name: formData.name.trim(),
+        gender: formData.gender,
+        weight: formData.weight ? parseFloat(formData.weight) : undefined,
+        notes: formData.notes.trim(),
+        purchasePrice: formData.purchasePrice ? parseFloat(formData.purchasePrice) : undefined,
+        healthStatus: formData.healthStatus,
+        tipoProduccion: formData.tipoProduccion,
+        farmId: formData.farmId
+      };
 
       if (isEditMode) {
-        // Actualizar ganado existente usando la API directa
-        const updateData = {
-          identificationNumber: identifier,
-          name: name,
-          gender: gender,
-          weight: weight ? parseFloat(weight) : undefined,
-          notes: notes,
-          purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
-          healthStatus: healthStatus,
-          tipoProduccion: tipoProduccion,
-          farmId: farmIdNumeric.toString()
-        };
-
-        await api.cattle.update(cattleId!, updateData);
+        await api.cattle.update(cattleId!, cattleData);
         showSuccess('Éxito', 'Ganado actualizado correctamente', () => {
-          // Invalidar caché para que se reflejen los cambios
           invalidateCache('cattle');
-          invalidateCache('farms');
           router.back();
         });
       } else {
-        // Crear nuevo ganado usando Supabase directo (método original que funcionaba)
-        // Primero crear la información veterinaria
-        const { data: infoVetData, error: infoVetError } = await supabase
-          .from('informacion_veterinaria')
-          .insert({
-            fecha_tratamiento: new Date().toISOString(),
-            diagnostico: healthStatus === 'Enfermo' ? 'Requiere revisión' : 'Sin diagnóstico',
-            tratamiento: '',
-            nota: notes || ''
-          })
-          .select()
-          .single();
-
-        if (infoVetError) throw infoVetError;
-
-        // Crear estructura de datos para el ganado
-        const cattleData = {
-          nombre: name,
-          numero_identificacion: parseInt(identifier),
-          precio_compra: parseFloat(purchasePrice) || 0,
-          nota: notes || '',
-          id_finca: farmIdNumeric,
-          id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
-          id_genero: gender === 'Macho' ? 1 : 2,
-          id_informacion_veterinaria: infoVetData.id_informacion_veterinaria,
-          id_produccion: tipoProduccion === 'leche' ? 1 : 2
-        };
-        
-        // Insertar en la tabla ganado
-        const { data, error } = await supabase
-          .from('ganado')
-          .insert([cattleData])
-          .select();
-
-        if (error) {
-          console.error('Error de Supabase al insertar ganado:', error);
-          throw error;
-        }
-        
+        await api.cattle.create(cattleData);
         showSuccess('Éxito', 'Ganado registrado correctamente', () => {
-          // Invalidar caché para que se reflejen los cambios
           invalidateCache('cattle');
-          invalidateCache('farms');
           router.back();
         });
       }
     } catch (error: any) {
       console.error('Error al guardar ganado:', error);
-      
-      // Proporcionar mensajes de error más específicos
-      let errorMessage = 'No se pudo registrar el ganado. ';
-      
-      if (error.code === '23503') {
-        errorMessage += 'La granja seleccionada no es válida.';
-      } else if (error.code === '23505') {
-        errorMessage += 'El número de identificación ya existe.';
-      } else if (error.message) {
-        errorMessage += error.message;
-      } else {
-        errorMessage += 'Por favor, intente nuevamente.';
-      }
-      
-      showError('Error', errorMessage);
+      showError('Error', error.message || 'No se pudo guardar el ganado');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDelete = async () => {
     try {
-      if (!cattleId) return;
-      
-      // Usar Supabase directo (método original que funcionaba)
-      const { error } = await supabase
-        .from('ganado')
-        .delete()
-        .eq('id_ganado', cattleId);
-      
-      if (error) throw error;
-      
+      await api.cattle.delete(cattleId!);
       showSuccess('Éxito', 'Ganado eliminado correctamente', () => {
-        // Invalidar caché para que se reflejen los cambios
         invalidateCache('cattle');
-        invalidateCache('farms');
         router.back();
       });
     } catch (error: any) {
       console.error('Error al eliminar ganado:', error);
-      showError('Error', 'No se pudo eliminar el ganado. Inténtalo de nuevo.');
+      showError('Error', 'No se pudo eliminar el ganado');
     }
   };
+
+  const confirmDelete = () => {
+    setDeleteModalVisible(false);
+    showConfirm(
+      'Confirmar eliminación',
+      '¿Estás seguro de que quieres eliminar este ganado? Esta acción no se puede deshacer.',
+      handleDelete,
+      'Eliminar',
+      'Cancelar'
+    );
+  };
+
+  const renderOptionButtons = (options: string[], selectedValue: string, onSelect: (value: string) => void) => (
+    <View style={styles.optionsContainer}>
+      {options.map(option => (
+        <TouchableOpacity
+          key={option}
+          style={[styles.optionButton, selectedValue === option && styles.selectedOption]}
+          onPress={() => onSelect(option)}
+        >
+          <Text style={[styles.optionText, selectedValue === option && styles.selectedOptionText]}>
+            {option}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   if (loadingCattle) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#27ae60" />
+        <ActivityIndicator size="large" color={tw.colors.primary} />
         <Text style={styles.loadingText}>Cargando datos del ganado...</Text>
       </View>
     );
@@ -401,423 +253,167 @@ export default function AddCattlePage() {
         </Text>
       </View>
 
-      <View style={styles.formContainer}>
-        <Text style={styles.sectionTitle}>Información básica</Text>
+      <View style={styles.content}>
+        {/* Información básica */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Información básica</Text>
 
-        <Text style={styles.label}>Número de Identificación *</Text>
-        <TextInput
-          style={styles.input}
-          value={identifier}
-          onChangeText={setIdentifier}
-          placeholder="Número de identificación"
-          keyboardType="numeric"
-        />
+          <Text style={styles.label}>Número de Identificación *</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.identificationNumber}
+            onChangeText={(value) => updateFormData('identificationNumber', value)}
+            placeholder="Número de identificación"
+            keyboardType="numeric"
+          />
 
-        <Text style={styles.label}>Nombre *</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Nombre del animal"
-        />
+          <Text style={styles.label}>Nombre *</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.name}
+            onChangeText={(value) => updateFormData('name', value)}
+            placeholder="Nombre del animal"
+          />
 
-        <Text style={styles.label}>Género</Text>
-        <View style={styles.optionsContainer}>
-          {['Macho', 'Hembra'].map(option => (
-            <TouchableOpacity
-              key={option}
-              style={[styles.optionButton, gender === option && styles.selectedOption]}
-              onPress={() => setGender(option)}
-            >
-              <Text style={[styles.optionText, gender === option && styles.selectedOptionText]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <Text style={styles.label}>Género</Text>
+          {renderOptionButtons(['Macho', 'Hembra'], formData.gender, (value) => updateFormData('gender', value))}
+
+          <Text style={styles.label}>Estado de Salud</Text>
+          {renderOptionButtons(['Saludable', 'Enfermo', 'En tratamiento'], formData.healthStatus, (value) => updateFormData('healthStatus', value))}
+
+          <Text style={styles.label}>Tipo de Producción</Text>
+          {renderOptionButtons(['Leche', 'Carne'], formData.tipoProduccion, (value) => updateFormData('tipoProduccion', value.toLowerCase()))}
+
+          <Text style={styles.label}>Peso (kg)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.weight}
+            onChangeText={(value) => updateFormData('weight', value)}
+            placeholder="Peso en kilogramos"
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.label}>Precio de compra</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.purchasePrice}
+            onChangeText={(value) => updateFormData('purchasePrice', value)}
+            placeholder="Precio de compra"
+            keyboardType="numeric"
+          />
+
+          <Text style={styles.label}>Notas</Text>
+          <TextInput
+            style={styles.textArea}
+            value={formData.notes}
+            onChangeText={(value) => updateFormData('notes', value)}
+            placeholder="Información adicional sobre el animal"
+            multiline
+            textAlignVertical="top"
+          />
         </View>
 
-        <Text style={styles.label}>Estado de Salud</Text>
-        <View style={styles.optionsContainer}>
-          {['Saludable', 'Enfermo', 'En tratamiento'].map(option => (
-            <TouchableOpacity
-              key={option}
-              style={[styles.optionButton, healthStatus === option && styles.selectedOption]}
-              onPress={() => setHealthStatus(option)}
-            >
-              <Text style={[styles.optionText, healthStatus === option && styles.selectedOptionText]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Precio de compra</Text>
-        <TextInput
-          style={styles.input}
-          value={purchasePrice}
-          onChangeText={setPurchasePrice}
-          placeholder="Precio de compra"
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.label}>Tipo de Producción</Text>
-        <View style={styles.optionsContainer}>
-          {['Leche', 'Carne'].map(option => (
-            <TouchableOpacity
-              key={option}
-              style={[styles.optionButton, tipoProduccion === option.toLowerCase() && styles.selectedOption]}
-              onPress={() => setTipoProduccion(option.toLowerCase())}
-            >
-              <Text style={[styles.optionText, tipoProduccion === option.toLowerCase() && styles.selectedOptionText]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={styles.label}>Notas</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Información adicional sobre el animal"
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-        />
-
-        <Text style={styles.sectionTitle}>Asignación a Granja</Text>
-        <Text style={styles.label}>Granja *</Text>
-        {loadingFarms ? (
-          <View style={{padding: 15, alignItems: 'center'}}>
-            <ActivityIndicator size="small" color="#27ae60" style={{marginBottom: 10}} />
-            <Text style={{color: '#666'}}>Cargando granjas disponibles...</Text>
-          </View>
-        ) : (
-          <View style={styles.farmSelector}>
-            {farms && farms.length > 0 ? (
-              <View>
-                <Text style={{marginBottom: 12, color: '#444', fontWeight: '500'}}>
-                  Selecciona una granja ({farms.length} disponibles):
-                </Text>
-                {farms.map((farm, index) => {
-                  if (!farm) return null;
-                  
-                  const farmId = farm.id_finca.toString();
-                  const farmName = farm.nombre || `Granja ${index+1}`;
-                  
-                  return (
-                    <TouchableOpacity
-                      key={farmId}
-                      style={[
-                        styles.farmOption, 
-                        selectedFarmId === farmId && styles.selectedFarmOption
-                      ]}
-                      onPress={() => setSelectedFarmId(farmId)}
-                    >
-                      <Text style={[styles.farmOptionText, selectedFarmId === farmId && styles.selectedFarmOptionText]}>
-                        {farmName}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                
-                {selectedFarmId === '' && (
-                  <Text style={{marginTop: 8, color: '#e74c3c', fontSize: 13}}>
-                    Por favor, selecciona una granja para continuar
-                  </Text>
-                )}
-              </View>
-            ) : (
-              <View>
-                <Text style={styles.noFarmsText}>No hay granjas disponibles. Por favor, crea una granja primero.</Text>
+        {/* Asignación a Granja */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Asignación a Granja</Text>
+          <Text style={styles.label}>Granja *</Text>
+          
+          {loadingFarms ? (
+            <View style={createStyles('p-4 items-center')}>
+              <ActivityIndicator size="small" color={tw.colors.primary} />
+              <Text style={styles.loadingText}>Cargando granjas...</Text>
+            </View>
+          ) : farms && farms.length > 0 ? (
+            <View style={styles.farmSelector}>
+              {farms.map((farm) => (
                 <TouchableOpacity
-                  style={styles.createFarmButton}
-                  onPress={() => {
-                    try {
-                      router.push('/(tabs)/farms');
-                    } catch (e) {
-                      console.error('Error al navegar a granjas:', e);
-                      showError('Error', 'No se pudo navegar a la pantalla de granjas');
-                    }
-                  }}
+                  key={farm._id}
+                  style={[styles.farmOption, formData.farmId === farm._id && styles.selectedFarm]}
+                  onPress={() => updateFormData('farmId', farm._id)}
                 >
-                  <Text style={styles.createFarmButtonText}>Crear Granja</Text>
+                  <Text style={[styles.farmText, formData.farmId === farm._id && styles.selectedFarmText]}>
+                    {farm.name}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        )}
+              ))}
+            </View>
+          ) : (
+            <View style={createStyles('p-4 bg-red-50 rounded-lg border border-red-200')}>
+              <Text style={createStyles('text-red-700 text-center')}>
+                No hay granjas disponibles. Por favor, crea una granja primero.
+              </Text>
+            </View>
+          )}
+        </View>
 
+        {/* Botones */}
         <View style={styles.buttonsContainer}>
           <TouchableOpacity 
-            style={styles.button} 
+            style={[styles.button, styles.cancelButton]} 
             onPress={handleCancel}
           >
             <Text style={styles.buttonText}>Cancelar</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.saveButton}
+            style={[styles.button, styles.saveButton]} 
             onPress={handleSave}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>{isEditMode ? 'Actualizar' : 'Guardar'}</Text>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {isEditMode ? 'Actualizar' : 'Guardar'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Botón de eliminar solo en modo edición */}
+        {/* Botón de eliminar en modo edición */}
         {isEditMode && (
           <TouchableOpacity 
-            style={styles.deleteButton}
+            style={[styles.button, styles.deleteButton]} 
             onPress={() => setDeleteModalVisible(true)}
           >
             <Text style={styles.buttonText}>Eliminar Ganado</Text>
           </TouchableOpacity>
         )}
+      </View>
 
-        {/* Modal de confirmación de eliminación */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={deleteModalVisible}
-          onRequestClose={() => setDeleteModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Confirmar eliminación</Text>
-              <Text style={styles.modalText}>
-                ¿Estás seguro de que quieres eliminar este ganado? Esta acción no se puede deshacer.
-              </Text>
-              <View style={styles.modalButtonsContainer}>
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: '#95a5a6' }]}
-                  onPress={() => setDeleteModalVisible(false)}
-                >
-                  <Text style={styles.deleteButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: '#e74c3c' }]}
-                  onPress={() => {
-                    setDeleteModalVisible(false);
-                    handleDelete();
-                  }}
-                >
-                  <Text style={styles.saveButtonText}>
-                    Eliminar
-                  </Text>
-                </TouchableOpacity>
-              </View>
+      {/* Modal de confirmación de eliminación */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirmar eliminación</Text>
+            <Text style={styles.modalText}>
+              ¿Estás seguro de que quieres eliminar este ganado? Esta acción no se puede deshacer.
+            </Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, createStyles('bg-gray-500')]}
+                onPress={() => setDeleteModalVisible(false)}
+              >
+                <Text style={styles.buttonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, createStyles('bg-red-600')]}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.buttonText}>Eliminar</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </Modal>
-      </View>
+        </View>
+      </Modal>
       
       {/* Modal personalizado */}
       <ModalComponent />
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#666',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    paddingTop: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-  },
-  formContainer: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 8,
-  },
-  optionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  selectedOption: {
-    backgroundColor: '#27ae60',
-    borderColor: '#27ae60',
-  },
-  optionText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  selectedOptionText: {
-    color: '#fff',
-  },
-  farmSelector: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-  },
-  farmOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#f9f9f9',
-    marginBottom: 8,
-  },
-  selectedFarmOption: {
-    backgroundColor: '#27ae60',
-    borderColor: '#27ae60',
-  },
-  farmOptionText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  selectedFarmOptionText: {
-    color: '#fff',
-  },
-  buttonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginHorizontal: 4,
-  },
-  cancelButton: {
-    backgroundColor: '#95a5a6',
-  },
-  saveButton: {
-    backgroundColor: '#27ae60',
-  },
-  deleteButton: {
-    backgroundColor: '#e74c3c',
-  },
-  buttonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
-  },
-  saveButtonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
-  },
-  deleteButtonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
-  },
-  noFarmsText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#e74c3c',
-    marginTop: 8,
-  },
-  createFarmButton: {
-    backgroundColor: '#27ae60',
-    borderRadius: 8,
-    paddingVertical: 12,
-    marginTop: 8,
-  },
-  createFarmButtonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#fff',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    textAlign: 'center',
-    color: '#333',
-  },
-  modalText: {
-    fontSize: 14,
-    marginBottom: 24,
-    textAlign: 'center',
-    color: '#666',
-  },
-  modalButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginHorizontal: 4,
-  },
-});

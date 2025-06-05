@@ -122,6 +122,10 @@ const users = {
   updatePremium: (idPremium: number): Promise<any> => {
     return instance.put('users/premium', { id_premium: idPremium });
   },
+
+  deleteAccount: (): Promise<any> => {
+    return instance.delete('users/delete-account');
+  },
 };
 
 // API para ganado

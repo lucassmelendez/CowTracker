@@ -81,6 +81,16 @@ export default function ProfilePage() {
     saveButton: createStyles(tw.primaryButton + ' py-3 px-5'),
     cancelButton: createStyles('bg-gray-100 py-3 px-5 rounded-lg items-center border border-gray-300'),
     logoutButton: createStyles('bg-red-500 py-3 px-5 rounded-lg items-center mt-4'),
+    deleteAccountButton: {
+      backgroundColor: '#b91c1c',
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      alignItems: 'center' as const,
+      marginTop: 8,
+      borderWidth: 2,
+      borderColor: '#991b1b',
+    },
     buttonText: createStyles('text-white text-base font-semibold'),
     cancelText: createStyles('text-gray-800 text-base font-semibold'),
     loadingContainer: createStyles(tw.loadingContainer),
@@ -311,6 +321,38 @@ export default function ProfilePage() {
     );
   };
 
+  const handleDeleteAccount = () => {
+    showConfirm(
+      'Eliminar cuenta',
+      '⚠️ ADVERTENCIA: Esta acción eliminará permanentemente tu cuenta y todos tus datos.\n\n¿Estás completamente seguro de que deseas eliminar tu cuenta? Esta acción NO se puede deshacer.',
+      async () => {
+        try {
+          setIsLoading(true);
+          await api.users.deleteAccount();
+          
+          showSuccess(
+            'Cuenta eliminada',
+            'Tu cuenta ha sido eliminada exitosamente. Serás redirigido al inicio de sesión.',
+            () => {
+              logout();
+              router.push('/login');
+            }
+          );
+        } catch (error: any) {
+          console.error('Error al eliminar cuenta:', error);
+          showError(
+            'Error',
+            error.message || 'No se pudo eliminar la cuenta. Inténtalo de nuevo.'
+          );
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      'Eliminar cuenta',
+      'Cancelar'
+    );
+  };
+
   const handleCloseCongratulations = () => {
     setShowCongratulations(false);
     setCongratulationsData(null);
@@ -475,16 +517,30 @@ export default function ProfilePage() {
                 <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                   <Text style={styles.cancelText}>Cancelar</Text>
                 </TouchableOpacity>
+                
+                {/* Botón de eliminar cuenta solo visible en modo edición */}
+                <TouchableOpacity 
+                  style={styles.deleteAccountButton} 
+                  onPress={handleDeleteAccount}
+                  disabled={isLoading}
+                >
+                  <View style={createStyles('flex-row items-center')}>
+                    <Ionicons name="trash-outline" size={18} color="#fff" style={createStyles('mr-2')} />
+                    <Text style={styles.buttonText}>Eliminar cuenta</Text>
+                  </View>
+                </TouchableOpacity>
               </>
             ) : (
-              <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
-                <Text style={styles.buttonText}>Editar perfil</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+                  <Text style={styles.buttonText}>Editar perfil</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                  <Text style={styles.buttonText}>Cerrar sesión</Text>
+                </TouchableOpacity>
+              </>
             )}
-            
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Text style={styles.buttonText}>Cerrar sesión</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

@@ -51,7 +51,7 @@ export default function AddVeterinaryRecordPage() {
         setCattle(data);
       } catch (error) {
         console.error('Error loading cattle data:', error);
-        showError('No se pudo cargar la información del ganado');
+        showError('Error', 'No se pudo cargar la información del ganado');
       } finally {
         setLoading(false);
       }
@@ -62,7 +62,7 @@ export default function AddVeterinaryRecordPage() {
   
   const handleSubmit = async () => {
     if (!cattleId) {
-      showError('No se pudo identificar el ganado');
+      showError('Error', 'No se pudo identificar el ganado');
       return;
     }
     
@@ -97,6 +97,7 @@ export default function AddVeterinaryRecordPage() {
       const resultado = await api.cattle.addMedicalRecord(cattleIdString, recordData);
       
       showSuccess(
+        'Éxito',
         'Registro veterinario agregado correctamente',
         () => router.back()
       );
@@ -126,7 +127,7 @@ export default function AddVeterinaryRecordPage() {
         errorMsg = `Error del servidor (${statusCode}). El endpoint podría no existir o tener un problema.`;
       }
       
-      showError(errorMsg);
+      showError('Error', errorMsg);
       setError(errorMsg);
     } finally {
       setSubmitting(false);

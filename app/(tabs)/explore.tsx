@@ -258,15 +258,25 @@ export default function CattleTab() {
 
   const onRefresh = async () => {
     console.log('Refrescando manualmente...');
-    if (isShowingAllFarms) {
-      const promises = [refreshFarms()];
-      // Solo refrescar todo el ganado si es admin
-      if (isAdmin()) {
-        promises.push(refreshAllCattle());
+    try {
+      // Invalidar caché antes de refrescar para obtener datos frescos del servidor
+      await invalidateCache('farms');
+      await invalidateCache('cattle');
+      
+      if (isShowingAllFarms) {
+        const promises = [refreshFarms()];
+        // Solo refrescar todo el ganado si es admin
+        if (isAdmin()) {
+          promises.push(refreshAllCattle());
+        }
+        await Promise.all(promises);
+      } else {
+        await refreshFarmCattle();
       }
-      await Promise.all(promises);
-    } else {
-      await refreshFarmCattle();
+      
+      console.log('Datos de explore refrescados desde el servidor');
+    } catch (error) {
+      console.error('Error al refrescar datos:', error);
     }
   };
 

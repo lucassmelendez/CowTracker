@@ -90,10 +90,17 @@ export default function Admin() {
   const onRefresh = async () => {
     console.log('Refrescando datos de administrador...');
     try {
+      // Invalidar caché antes de refrescar para obtener datos frescos del servidor
+      await invalidateCache('users');
+      await invalidateCache('farms');
+      
+      // Ahora refrescar los datos desde el servidor
       await Promise.all([
         refreshWorkers(),
         refreshVeterinarians()
       ]);
+      
+      console.log('Datos de administrador refrescados desde el servidor');
     } catch (error) {
       console.error('Error al refrescar datos:', error);
     }

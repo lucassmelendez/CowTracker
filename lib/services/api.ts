@@ -37,11 +37,10 @@ const getSupabaseToken = async (): Promise<string | null> => {
 instance.interceptors.request.use(
   async (config) => {
     try {
-      const token = await getSupabaseToken();
-      if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-        console.log('Token de Supabase agregado a la petición:', token.substring(0, 20) + '...');
-      } else {
+        const token = await getSupabaseToken();
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  } else {
         console.log('No se encontró token de Supabase para la petición');
       }
     } catch (error) {

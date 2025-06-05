@@ -307,10 +307,12 @@ export default function VeterinaryDataPage() {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Fecha:</Text>
               <Text style={styles.infoValue}>
-                {formatDate(vetInfo?.fecha_tratamiento)}{' '}
-                <Text style={styles.daysInfo}>
-                  {getDaysInfo(vetInfo?.fecha_tratamiento)}
-                </Text>
+                {formatDate(vetInfo?.fecha_tratamiento)}
+                {getDaysInfo(vetInfo?.fecha_tratamiento) && (
+                  <Text style={styles.daysInfo}>
+                    {' '}{getDaysInfo(vetInfo?.fecha_tratamiento)}
+                  </Text>
+                )}
               </Text>
             </View>
             

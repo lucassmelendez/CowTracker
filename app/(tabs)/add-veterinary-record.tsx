@@ -25,8 +25,6 @@ export default function AddVeterinaryRecordPage() {
   // Validar que tengamos un cattleId válido
   if (!cattleId) {
     console.error('No se proporcionó un ID de ganado válido en los parámetros de URL');
-  } else {
-    console.log('ID de ganado recibido:', cattleId);
   }
   
   const [cattle, setCattle] = useState<any>(null);
@@ -76,10 +74,7 @@ export default function AddVeterinaryRecordPage() {
       setSubmitting(true);
       
       // Verificar sesión de Supabase antes de hacer la petición
-      console.log('=== VERIFICACIÓN DE AUTENTICACIÓN ===');
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('Sesión de Supabase:', sessionData?.session ? 'Activa' : 'No activa');
-      console.log('Token de Supabase:', sessionData?.session?.access_token ? 'Presente' : 'Ausente');
       if (sessionError) {
         console.error('Error al obtener sesión:', sessionError);
       }
@@ -103,13 +98,7 @@ export default function AddVeterinaryRecordPage() {
         throw new Error('El ID del ganado no es válido');
       }
       
-      console.log('=== DEBUG INFO ===');
-      console.log('Enviando datos médicos para ganado con ID:', cattleIdString);
-      console.log('Datos a enviar:', JSON.stringify(recordData, null, 2));
-      console.log('URL completa:', `cattle/${cattleIdString}/medical`);
-      
       const resultado = await api.cattle.addMedicalRecord(cattleIdString, recordData);
-      console.log('Respuesta del servidor:', resultado);
       
       Alert.alert(
         'Éxito',

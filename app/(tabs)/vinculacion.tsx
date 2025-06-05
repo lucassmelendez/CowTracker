@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/services/api';
+import cachedApi from '../../lib/services/cachedApi';
 import { useCustomModal } from '../../components/CustomModal';
 import { useCacheManager } from '../../hooks/useCachedData';
 import { useAuth } from '../../components/AuthContext';
@@ -39,7 +40,7 @@ export default function VinculacionTab() {
       setFincasVinculadas(fincasData);
     } catch (error) {
       console.error('Error al cargar fincas vinculadas:', error);
-      showError('No se pudieron cargar las fincas vinculadas');
+      showError('Error', 'No se pudieron cargar las fincas vinculadas');
     } finally {
       setLoadingFincas(false);
       setRefreshing(false);
@@ -80,22 +81,29 @@ export default function VinculacionTab() {
     try {
       setEliminandoVinculacion(finca._id);
       
-      // Determinar el tipo de usuario y usar el endpoint correcto
-      const userId = userInfo?.id?.toString() || 'current-user';
+      // Obtener el ID del usuario actual
+      const userId = userInfo?.uid;
+      if (!userId) {
+        throw new Error('No se pudo obtener la información del usuario');
+      }
       
+      // Obtener el ID de la finca
+      const farmId = finca._id || finca.id_finca?.toString();
+      if (!farmId) {
+        throw new Error('ID de granja no válido');
+      }
+      
+      // Usar cachedApi para eliminar la vinculación (invalida caché automáticamente)
       if (isVeterinario()) {
-        await api.farms.removeVeterinarian(finca._id, userId);
+        await cachedApi.removeFarmVeterinarian(farmId, userId);
       } else if (isTrabajador()) {
-        await api.farms.removeWorker(finca._id, userId);
+        await cachedApi.removeFarmWorker(farmId, userId);
       } else {
         throw new Error('Tipo de usuario no válido para eliminar vinculación');
       }
       
-      // Invalidar caché para refrescar datos
-      await invalidateCache('farms');
-      await invalidateCache('users');
-      
       showSuccess(
+        'Éxito',
         'Vinculación eliminada correctamente',
         () => {
           cargarFincasVinculadas(); // Recargar la lista
@@ -115,7 +123,7 @@ export default function VinculacionTab() {
         }
       }
       
-      showError(mensaje);
+      showError('Error', mensaje);
     } finally {
       setEliminandoVinculacion(null);
     }
@@ -123,7 +131,7 @@ export default function VinculacionTab() {
 
   const handleVerificarCodigo = async () => {
     if (!codigo || codigo.trim().length < 6) {
-      showError('Por favor ingresa un código válido de 6 caracteres');
+      showError('Error', 'Por favor ingresa un código válido de 6 caracteres');
       return;
     }
 
@@ -135,6 +143,7 @@ export default function VinculacionTab() {
       
       if (response && (response.data?.success || (response as any).success)) {
         showSuccess(
+          'Éxito',
           'Has sido vinculado correctamente a la finca',
           () => {
             cargarFincasVinculadas(); // Recargar la lista de fincas
@@ -160,7 +169,7 @@ export default function VinculacionTab() {
         }
       }
       
-      showError(mensaje);
+      showError('Error', mensaje);
     } finally {
       setLoading(false);
     }

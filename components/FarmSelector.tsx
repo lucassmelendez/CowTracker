@@ -101,7 +101,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
         onPress={() => handleSelectFarm(item)}
       >
         <View style={styles.farmIconContainer}>
-          <Ionicons name="business" size={24} color="#27ae60" />
+          <Ionicons name="leaf" size={24} color="#27ae60" />
         </View>
         <View style={styles.farmInfoContainer}>
           <Text style={[
@@ -145,7 +145,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
         style={styles.selectorButton}
         onPress={handleAddFarm}
       >
-        <Ionicons name="add-circle" size={18} color="#ffffff" />
+        <Ionicons name="add" size={18} color="#ffffff" />
         <Text style={styles.selectorText}>Añadir granja</Text>
       </TouchableOpacity>
     );
@@ -157,7 +157,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
         style={styles.selectorButton}
         onPress={() => setModalVisible(true)}
       >
-        <Ionicons name="business" size={18} color="#ffffff" />
+        <Ionicons name="leaf" size={18} color="#ffffff" />
         <Text style={styles.selectorText} numberOfLines={1}>
           {selectedFarm ? selectedFarm.name : 'Seleccionar granja'}
         </Text>
@@ -219,19 +219,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    minWidth: 180,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 16,
     maxWidth: 220,
+    minHeight: 44,
   },
   selectorText: {
     color: '#ffffff',
     marginHorizontal: 8,
-    fontSize: 14,
-    fontWeight: '600',
-    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   errorText: {
     color: '#ffffff',
@@ -291,9 +293,9 @@ const styles = StyleSheet.create({
     borderColor: '#27ae60',
   },
   farmIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 32,
+    borderRadius: 12,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',

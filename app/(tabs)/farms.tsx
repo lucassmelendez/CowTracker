@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
+import { useAuth } from '../../components/AuthContext';
 import api from '../../lib/services/api';
 import { createStyles } from '../../styles/tailwind';
 
@@ -25,6 +26,7 @@ interface Farm {
 
 export default function FarmsPage() {
   const router = useRouter();
+  const { isAdmin } = useAuth();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -156,20 +158,22 @@ export default function FarmsPage() {
     <View style={createStyles('bg-white rounded-lg mx-4 my-2 p-4 shadow-sm')}>
       <View style={createStyles('flex-row justify-between items-center mb-3')}>
         <Text style={createStyles('text-lg font-bold text-gray-800')}>{item.name}</Text>
-        <View style={createStyles('flex-row items-center')}>
-          <TouchableOpacity 
-            style={createStyles('p-2 ml-2')} 
-            onPress={() => openEditModal(item)}
-          >
-            <Ionicons name="create-outline" size={20} color="#16a34a" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={createStyles('p-2 ml-2')} 
-            onPress={() => confirmDelete(item)}
-          >
-            <Ionicons name="trash-outline" size={20} color="#ef4444" />
-          </TouchableOpacity>
-        </View>
+        {isAdmin() && (
+          <View style={createStyles('flex-row items-center')}>
+            <TouchableOpacity 
+              style={createStyles('p-2 ml-2')} 
+              onPress={() => openEditModal(item)}
+            >
+              <Ionicons name="create-outline" size={20} color="#16a34a" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={createStyles('p-2 ml-2')} 
+              onPress={() => confirmDelete(item)}
+            >
+              <Ionicons name="trash-outline" size={20} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <View style={createStyles('mb-4')}>
@@ -241,13 +245,15 @@ export default function FarmsPage() {
             }
           />
 
-          {/* Botón flotante para agregar */}
-          <TouchableOpacity 
-            style={createStyles('absolute bottom-5 right-5 bg-green-600 w-14 h-14 rounded-full justify-center items-center shadow-lg')}
-            onPress={() => setModalVisible(true)}
-          >
-            <Ionicons name="add" size={28} color="#ffffff" />
-          </TouchableOpacity>
+          {/* Botón flotante para agregar - Solo para administradores */}
+          {isAdmin() && (
+            <TouchableOpacity 
+              style={createStyles('absolute bottom-5 right-5 bg-green-600 w-14 h-14 rounded-full justify-center items-center shadow-lg')}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="add" size={28} color="#ffffff" />
+            </TouchableOpacity>
+          )}
         </>
       )}
 

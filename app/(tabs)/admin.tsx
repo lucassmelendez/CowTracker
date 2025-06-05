@@ -6,7 +6,9 @@ import {
   StyleSheet, 
   Modal,
   ActivityIndicator,
-  Clipboard
+  Clipboard,
+  ScrollView,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../components/AuthContext';
@@ -83,6 +85,19 @@ export default function Admin() {
   useEffect(() => {
     setLoading(workersLoading || vetsLoading);
   }, [workersLoading, vetsLoading]);
+
+  // Función para refrescar datos
+  const onRefresh = async () => {
+    console.log('Refrescando datos de administrador...');
+    try {
+      await Promise.all([
+        refreshWorkers(),
+        refreshVeterinarians()
+      ]);
+    } catch (error) {
+      console.error('Error al refrescar datos:', error);
+    }
+  };
   
   const handleDelete = (person: any, type: string) => {
     setSelectedUser({ ...person, type });
@@ -255,199 +270,211 @@ export default function Admin() {
 
   return (
     <View style={{ flex: 1 }}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Trabajadores y veterinarios:</Text>
-        
-        <View style={styles.listContainer}>
-          {/* Veterinarios */}
-          {vets.map((vet, index) => (
-            <TouchableOpacity key={`vet-${vet._id || index}`} activeOpacity={0.7}>
-              {renderPersonItem({ item: vet, type: 'vet' })}
-            </TouchableOpacity>
-          ))}
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={onRefresh}
+            colors={['#27ae60']}
+            tintColor="#27ae60"
+          />
+        }
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>Trabajadores y veterinarios:</Text>
           
-          {/* Trabajadores */}
-          {workers.map((worker, index) => (
-            <TouchableOpacity key={`worker-${worker._id || index}`} activeOpacity={0.7}>
-              {renderPersonItem({ item: worker, type: 'worker' })}
-            </TouchableOpacity>
-          ))}
-          
-          {vets.length === 0 && workers.length === 0 && (
-            <Text style={styles.emptyText}>No hay personal vinculado a esta finca.</Text>
-          )}
-        </View>
-        
-        <TouchableOpacity 
-          style={[styles.addButton, generatingCode && styles.disabledButton]}
-          onPress={() => handleAddNewStaff('worker')}
-          disabled={generatingCode}
-        >
-          {generatingCode ? (
-            <ActivityIndicator size="small" color="#ffffff" />
-          ) : (
-            <Text style={styles.addButtonText}>Vincular nuevo trabajador</Text>
-          )}
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.addButton, { marginTop: 10 }, generatingCode && styles.disabledButton]}
-          onPress={() => handleAddNewStaff('vet')}
-          disabled={generatingCode}
-        >
-          {generatingCode ? (
-            <ActivityIndicator size="small" color="#ffffff" />
-          ) : (
-            <Text style={styles.addButtonText}>Vincular nuevo veterinario</Text>
-          )}
-        </TouchableOpacity>
-        
-        {/* Modal de confirmación para eliminar */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={deleteModalVisible}
-          onRequestClose={() => setDeleteModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>Confirmar eliminación</Text>
-              <Text style={styles.modalText}>
-                ¿Estás seguro de que deseas eliminar este {selectedUser?.type === 'worker' ? 'Trabajador' : 'Veterinario'}?
-              </Text>
-              
-              <View style={styles.modalButtons}>
-                <TouchableOpacity 
-                  style={styles.cancelButton}
-                  onPress={() => setDeleteModalVisible(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={styles.deleteConfirmButton}
-                  onPress={confirmDelete}
-                >
-                  <Text style={styles.deleteConfirmButtonText}>Eliminar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+          <View style={styles.listContainer}>
+            {/* Veterinarios */}
+            {vets.map((vet, index) => (
+              <TouchableOpacity key={`vet-${vet._id || index}`} activeOpacity={0.7}>
+                {renderPersonItem({ item: vet, type: 'vet' })}
+              </TouchableOpacity>
+            ))}
+            
+            {/* Trabajadores */}
+            {workers.map((worker, index) => (
+              <TouchableOpacity key={`worker-${worker._id || index}`} activeOpacity={0.7}>
+                {renderPersonItem({ item: worker, type: 'worker' })}
+              </TouchableOpacity>
+            ))}
+            
+            {vets.length === 0 && workers.length === 0 && (
+              <Text style={styles.emptyText}>No hay personal vinculado a esta finca.</Text>
+            )}
           </View>
-        </Modal>
-        
-        {/* Modal de código de vinculación */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={codeModalVisible}
-          onRequestClose={() => setCodeModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.codeModalContent}>
-              {/* Header con gradiente */}
-              <View style={styles.codeModalHeader}>
-                <View style={styles.iconContainer}>
-                  <Ionicons 
-                    name={codeType === 'trabajador' ? "people" : "medical"} 
-                    size={50} 
-                    color="#fff" 
-                  />
-                </View>
-                <Text style={styles.codeModalTitle}>
-                  ¡Código Generado!
-                </Text>
-                <Text style={styles.codeModalSubtitle}>
-                  Invitar {codeType === 'trabajador' ? 'Trabajador' : 'Veterinario'}
-                </Text>
-              </View>
-              
-              {/* Contenido principal */}
-              <View style={styles.codeModalBody}>
-                <Text style={styles.instructionText}>
-                  Comparte este código con la persona que quieres invitar:
-                </Text>
-                
-                {/* Código destacado */}
-                <View style={styles.codeContainer}>
-                  <Text style={styles.codeText}>{generatedCode}</Text>
-                  <TouchableOpacity 
-                    style={styles.copyIconButton}
-                    onPress={handleCopyCode}
-                  >
-                    <Ionicons name="copy-outline" size={24} color="#27ae60" />
-                  </TouchableOpacity>
-                </View>
-                
-                {/* Información de expiración */}
-                <View style={styles.expirationContainer}>
-                  <Ionicons name="time-outline" size={20} color="#f39c12" />
-                  <Text style={styles.expirationText}>
-                    Este código expira el {codeExpiration}
-                  </Text>
-                </View>
-                
-                {/* Instrucciones adicionales */}
-                <View style={styles.instructionsContainer}>
-                  <Text style={styles.instructionsTitle}>
-                    Instrucciones para el {codeType}:
-                  </Text>
-                  <View style={styles.instructionItem}>
-                    <Text style={styles.instructionNumber}>1.</Text>
-                    <Text style={styles.instructionDetail}>
-                      Descargar la aplicación CowTracker
-                    </Text>
-                  </View>
-                  <View style={styles.instructionItem}>
-                    <Text style={styles.instructionNumber}>2.</Text>
-                    <Text style={styles.instructionDetail}>
-                      Crear una cuenta o iniciar sesión
-                    </Text>
-                  </View>
-                  <View style={styles.instructionItem}>
-                    <Text style={styles.instructionNumber}>3.</Text>
-                    <Text style={styles.instructionDetail}>
-                      Usar este código para vincularse a la finca
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              
-              {/* Botones de acción */}
-              <View style={styles.codeModalButtons}>
-                <TouchableOpacity
-                  style={styles.copyButton}
-                  onPress={handleCopyCode}
-                >
-                  <Ionicons name="copy" size={20} color="#fff" style={{ marginRight: 8 }} />
-                  <Text style={styles.copyButtonText}>
-                    Copiar Código
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={styles.closeModalButton}
-                  onPress={() => setCodeModalVisible(false)}
-                >
-                  <Text style={styles.closeModalButtonText}>
-                    Cerrar
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Botón de cerrar */}
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setCodeModalVisible(false)}
+          
+          <TouchableOpacity 
+            style={[styles.addButton, generatingCode && styles.disabledButton]}
+            onPress={() => handleAddNewStaff('worker')}
+            disabled={generatingCode}
+          >
+            {generatingCode ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.addButtonText}>Vincular nuevo trabajador</Text>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.addButton, { marginTop: 10 }, generatingCode && styles.disabledButton]}
+            onPress={() => handleAddNewStaff('vet')}
+            disabled={generatingCode}
+          >
+            {generatingCode ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Text style={styles.addButtonText}>Vincular nuevo veterinario</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+      
+      {/* Modal de confirmación para eliminar */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={() => setDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Confirmar eliminación</Text>
+            <Text style={styles.modalText}>
+              ¿Estás seguro de que deseas eliminar este {selectedUser?.type === 'worker' ? 'Trabajador' : 'Veterinario'}?
+            </Text>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => setDeleteModalVisible(false)}
               >
-                <Ionicons name="close" size={24} color="#95a5a6" />
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.deleteConfirmButton}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.deleteConfirmButtonText}>Eliminar</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </Modal>
-        
-        {/* Modal personalizado */}
-        <ModalComponent />
-      </View>
+        </View>
+      </Modal>
+      
+      {/* Modal de código de vinculación */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={codeModalVisible}
+        onRequestClose={() => setCodeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.codeModalContent}>
+            {/* Header con gradiente */}
+            <View style={styles.codeModalHeader}>
+              <View style={styles.iconContainer}>
+                <Ionicons 
+                  name={codeType === 'trabajador' ? "people" : "medical"} 
+                  size={50} 
+                  color="#fff" 
+                />
+              </View>
+              <Text style={styles.codeModalTitle}>
+                ¡Código Generado!
+              </Text>
+              <Text style={styles.codeModalSubtitle}>
+                Invitar {codeType === 'trabajador' ? 'Trabajador' : 'Veterinario'}
+              </Text>
+            </View>
+            
+            {/* Contenido principal */}
+            <View style={styles.codeModalBody}>
+              <Text style={styles.instructionText}>
+                Comparte este código con la persona que quieres invitar:
+              </Text>
+              
+              {/* Código destacado */}
+              <View style={styles.codeContainer}>
+                <Text style={styles.codeText}>{generatedCode}</Text>
+                <TouchableOpacity 
+                  style={styles.copyIconButton}
+                  onPress={handleCopyCode}
+                >
+                  <Ionicons name="copy-outline" size={24} color="#27ae60" />
+                </TouchableOpacity>
+              </View>
+              
+              {/* Información de expiración */}
+              <View style={styles.expirationContainer}>
+                <Ionicons name="time-outline" size={20} color="#f39c12" />
+                <Text style={styles.expirationText}>
+                  Este código expira el {codeExpiration}
+                </Text>
+              </View>
+              
+              {/* Instrucciones adicionales */}
+              <View style={styles.instructionsContainer}>
+                <Text style={styles.instructionsTitle}>
+                  Instrucciones para el {codeType}:
+                </Text>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionNumber}>1.</Text>
+                  <Text style={styles.instructionDetail}>
+                    Descargar la aplicación CowTracker
+                  </Text>
+                </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionNumber}>2.</Text>
+                  <Text style={styles.instructionDetail}>
+                    Crear una cuenta o iniciar sesión
+                  </Text>
+                </View>
+                <View style={styles.instructionItem}>
+                  <Text style={styles.instructionNumber}>3.</Text>
+                  <Text style={styles.instructionDetail}>
+                    Usar este código para vincularse a la finca
+                  </Text>
+                </View>
+              </View>
+            </View>
+            
+            {/* Botones de acción */}
+            <View style={styles.codeModalButtons}>
+              <TouchableOpacity
+                style={styles.copyButton}
+                onPress={handleCopyCode}
+              >
+                <Ionicons name="copy" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.copyButtonText}>
+                  Copiar Código
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.closeModalButton}
+                onPress={() => setCodeModalVisible(false)}
+              >
+                <Text style={styles.closeModalButtonText}>
+                  Cerrar
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Botón de cerrar */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setCodeModalVisible(false)}
+            >
+              <Ionicons name="close" size={24} color="#95a5a6" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Modal personalizado */}
+      <ModalComponent />
     </View>
   );
 } 

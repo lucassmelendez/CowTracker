@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFarm } from '../../components/FarmContext';
 import { useAuth } from '../../components/AuthContext';
-import { useAllFarms, useFarmCattle, useAllCattleWithFarmInfo, useCacheManager } from '../../hooks/useCachedData';
+import { useUserFarms, useAllFarms, useFarmCattle, useAllCattleWithFarmInfo, useCacheManager } from '../../hooks/useCachedData';
 import { createStyles, tw } from '../../styles/tailwind';
 
 interface CattleItem {
@@ -27,8 +27,12 @@ interface CattleItem {
   precio_compra?: number;
   nota?: string;
   notes?: string;
+  id_finca?: string | number;
   finca?: {
     nombre: string;
+    id?: string | number;
+    id_finca?: string | number;
+    _id?: string;
   };
   farmName?: string;
   farmId?: string;
@@ -60,13 +64,31 @@ export default function CattleTab() {
   const isShowingAllFarms = !selectedFarm || selectedFarm._id === 'all-farms';
   const selectedFarmId = isShowingAllFarms ? null : selectedFarm._id;
 
-  // Hooks con caché
+  // Hooks con caché - usar useUserFarms para obtener solo las granjas del usuario
+  const { 
+    data: userFarms, 
+    loading: userFarmsLoading, 
+    error: userFarmsError,
+    refresh: refreshUserFarms 
+  } = useUserFarms();
+
+  // Solo usar useAllFarms si es admin
   const { 
     data: allFarms, 
-    loading: farmsLoading, 
-    error: farmsError,
-    refresh: refreshFarms 
+    loading: allFarmsLoading, 
+    error: allFarmsError,
+    refresh: refreshAllFarms 
   } = useAllFarms();
+
+  // Determinar qué granjas usar según el rol del usuario
+  const farmsToUse = isAdmin() ? allFarms : userFarms;
+  const farmsLoading = isAdmin() ? allFarmsLoading : userFarmsLoading;
+  const farmsError = isAdmin() ? allFarmsError : userFarmsError;
+  const refreshFarms = isAdmin() ? refreshAllFarms : refreshUserFarms;
+
+  // Solo obtener ganado con información de granja si es admin o si el usuario tiene granjas
+  const shouldLoadAllCattle = isAdmin() && isShowingAllFarms;
+  const userHasFarms = userFarms && userFarms.length > 0;
 
   const { 
     data: allCattleWithFarmInfo, 
@@ -83,8 +105,8 @@ export default function CattleTab() {
   } = useFarmCattle(selectedFarmId);
 
   // Determinar el estado de carga y datos a mostrar
-  const loading = isShowingAllFarms ? (farmsLoading || allCattleLoading) : farmCattleLoading;
-  const dataError = isShowingAllFarms ? (farmsError || allCattleError) : farmCattleError;
+  const loading = isShowingAllFarms ? (farmsLoading || (shouldLoadAllCattle ? allCattleLoading : false)) : farmCattleLoading;
+  const dataError = isShowingAllFarms ? (farmsError || (shouldLoadAllCattle ? allCattleError : null)) : farmCattleError;
 
   const styles = {
     container: createStyles(tw.container),
@@ -146,13 +168,47 @@ export default function CattleTab() {
   // Agregar un efecto adicional para refrescar cuando cambian los datos del caché
   useEffect(() => {
     console.log('Datos del caché cambiaron, actualizando vista...');
+    console.log('Usuario es admin:', isAdmin());
+    console.log('Usuario tiene granjas:', userHasFarms);
+    console.log('Granjas del usuario:', userFarms?.length || 0);
+    
     if (isShowingAllFarms) {
-      console.log('Mostrando todo el ganado:', allCattleWithFarmInfo?.length || 0);
-      console.log('Datos de todo el ganado:', allCattleWithFarmInfo);
-      setCattle(allCattleWithFarmInfo || []);
+      // Si es admin, mostrar todo el ganado
+      if (isAdmin()) {
+        console.log('Admin: Mostrando todo el ganado:', allCattleWithFarmInfo?.length || 0);
+        setCattle(allCattleWithFarmInfo || []);
+      } 
+      // Si no es admin pero tiene granjas, filtrar ganado solo de sus granjas
+      else if (userHasFarms && allCattleWithFarmInfo) {
+        const userFarmIds = userFarms?.map(farm => farm._id || farm.id_finca || farm.id) || [];
+        console.log('IDs de granjas del usuario:', userFarmIds);
+        
+        const filteredCattle = allCattleWithFarmInfo.filter(cattle => {
+          // Intentar obtener el ID de la granja del ganado de diferentes formas
+          const cattleFarmId = cattle.farmId || 
+                              cattle.finca?.id_finca || 
+                              cattle.finca?.id || 
+                              cattle.id_finca ||
+                              cattle.finca?._id;
+          
+          console.log('Ganado:', cattle.nombre || cattle.numero_identificacion, 'Granja ID:', cattleFarmId);
+          return cattleFarmId && userFarmIds.includes(cattleFarmId.toString());
+        });
+        
+        console.log('Usuario con granjas: Mostrando ganado filtrado:', filteredCattle.length);
+        console.log('Ganado filtrado:', filteredCattle.map(c => ({ 
+          nombre: c.nombre, 
+          farmId: c.farmId || c.finca?.id_finca || c.finca?.id 
+        })));
+        setCattle(filteredCattle);
+      }
+      // Si no es admin y no tiene granjas, no mostrar ganado
+      else {
+        console.log('Usuario sin granjas: No mostrando ganado');
+        setCattle([]);
+      }
     } else {
       console.log('Mostrando ganado de granja específica:', farmCattle?.length || 0);
-      console.log('Datos del ganado de la granja:', farmCattle);
       
       // Verificar si los datos están en formato incorrecto
       if (farmCattle && typeof farmCattle === 'object' && !Array.isArray(farmCattle)) {
@@ -163,7 +219,7 @@ export default function CattleTab() {
       
       setCattle(farmCattle || []);
     }
-  }, [allCattleWithFarmInfo, farmCattle, isShowingAllFarms]);
+  }, [allCattleWithFarmInfo, farmCattle, isShowingAllFarms, userFarms, userHasFarms, isAdmin]);
 
   // Efecto separado para manejar cambios en la granja seleccionada
   useEffect(() => {
@@ -174,14 +230,18 @@ export default function CattleTab() {
     // Refrescar datos cuando cambia la granja seleccionada
     const refreshOnFarmChange = async () => {
       if (isShowingAllFarms) {
-        await refreshAllCattle();
+        // Solo refrescar todo el ganado si es admin o si el usuario tiene granjas
+        if (isAdmin()) {
+          await refreshAllCattle();
+        }
+        await refreshFarms();
       } else if (selectedFarmId) {
         await refreshFarmCattle();
       }
     };
     
     refreshOnFarmChange();
-  }, [selectedFarm, selectedFarmId, isShowingAllFarms]);
+  }, [selectedFarm, selectedFarmId, isShowingAllFarms, isAdmin]);
 
   // Manejar errores
   useEffect(() => {
@@ -199,7 +259,12 @@ export default function CattleTab() {
   const onRefresh = async () => {
     console.log('Refrescando manualmente...');
     if (isShowingAllFarms) {
-      await Promise.all([refreshAllCattle(), refreshFarms()]);
+      const promises = [refreshFarms()];
+      // Solo refrescar todo el ganado si es admin
+      if (isAdmin()) {
+        promises.push(refreshAllCattle());
+      }
+      await Promise.all(promises);
     } else {
       await refreshFarmCattle();
     }
@@ -300,10 +365,42 @@ export default function CattleTab() {
   };
 
   const getSubtitle = () => {
+    if (loading) return 'Cargando...';
+    
     if (isShowingAllFarms) {
-      return `${cattle.length} animales en todas las granjas`;
+      if (isAdmin()) {
+        const totalFarms = allFarms?.length || 0;
+        const totalCattle = cattle.length;
+        return `${totalCattle} animales en ${totalFarms} granjas`;
+      } else if (userHasFarms) {
+        const userFarmCount = userFarms?.length || 0;
+        const totalCattle = cattle.length;
+        return `${totalCattle} animales en ${userFarmCount} granjas asignadas`;
+      } else {
+        return 'No tienes granjas asignadas. Contacta al administrador.';
+      }
     } else {
-      return `${cattle.length} animales en ${selectedFarm?.name || 'granja seleccionada'}`;
+      const farmName = selectedFarm?.nombre || 'Granja seleccionada';
+      const cattleCount = cattle.length;
+      return `${cattleCount} animales en ${farmName}`;
+    }
+  };
+
+  // Determinar si mostrar el botón de agregar ganado
+  const canAddCattle = isAdmin() || (userHasFarms && (!isShowingAllFarms || selectedFarmId));
+
+  // Determinar el mensaje cuando no hay ganado
+  const getEmptyMessage = () => {
+    if (isShowingAllFarms) {
+      if (isAdmin()) {
+        return 'No hay ganado registrado en el sistema';
+      } else if (!userHasFarms) {
+        return 'No tienes granjas asignadas.\nContacta al administrador para obtener acceso a las granjas.';
+      } else {
+        return 'No hay ganado registrado en tus granjas';
+      }
+    } else {
+      return `No hay ganado registrado en ${selectedFarm?.nombre || 'esta granja'}`;
     }
   };
 
@@ -340,13 +437,8 @@ export default function CattleTab() {
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {isShowingAllFarms 
-                ? 'No hay ganado registrado en ninguna granja' 
-                : `No hay ganado en la granja "${selectedFarm?.name || 'seleccionada'}"`
-              }
-            </Text>
-            {(isAdmin() || isTrabajador()) && (
+            <Text style={styles.emptyText}>{getEmptyMessage()}</Text>
+            {canAddCattle && (
               <TouchableOpacity style={styles.addButton} onPress={navigateToAdd}>
                 <Text style={styles.addButtonText}>Agregar Ganado</Text>
               </TouchableOpacity>
@@ -355,7 +447,7 @@ export default function CattleTab() {
         }
       />
 
-      {(isAdmin() || isTrabajador()) && (
+      {canAddCattle && (
         <TouchableOpacity style={styles.fab} onPress={navigateToAdd}>
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>

@@ -9,6 +9,8 @@ import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 import { useUserProfile, useCacheManager } from '../../hooks/useCachedData';
 import cachedApi from '../../lib/services/cachedApi';
 import { createStyles, tw } from '../../styles/tailwind';
+import CongratulationsModal from '../../components/CongratulationsModal';
+import { PremiumNotificationService } from '../../lib/services/premiumNotifications';
 
 interface UserData {
   email: string;
@@ -31,6 +33,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [congratulationsData, setCongratulationsData] = useState<any>(null);
   const [userData, setUserData] = useState<UserData>({
     email: '',
     role: '',
@@ -83,6 +87,20 @@ export default function ProfilePage() {
     upgradeButtonText: createStyles('text-white text-sm font-semibold'),
     helperText: createStyles('text-sm text-gray-600 text-center mt-2'),
   };
+
+  // Verificar felicitaciones Premium al cargar
+  useEffect(() => {
+    const checkPremiumActivation = async () => {
+      const pendingActivation = await PremiumNotificationService.getPendingActivation();
+      if (pendingActivation) {
+        console.log('🎊 Activación Premium detectada en perfil:', pendingActivation);
+        setCongratulationsData(pendingActivation);
+        setShowCongratulations(true);
+      }
+    };
+
+    checkPremiumActivation();
+  }, []);
 
   // Cargar datos del perfil al montar el componente
   useEffect(() => {
@@ -275,6 +293,12 @@ export default function ProfilePage() {
     );
   };
 
+  const handleCloseCongratulations = () => {
+    setShowCongratulations(false);
+    setCongratulationsData(null);
+    console.log('🎊 Felicitaciones cerradas en perfil');
+  };
+
   const getInitials = () => {
     const firstName = userData.primer_nombre || '';
     const lastName = userData.primer_apellido || '';
@@ -442,6 +466,13 @@ export default function ProfilePage() {
         onClose={() => setShowPremiumModal(false)}
         title="¡Actualiza tu cuenta a Premium!"
         subtitle="Desbloquea todas las funcionalidades de CowTracker"
+      />
+      
+      {/* Modal de Felicitaciones */}
+      <CongratulationsModal
+        visible={showCongratulations}
+        onClose={handleCloseCongratulations}
+        paymentData={congratulationsData}
       />
     </View>
   );

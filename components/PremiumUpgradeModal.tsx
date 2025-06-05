@@ -17,6 +17,7 @@ import { useAuth } from './AuthContext';
 import { useRouter } from 'expo-router';
 import { useCacheManager } from '../hooks/useCachedData';
 import CongratulationsModal from './CongratulationsModal';
+import { PremiumNotificationService } from '../lib/services/premiumNotifications';
 
 interface PremiumUpgradeModalProps {
   visible: boolean;
@@ -225,13 +226,29 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       await invalidateCache('users/profile');
       await invalidateCache('farms');
       
-      // Mostrar modal de felicitaciones inmediatamente
-      setCongratulationsData(paymentData);
-      setShowCongratulations(true);
+      // Guardar datos para mostrar felicitaciones después
+      await PremiumNotificationService.setPendingActivation({
+        buy_order: paymentData.buy_order,
+        amount: paymentData.amount,
+        authorization_code: paymentData.authorization_code,
+        timestamp: Date.now()
+      });
+      
       setIsActivatingPremium(false);
       
       // Cerrar el modal de pago
       onClose();
+      
+      // Navegar al perfil después de un breve delay
+      setTimeout(() => {
+        console.log('🧭 Navegando al perfil después de activación...');
+        try {
+          router.replace('/(tabs)/profile');
+        } catch (navError) {
+          console.error('❌ Error en navegación al perfil:', navError);
+          // Si falla, al menos el usuario verá las felicitaciones en el index
+        }
+      }, 500);
       
     } catch (error) {
       console.error('❌ Error al activar Premium:', error);

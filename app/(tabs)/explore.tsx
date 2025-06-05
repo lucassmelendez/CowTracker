@@ -30,9 +30,8 @@ interface CattleItem {
   id_finca?: string | number;
   finca?: {
     nombre: string;
-    id?: string | number;
-    id_finca?: string | number;
     _id?: string;
+    id_finca?: string | number;
   };
   farmName?: string;
   farmId?: string;
@@ -180,16 +179,13 @@ export default function CattleTab() {
       } 
       // Si no es admin pero tiene granjas, filtrar ganado solo de sus granjas
       else if (userHasFarms && allCattleWithFarmInfo) {
-        const userFarmIds = userFarms?.map(farm => farm._id || farm.id_finca || farm.id) || [];
+        const userFarmIds = userFarms?.map(farm => farm._id || farm.id_finca) || [];
         console.log('IDs de granjas del usuario:', userFarmIds);
         
         const filteredCattle = allCattleWithFarmInfo.filter(cattle => {
           // Intentar obtener el ID de la granja del ganado de diferentes formas
           const cattleFarmId = cattle.farmId || 
-                              cattle.finca?.id_finca || 
-                              cattle.finca?.id || 
-                              cattle.id_finca ||
-                              cattle.finca?._id;
+                              cattle.finca?.nombre; // Usar nombre como identificador
           
           console.log('Ganado:', cattle.nombre || cattle.numero_identificacion, 'Granja ID:', cattleFarmId);
           return cattleFarmId && userFarmIds.includes(cattleFarmId.toString());
@@ -198,7 +194,7 @@ export default function CattleTab() {
         console.log('Usuario con granjas: Mostrando ganado filtrado:', filteredCattle.length);
         console.log('Ganado filtrado:', filteredCattle.map(c => ({ 
           nombre: c.nombre, 
-          farmId: c.farmId || c.finca?.id_finca || c.finca?.id 
+          farmId: c.farmId || c.finca?.nombre 
         })));
         setCattle(filteredCattle);
       }
@@ -390,7 +386,7 @@ export default function CattleTab() {
         return 'No tienes granjas asignadas. Contacta al administrador.';
       }
     } else {
-      const farmName = selectedFarm?.nombre || 'Granja seleccionada';
+      const farmName = selectedFarm?.name || 'Granja seleccionada';
       const cattleCount = cattle.length;
       return `${cattleCount} animales en ${farmName}`;
     }
@@ -410,7 +406,7 @@ export default function CattleTab() {
         return 'No hay ganado registrado en tus granjas';
       }
     } else {
-      return `No hay ganado registrado en ${selectedFarm?.nombre || 'esta granja'}`;
+      return `No hay ganado registrado en ${selectedFarm?.name || 'esta granja'}`;
     }
   };
 

@@ -102,6 +102,7 @@ export default function RegisterScreen() {
       
       if (result.success) {
         showSuccess(
+          'success',
           'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.',
           () => router.push('/login')
         );

@@ -6,7 +6,6 @@ import {
   Modal, 
   StyleSheet, 
   ActivityIndicator,
-  Alert,
   Platform,
   Linking
 } from 'react-native';
@@ -18,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { useCacheManager } from '../hooks/useCachedData';
 import CongratulationsModal from './CongratulationsModal';
 import { PremiumNotificationService } from '../lib/services/premiumNotifications';
+import { useCustomModal } from './CustomModal';
 
 interface PremiumUpgradeModalProps {
   visible: boolean;
@@ -57,6 +57,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
   const { userInfo, updateProfile } = useAuth();
   const router = useRouter();
   const { invalidateCache } = useCacheManager();
+  const { showError, showConfirm, ModalComponent } = useCustomModal();
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
   const [priceDisplay, setPriceDisplay] = useState<string>('$10.000');
   const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(false);
@@ -211,25 +212,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
         errorMessage += 'Por favor, intenta nuevamente.';
       }
       
-      Alert.alert(
-        'Error de Pago', 
-        errorMessage,
-        [
-          { 
-            text: 'Reintentar', 
-            onPress: () => {
-              setTimeout(() => {
-                setIsProcessingPayment(false);
-              }, 1000);
-            }
-          },
-          { 
-            text: 'Cancelar', 
-            style: 'cancel',
-            onPress: () => setIsProcessingPayment(false)
-          }
-        ]
-      );
+      showError(errorMessage);
       return;
     } finally {
       if (!isProcessingPayment) {
@@ -299,18 +282,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
     } catch (error) {
       console.error('❌ Error al activar Premium:', error);
       setIsActivatingPremium(false);
-      Alert.alert(
-        'Pago Procesado',
-        'Tu pago fue procesado exitosamente, pero hubo un problema al activar Premium automáticamente. Por favor, contacta a soporte.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onClose();
-            }
-          }
-        ]
-      );
+      showError('Tu pago fue procesado exitosamente, pero hubo un problema al activar Premium automáticamente. Por favor, contacta a soporte.');
     }
   };
 
@@ -432,18 +404,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       setShowWebView(false);
       setIsWebViewLoading(true);
       
-      Alert.alert(
-        'Pago Cancelado',
-        'El pago fue cancelado o no se pudo procesar. No se realizaron cargos.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Mantener el modal abierto para permitir reintentar
-            }
-          }
-        ]
-      );
+      showError('El pago fue cancelado o no se pudo procesar. No se realizaron cargos.');
     }
     
     // Log para debugging - mostrar URLs de Webpay sin tratarlas como errores
@@ -454,23 +415,13 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
 
   // Función para cerrar el WebView
   const handleCloseWebView = () => {
-    Alert.alert(
+    showConfirm(
       'Cancelar Pago',
       '¿Estás seguro de que quieres cancelar el pago?',
-      [
-        {
-          text: 'Continuar Pagando',
-          style: 'cancel'
-        },
-        {
-          text: 'Cancelar Pago',
-          style: 'destructive',
-          onPress: () => {
-            setShowWebView(false);
-            setIsWebViewLoading(true);
-          }
-        }
-      ]
+      () => {
+        setShowWebView(false);
+        setIsWebViewLoading(true);
+      }
     );
   };
 
@@ -689,22 +640,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
                 onError={(syntheticEvent) => {
                   const { nativeEvent } = syntheticEvent;
                   console.error('❌ Error en WebView:', nativeEvent);
-                  Alert.alert(
-                    'Error de Conexión',
-                    'No se pudo cargar el sistema de pago. Verifica tu conexión a internet.',
-                    [
-                      {
-                        text: 'Reintentar',
-                        onPress: () => {
-                          setIsWebViewLoading(true);
-                        }
-                      },
-                      {
-                        text: 'Cancelar',
-                        onPress: handleCloseWebView
-                      }
-                    ]
-                  );
+                  showError('No se pudo cargar el sistema de pago. Verifica tu conexión a internet.');
                 }}
               />
             )
@@ -739,6 +675,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
         onClose={handleCloseCongratulations}
         paymentData={congratulationsData}
       />
+      <ModalComponent />
     </>
   );
 };

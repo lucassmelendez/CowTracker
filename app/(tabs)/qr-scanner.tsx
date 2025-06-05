@@ -1,12 +1,14 @@
 import { BarcodeScanningResult, CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function App() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [qr, setQr] = useState<string | null>(null);
+  const { showError, ModalComponent } = useCustomModal();
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -20,6 +22,7 @@ export default function App() {
           <Text style={styles.message}>Necesitamos tu permiso para mostrar la cámara</Text>
           <Button onPress={requestPermission} title="Dar permiso" />
         </View>
+        <ModalComponent />
       </View>
     );
   }
@@ -48,14 +51,14 @@ export default function App() {
             params: { id: cattleId }
           });
         } else {
-          Alert.alert('Error', 'QR inválido: No se encontró el ID del ganado');
+          showError('QR inválido: No se encontró el ID del ganado');
         }
       } else {
-        Alert.alert('QR no válido', 'Este código QR no corresponde a un ganado registrado');
+        showError('Este código QR no corresponde a un ganado registrado');
       }
     } catch (error) {
       console.error('Error al procesar el QR:', error);
-      Alert.alert('Error', 'El código QR no tiene el formato correcto');
+      showError('El código QR no tiene el formato correcto');
     }
   }
 
@@ -93,6 +96,7 @@ export default function App() {
           <Button title="Escanear otro" onPress={() => setQr(null)} color="#4CAF50" />
         </View>
       )}
+      <ModalComponent />
     </View>
   );
 }

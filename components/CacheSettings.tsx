@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCacheManager } from '../hooks/useCachedData';
+import { useCustomModal } from './CustomModal';
 
 interface CacheStatsDisplay {
   memorySize: number;
@@ -20,6 +20,7 @@ const CacheSettings: React.FC = () => {
   const [stats, setStats] = useState<CacheStatsDisplay>({ memorySize: 0, totalKeys: 0 });
   const [loading, setLoading] = useState(false);
   const { clearAllCache, invalidateCache, cleanupExpiredCache, getCacheStats } = useCacheManager();
+  const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
 
   useEffect(() => {
     updateStats();
@@ -31,53 +32,40 @@ const CacheSettings: React.FC = () => {
   };
 
   const handleClearAllCache = () => {
-    Alert.alert(
+    showConfirm(
       'Limpiar Todo el Caché',
       '¿Estás seguro de que quieres eliminar todos los datos del caché? Esto hará que la aplicación vuelva a cargar todos los datos desde el servidor.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Limpiar',
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await clearAllCache();
-              updateStats();
-              Alert.alert('Éxito', 'Caché limpiado completamente');
-            } catch (error) {
-              Alert.alert('Error', 'No se pudo limpiar el caché');
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
+      async () => {
+        setLoading(true);
+        try {
+          await clearAllCache();
+          updateStats();
+          showSuccess('Caché limpiado completamente');
+        } catch (error) {
+          showError('No se pudo limpiar el caché');
+        } finally {
+          setLoading(false);
+        }
+      }
     );
   };
 
   const handleInvalidateSpecific = (pattern: string, description: string) => {
-    Alert.alert(
+    showConfirm(
       `Limpiar ${description}`,
       `¿Quieres eliminar los datos de ${description.toLowerCase()} del caché?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Limpiar',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              await invalidateCache(pattern);
-              updateStats();
-              Alert.alert('Éxito', `Caché de ${description.toLowerCase()} limpiado`);
-            } catch (error) {
-              Alert.alert('Error', `No se pudo limpiar el caché de ${description.toLowerCase()}`);
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
+      async () => {
+        setLoading(true);
+        try {
+          await invalidateCache(pattern);
+          updateStats();
+          showSuccess(`Caché de ${description.toLowerCase()} limpiado`);
+        } catch (error) {
+          showError(`No se pudo limpiar el caché de ${description.toLowerCase()}`);
+        } finally {
+          setLoading(false);
+        }
+      }
     );
   };
 
@@ -86,9 +74,9 @@ const CacheSettings: React.FC = () => {
     try {
       await cleanupExpiredCache();
       updateStats();
-      Alert.alert('Éxito', 'Elementos expirados eliminados del caché');
+      showSuccess('Elementos expirados eliminados del caché');
     } catch (error) {
-      Alert.alert('Error', 'No se pudieron eliminar los elementos expirados');
+      showError('No se pudieron eliminar los elementos expirados');
     } finally {
       setLoading(false);
     }
@@ -246,6 +234,7 @@ const CacheSettings: React.FC = () => {
           <Text style={styles.loadingText}>Procesando...</Text>
         </View>
       )}
+      <ModalComponent />
     </ScrollView>
   );
 };

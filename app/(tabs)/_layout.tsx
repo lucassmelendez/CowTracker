@@ -126,7 +126,7 @@ export default function TabLayout() {
       <Stack.Screen
         name="admin"
         options={{
-          headerTitle: () => <CustomHeader title="Administrar" showBackButton={true} />,
+          headerTitle: () => <CustomHeader title="Administra tus Granjas" showBackButton={true} />,
           headerBackVisible: false,
           gestureEnabled: false,
           headerLeft: () => null, // Oculta el botón de navegación en web

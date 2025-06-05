@@ -74,7 +74,7 @@ export default function ReportPage() {
   const [exportModalVisible, setExportModalVisible] = useState(false);
   
   // Hook para modales personalizados
-  const { showError, ModalComponent } = useCustomModal();
+  const { showSuccess, showError, ModalComponent } = useCustomModal();
 
   // Usar el contexto de granja del header
   const { selectedFarm } = useFarm();
@@ -433,7 +433,8 @@ ${date}
       reportData, 
       selectedReportType, 
       selectedFarmName,
-      selectedReportType === 'cattle' ? cattleDetails : undefined
+      selectedReportType === 'cattle' ? cattleDetails : undefined,
+      { showSuccess, showError }
     );
   };
 
@@ -441,7 +442,11 @@ ${date}
     if (!reportData) return;
     
     setExportModalVisible(false);
-    await ReportGenerator.exportToCSV(reportData, selectedReportType);
+    await ReportGenerator.exportToCSV(
+      reportData, 
+      selectedReportType,
+      { showSuccess, showError }
+    );
   };
 
   const renderReportTypeItem = ({ item }: { item: ReportType }) => (

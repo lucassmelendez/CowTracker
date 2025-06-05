@@ -5,12 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
 import { createStyles, tw } from '../styles/tailwind';
+import { useCustomModal } from '../components/CustomModal';
 
 interface Role {
   id: string;
@@ -27,6 +27,7 @@ const roles: Role[] = [
 export default function RegisterScreen() {
   const router = useRouter();
   const { register } = useAuth();
+  const { showSuccess, ModalComponent } = useCustomModal();
 
   const [formData, setFormData] = useState({
     primer_nombre: '',
@@ -100,15 +101,9 @@ export default function RegisterScreen() {
       const result = await register(userData);
       
       if (result.success) {
-        Alert.alert(
-          'Registro exitoso',
+        showSuccess(
           'Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.push('/login'),
-            },
-          ]
+          () => router.push('/login')
         );
       } else {
         setErrors([result.message || 'Error en el registro']);
@@ -313,6 +308,7 @@ export default function RegisterScreen() {
           </View>
         </View>
       </Modal>
+      <ModalComponent />
     </View>
   );
 }

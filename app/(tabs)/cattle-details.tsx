@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Modal,
   ActivityIndicator,
   Platform,
@@ -19,12 +18,14 @@ import { supabase } from '../../lib/config/supabase';
 import { useCacheManager } from '../../hooks/useCachedData';
 import cachedApi from '../../lib/services/cachedApi';
 import QRCode from 'react-native-qrcode-svg';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function CattleDetailPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = params?.id;
   const { userInfo, isAdmin, isTrabajador } = useAuth();
+  const { showSuccess, showError, ModalComponent } = useCustomModal();
   
   const [cattle, setCattle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -89,18 +90,19 @@ export default function CattleDetailPage() {
       const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
       
       if (!id) {
-        Alert.alert('Error', 'ID de ganado no válido');
+        showError('ID de ganado no válido');
         return;
       }
 
       // Usar el sistema de caché para eliminar la vaca
       await cachedApi.deleteCattle(id);
 
-      Alert.alert('Éxito', 'Ganado eliminado correctamente');
-      router.back();
+      showSuccess('Ganado eliminado correctamente', () => {
+        router.back();
+      });
     } catch (err) {
       console.error('Error al eliminar ganado:', err);
-      Alert.alert('Error', 'No se pudo eliminar el ganado');
+      showError('No se pudo eliminar el ganado');
     }
   };
 
@@ -134,7 +136,7 @@ export default function CattleDetailPage() {
         title: 'Código QR del Ganado'
       });
     } catch (error) {
-      Alert.alert('Error', 'No se pudo compartir el código QR');
+      showError('No se pudo compartir el código QR');
     }
   };
 
@@ -384,6 +386,7 @@ export default function CattleDetailPage() {
           </View>
         </View>
       </Modal>
+      <ModalComponent />
     </View>
   );
 }

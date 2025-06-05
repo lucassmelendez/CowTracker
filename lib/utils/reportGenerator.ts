@@ -24,6 +24,11 @@ export interface CattleDetail {
   notes?: string;
 }
 
+export interface AlertCallbacks {
+  showSuccess: (message: string) => void;
+  showError: (message: string) => void;
+}
+
 export class ReportGenerator {
   static generateHTMLReport(
     reportData: ReportData, 
@@ -440,7 +445,8 @@ export class ReportGenerator {
     reportData: ReportData, 
     reportType: string, 
     farmName: string,
-    cattleDetails?: CattleDetail[]
+    cattleDetails?: CattleDetail[],
+    alertCallbacks?: AlertCallbacks
   ): Promise<void> {
     try {
       const htmlContent = this.generateHTMLReport(reportData, reportType, farmName, cattleDetails);
@@ -457,11 +463,15 @@ export class ReportGenerator {
           dialogTitle: 'Compartir Informe',
         });
       } else {
-        Alert.alert('Éxito', `Informe guardado como ${fileName}`);
+        if (alertCallbacks?.showSuccess) {
+          alertCallbacks.showSuccess(`Informe guardado como ${fileName}`);
+        }
       }
     } catch (error) {
       console.error('Error exportando informe:', error);
-      Alert.alert('Error', 'No se pudo exportar el informe');
+      if (alertCallbacks?.showError) {
+        alertCallbacks.showError('No se pudo exportar el informe');
+      }
     }
   }
 
@@ -500,7 +510,11 @@ export class ReportGenerator {
     return csvContent;
   }
 
-  static async exportToCSV(reportData: ReportData, reportType: string): Promise<void> {
+  static async exportToCSV(
+    reportData: ReportData, 
+    reportType: string,
+    alertCallbacks?: AlertCallbacks
+  ): Promise<void> {
     try {
       const csvContent = this.generateCSVReport(reportData, reportType);
       const fileName = `informe_${reportType}_${new Date().getTime()}.csv`;
@@ -516,11 +530,15 @@ export class ReportGenerator {
           dialogTitle: 'Compartir Informe CSV',
         });
       } else {
-        Alert.alert('Éxito', `Informe CSV guardado como ${fileName}`);
+        if (alertCallbacks?.showSuccess) {
+          alertCallbacks.showSuccess(`Informe CSV guardado como ${fileName}`);
+        }
       }
     } catch (error) {
       console.error('Error exportando CSV:', error);
-      Alert.alert('Error', 'No se pudo exportar el informe CSV');
+      if (alertCallbacks?.showError) {
+        alertCallbacks.showError('No se pudo exportar el informe CSV');
+      }
     }
   }
 } 

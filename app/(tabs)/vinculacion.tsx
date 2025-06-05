@@ -5,19 +5,20 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
   ScrollView,
   FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/services/api';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function VinculacionTab() {
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
   const [fincasVinculadas, setFincasVinculadas] = useState<any[]>([]);
   const [loadingFincas, setLoadingFincas] = useState(true);
+  const { showSuccess, showError, ModalComponent } = useCustomModal();
 
   useEffect(() => {
     cargarFincasVinculadas();
@@ -31,7 +32,7 @@ export default function VinculacionTab() {
       setFincasVinculadas(fincasData);
     } catch (error) {
       console.error('Error al cargar fincas vinculadas:', error);
-      Alert.alert('Error', 'No se pudieron cargar las fincas vinculadas');
+      showError('No se pudieron cargar las fincas vinculadas');
     } finally {
       setLoadingFincas(false);
     }
@@ -39,7 +40,7 @@ export default function VinculacionTab() {
 
   const handleVerificarCodigo = async () => {
     if (!codigo || codigo.trim().length < 6) {
-      Alert.alert('Error', 'Por favor ingresa un código válido de 6 caracteres');
+      showError('Por favor ingresa un código válido de 6 caracteres');
       return;
     }
 
@@ -50,18 +51,12 @@ export default function VinculacionTab() {
       });
       
       if (response && (response.data?.success || (response as any).success)) {
-        Alert.alert(
-          'Vinculación exitosa',
+        showSuccess(
           'Has sido vinculado correctamente a la finca',
-          [
-            {
-              text: 'Continuar',
-              onPress: () => {
-                cargarFincasVinculadas(); // Recargar la lista de fincas
-                setCodigo(''); // Limpiar el código
-              }
-            }
-          ]
+          () => {
+            cargarFincasVinculadas(); // Recargar la lista de fincas
+            setCodigo(''); // Limpiar el código
+          }
         );
       } else {
         throw new Error('Respuesta inválida del servidor');
@@ -82,7 +77,7 @@ export default function VinculacionTab() {
         }
       }
       
-      Alert.alert('Error', mensaje);
+      showError(mensaje);
     } finally {
       setLoading(false);
     }
@@ -165,6 +160,7 @@ export default function VinculacionTab() {
           )}
         </View>
       </ScrollView>
+      <ModalComponent />
     </View>
   );
 }

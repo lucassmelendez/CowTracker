@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform
@@ -16,11 +15,13 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../../lib/services/api';
 import { supabase } from '../../lib/config/supabase'; // Importar supabase para verificar sesión
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+  const { showSuccess, showError, ModalComponent } = useCustomModal();
   
   // Validar que tengamos un cattleId válido
   if (!cattleId) {
@@ -50,7 +51,7 @@ export default function AddVeterinaryRecordPage() {
         setCattle(data);
       } catch (error) {
         console.error('Error loading cattle data:', error);
-        Alert.alert('Error', 'No se pudo cargar la información del ganado');
+        showError('No se pudo cargar la información del ganado');
       } finally {
         setLoading(false);
       }
@@ -60,10 +61,8 @@ export default function AddVeterinaryRecordPage() {
   }, [cattleId]);
   
   const handleSubmit = async () => {
-
-    
     if (!cattleId) {
-      Alert.alert('Error', 'No se pudo identificar el ganado');
+      showError('No se pudo identificar el ganado');
       return;
     }
     
@@ -97,10 +96,9 @@ export default function AddVeterinaryRecordPage() {
       
       const resultado = await api.cattle.addMedicalRecord(cattleIdString, recordData);
       
-      Alert.alert(
-        'Éxito',
+      showSuccess(
         'Registro veterinario agregado correctamente',
-        [{ text: 'OK', onPress: () => router.back() }]
+        () => router.back()
       );
     } catch (error: any) {
       console.error('=== ERROR COMPLETO ===');
@@ -128,11 +126,7 @@ export default function AddVeterinaryRecordPage() {
         errorMsg = `Error del servidor (${statusCode}). El endpoint podría no existir o tener un problema.`;
       }
       
-      Alert.alert(
-        'Error al agregar registro médico', 
-        errorMsg,
-        [{ text: 'Entendido' }]
-      );
+      showError(errorMsg);
       setError(errorMsg);
     } finally {
       setSubmitting(false);
@@ -279,6 +273,7 @@ export default function AddVeterinaryRecordPage() {
           </View>
         </View>
       </ScrollView>
+      <ModalComponent />
     </KeyboardAvoidingView>
   );
 }

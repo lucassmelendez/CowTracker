@@ -6,16 +6,17 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Modal,
   Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function MilkSaleTab() {
   const router = useRouter();
+  const { showSuccess, ModalComponent } = useCustomModal();
   const [formData, setFormData] = useState({
     date: new Date(),
     customer: '',
@@ -93,26 +94,20 @@ export default function MilkSaleTab() {
       return;
     }
 
-    Alert.alert(
-      'Venta registrada',
+    showSuccess(
       'La venta de leche se ha registrado correctamente',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Reset form
-            setFormData({
-              date: new Date(),
-              customer: '',
-              liters: '',
-              pricePerLiter: '',
-              totalAmount: '0.00',
-              notes: ''
-            });
-            router.back();
-          }
-        }
-      ]
+      () => {
+        // Reset form
+        setFormData({
+          date: new Date(),
+          customer: '',
+          liters: '',
+          pricePerLiter: '',
+          totalAmount: '0.00',
+          notes: ''
+        });
+        router.back();
+      }
     );
   };
 
@@ -307,6 +302,7 @@ export default function MilkSaleTab() {
           </View>
         </Modal>
       </ScrollView>
+      <ModalComponent />
     </View>
   );
 }

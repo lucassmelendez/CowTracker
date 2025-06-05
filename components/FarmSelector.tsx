@@ -145,8 +145,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
         style={styles.selectorButton}
         onPress={handleAddFarm}
       >
-        <Ionicons name="add" size={18} color="#ffffff" />
-        <Text style={styles.selectorText}>Añadir granja</Text>
+        <Text style={styles.selectorText}>ver todas las granjas</Text>
       </TouchableOpacity>
     );
   }

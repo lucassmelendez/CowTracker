@@ -5,7 +5,6 @@ import {
   TextInput, 
   TouchableOpacity, 
   ScrollView, 
-  Alert,
   Platform,
   Modal,
   StyleSheet
@@ -13,9 +12,11 @@ import {
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { useCustomModal } from '../../components/CustomModal';
 
 export default function CattleSaleTab() {
   const router = useRouter();
+  const { showSuccess, ModalComponent } = useCustomModal();
   
   const [formData, setFormData] = useState({
     date: new Date(),
@@ -65,8 +66,9 @@ export default function CattleSaleTab() {
     }
 
     // Aquí irá la lógica para guardar la venta
-    Alert.alert('Éxito', 'Venta registrada correctamente');
-    router.back();
+    showSuccess('Venta registrada correctamente', () => {
+      router.back();
+    });
   };
 
   return (
@@ -214,6 +216,7 @@ export default function CattleSaleTab() {
           </View>
         </Modal>
       </ScrollView>
+      <ModalComponent />
     </View>
   );
 }

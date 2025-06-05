@@ -83,7 +83,7 @@ function CustomHeader({ title, showBackButton = false }: { title: string; showBa
           style={styles.profileButton}
           onPress={() => setProfileMenuVisible(true)}
         >
-          <Ionicons name="person-circle" size={24} color="#ffffff" />
+          <Ionicons name="person" size={24} color="#ffffff" />
         </TouchableOpacity>
 
         <Modal

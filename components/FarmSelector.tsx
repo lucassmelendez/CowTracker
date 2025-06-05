@@ -159,7 +159,7 @@ const FarmSelector: React.FC<FarmSelectorProps> = ({ onSelectFarm, selectedFarm 
       >
         <Ionicons name="leaf" size={18} color="#ffffff" />
         <Text style={styles.selectorText} numberOfLines={1}>
-          {selectedFarm ? selectedFarm.name : 'Seleccionar granja'}
+          {selectedFarm ? (selectedFarm.name.length > 9 ? selectedFarm.name.substring(0, 9) + '..' : selectedFarm.name) : 'Seleccionar granja'}
         </Text>
         <Ionicons name="chevron-down" size={16} color="#ffffff" />
       </TouchableOpacity>

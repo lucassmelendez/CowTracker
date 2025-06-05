@@ -65,14 +65,12 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({ title, showBackButton = tru
           />
         </View>
         
-        <View style={styles.profileButtonWrapper}>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => setProfileMenuVisible(true)}
-          >
-            <Ionicons name="person" size={18} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={styles.profileButton}
+          onPress={() => setProfileMenuVisible(true)}
+        >
+          <Ionicons name="person-circle" size={28} color="#ffffff" />
+        </TouchableOpacity>
 
         <Modal
           animationType="fade"
@@ -138,14 +136,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   backButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    padding: 8,
     marginLeft: 5,
     marginRight: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    minWidth: 44,
-    minHeight: 44,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -169,22 +166,15 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  profileButtonWrapper: {
-    marginLeft: 10,
-    padding: 4,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
   profileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginLeft: 10,
+    padding: 5,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    minWidth: 48,
-    minHeight: 44,
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,

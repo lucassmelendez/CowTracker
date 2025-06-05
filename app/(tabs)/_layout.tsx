@@ -7,7 +7,7 @@ import { useFarm } from '../../components/FarmContext';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 
-function CustomHeader({ title }: { title: string }) {
+function CustomHeader({ title, showBackButton = false }: { title: string; showBackButton?: boolean }) {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
   const router = useRouter();
@@ -27,9 +27,26 @@ function CustomHeader({ title }: { title: string }) {
     router.push('/profile');
   };
 
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      // Si no puede ir atrás, navegar a la página principal
+      router.replace('/(tabs)');
+    }
+  };
+
   return (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>{title}</Text>
+      {showBackButton && (
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={handleGoBack}
+        >
+          <Ionicons name="arrow-back" size={24} color="#ffffff" />
+        </TouchableOpacity>
+      )}
+      <Text style={[styles.headerTitle, !showBackButton && styles.headerTitleNoBack]}>{title}</Text>
       
       <View style={styles.headerRightContainer}>
         <FarmSelector 
@@ -124,37 +141,37 @@ export default function TabLayout() {
       <Stack.Screen
         name="explore"
         options={{
-          headerTitle: () => <CustomHeader title="Ganado" />,
+          headerTitle: () => <CustomHeader title="Ganado" showBackButton={true} />,
         }}
       />
       <Stack.Screen
         name="admin"
         options={{
-          headerTitle: () => <CustomHeader title="Administración" />,
+          headerTitle: () => <CustomHeader title="Administración" showBackButton={true} />,
         }}
       />
       <Stack.Screen
         name="production"
         options={{
-          headerTitle: () => <CustomHeader title="Producción" />,
+          headerTitle: () => <CustomHeader title="Producción" showBackButton={true} />,
         }}
       />
       <Stack.Screen
         name="veterinary-data"
         options={{
-          headerTitle: () => <CustomHeader title="Datos Veterinarios" />,
+          headerTitle: () => <CustomHeader title="Datos Veterinarios" showBackButton={true} />,
         }}
       />
       <Stack.Screen
         name="report"
         options={{
-          headerTitle: () => <CustomHeader title="Informes" />,
+          headerTitle: () => <CustomHeader title="Informes" showBackButton={true} />,
         }}
       />
       <Stack.Screen
         name="sales"
         options={{
-          headerTitle: () => <CustomHeader title="Ventas" />,
+          headerTitle: () => <CustomHeader title="Ventas" showBackButton={true} />,
         }}
       />
     </Stack>
@@ -169,12 +186,25 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingRight: 5,
   },
+  backButton: {
+    padding: 8,
+    marginLeft: 5,
+    marginRight: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontWeight: 'bold',
     fontSize: 18,
     color: '#ffffff',
-    marginLeft: 5,
     flex: 1,
+  },
+  headerTitleNoBack: {
+    marginLeft: 5,
   },
   headerRightContainer: {
     flexDirection: 'row',

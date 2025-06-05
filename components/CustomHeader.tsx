@@ -8,9 +8,10 @@ import { useRouter } from 'expo-router';
 
 interface CustomHeaderProps {
   title: string;
+  showBackButton?: boolean;
 }
 
-const CustomHeader: React.FC<CustomHeaderProps> = ({ title }) => {
+const CustomHeader: React.FC<CustomHeaderProps> = ({ title, showBackButton = true }) => {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
   const router = useRouter();
@@ -35,9 +36,26 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({ title }) => {
     router.push('/farms');
   };
 
+  const handleGoBack = (): void => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      // Si no puede ir atrás, navegar a la página principal
+      router.replace('/(tabs)');
+    }
+  };
+
   return (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>{title}</Text>
+      {showBackButton && (
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={handleGoBack}
+        >
+          <Ionicons name="arrow-back" size={24} color="#ffffff" />
+        </TouchableOpacity>
+      )}
+      <Text style={[styles.headerTitle, !showBackButton && styles.headerTitleNoBack]}>{title}</Text>
       
       <View style={styles.headerRightContainer}>
         <View style={styles.farmSelectorWrapper}>
@@ -117,12 +135,25 @@ const styles = StyleSheet.create({
     paddingRight: 5,
     paddingVertical: 10,
   },
+  backButton: {
+    padding: 8,
+    marginLeft: 5,
+    marginRight: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: {
     fontWeight: 'bold',
     fontSize: 20,
     color: '#ffffff',
-    marginLeft: 10,
     flex: 1,
+  },
+  headerTitleNoBack: {
+    marginLeft: 10,
   },
   headerRightContainer: {
     flexDirection: 'row',

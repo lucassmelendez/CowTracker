@@ -91,6 +91,12 @@ export default function ProfilePage() {
       borderWidth: 2,
       borderColor: '#991b1b',
     },
+    separator: {
+      height: 1,
+      backgroundColor: '#e5e7eb',
+      marginVertical: 16,
+      marginHorizontal: 20,
+    },
     buttonText: createStyles('text-white text-base font-semibold'),
     cancelText: createStyles('text-gray-800 text-base font-semibold'),
     loadingContainer: createStyles(tw.loadingContainer),
@@ -517,6 +523,9 @@ export default function ProfilePage() {
                 <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                   <Text style={styles.cancelText}>Cancelar</Text>
                 </TouchableOpacity>
+                
+                {/* Separador visual */}
+                <View style={styles.separator} />
                 
                 {/* Botón de eliminar cuenta solo visible en modo edición */}
                 <TouchableOpacity 

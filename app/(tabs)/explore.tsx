@@ -14,6 +14,7 @@ import { useFarm } from '../../components/FarmContext';
 import { useAuth } from '../../components/AuthContext';
 import { useUserFarms, useAllFarms, useFarmCattle, useAllCattleWithFarmInfo, useCacheManager } from '../../hooks/useCachedData';
 import { createStyles, tw } from '../../styles/tailwind';
+import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 
 interface CattleItem {
   id_ganado?: string | number;
@@ -54,9 +55,10 @@ interface CattleItem {
 export default function CattleTab() {
   const router = useRouter();
   const { selectedFarm } = useFarm();
-  const { isAdmin, isTrabajador } = useAuth();
+  const { isAdmin, isTrabajador, userInfo } = useAuth();
   const [cattle, setCattle] = useState<CattleItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { invalidateCache } = useCacheManager();
 
   // Determinar si estamos mostrando todas las granjas o una específica
@@ -281,6 +283,14 @@ export default function CattleTab() {
   };
 
   const navigateToAdd = () => {
+    // Verificar límite de ganado para usuarios no premium
+    const isPremium = userInfo?.id_premium === 2 || userInfo?.id_premium === 3; // 2 = Premium, 3 = Empleado
+    
+    if (!isPremium && cattle.length >= 2) {
+      setShowPremiumModal(true);
+      return;
+    }
+    
     router.push('/(tabs)/add-cattle');
   };
 
@@ -458,6 +468,14 @@ export default function CattleTab() {
           <Text style={styles.fabText}>+</Text>
         </TouchableOpacity>
       )}
+
+      {/* Modal de Premium */}
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="¡Actualiza tu cuenta a Premium!"
+        subtitle="Los usuarios no premium solo pueden tener máximo 2 animales. Actualiza a premium para agregar ganado ilimitado."
+      />
     </View>
   );
 }

@@ -7,6 +7,31 @@ import { useFarm } from '../../components/FarmContext';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 
+// Header simple solo con título y botón de volver atrás
+function SimpleHeader({ title }: { title: string }) {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
+  return (
+    <View style={styles.simpleHeaderContainer}>
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={handleGoBack}
+      >
+        <Ionicons name="arrow-back" size={24} color="#ffffff" />
+      </TouchableOpacity>
+      <Text style={styles.simpleHeaderTitle}>{title}</Text>
+    </View>
+  );
+}
+
 function CustomHeader({ title, showBackButton = false }: { title: string; showBackButton?: boolean }) {
   const { selectedFarm, selectFarm } = useFarm();
   const { userInfo, logout } = useAuth();
@@ -130,6 +155,8 @@ export default function TabLayout() {
           fontWeight: 'bold',
           color: '#ffffff'
         },
+        headerBackVisible: false, // Deshabilitar el botón de navegación nativo
+        gestureEnabled: false, // Opcional: deshabilitar gestos de navegación
       }}
     >
       <Stack.Screen
@@ -147,7 +174,7 @@ export default function TabLayout() {
       <Stack.Screen
         name="admin"
         options={{
-          headerTitle: () => <CustomHeader title="Administración" showBackButton={true} />,
+          headerTitle: () => <CustomHeader title="Administrar" showBackButton={true} />,
         }}
       />
       <Stack.Screen
@@ -172,6 +199,60 @@ export default function TabLayout() {
         name="sales"
         options={{
           headerTitle: () => <CustomHeader title="Ventas" showBackButton={true} />,
+        }}
+      />
+      <Stack.Screen
+        name="profile"
+        options={{
+          headerTitle: () => <SimpleHeader title="Mi Perfil" />,
+        }}
+      />
+      <Stack.Screen
+        name="farms"
+        options={{
+          headerTitle: () => <SimpleHeader title="Granjas" />,
+        }}
+      />
+      <Stack.Screen
+        name="cattle-details"
+        options={{
+          headerTitle: () => <SimpleHeader title="Detalles del Ganado" />,
+        }}
+      />
+      <Stack.Screen
+        name="add-veterinary-record"
+        options={{
+          headerTitle: () => <SimpleHeader title="Agregar Registro Veterinario" />,
+        }}
+      />
+      <Stack.Screen
+        name="vinculacion"
+        options={{
+          headerTitle: () => <SimpleHeader title="Vincular a Finca" />,
+        }}
+      />
+      <Stack.Screen
+        name="issue-report"
+        options={{
+          headerTitle: () => <SimpleHeader title="Reportar Problema" />,
+        }}
+      />
+      <Stack.Screen
+        name="cattle-sale"
+        options={{
+          headerTitle: () => <SimpleHeader title="Venta de Ganado" />,
+        }}
+      />
+      <Stack.Screen
+        name="milk-sale"
+        options={{
+          headerTitle: () => <SimpleHeader title="Venta de Leche" />,
+        }}
+      />
+      <Stack.Screen
+        name="help"
+        options={{
+          headerTitle: () => <SimpleHeader title="Ayuda" />,
         }}
       />
     </Stack>
@@ -205,6 +286,19 @@ const styles = StyleSheet.create({
   },
   headerTitleNoBack: {
     marginLeft: 5,
+  },
+  // Estilos para el header simple
+  simpleHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingRight: 5,
+  },
+  simpleHeaderTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#ffffff',
+    flex: 1,
   },
   headerRightContainer: {
     flexDirection: 'row',

@@ -13,7 +13,7 @@ import {
   Clipboard,
   StyleSheet
 } from 'react-native';
-import { Stack } from 'expo-router';
+// import { Stack } from 'expo-router'; // Removido para usar el header del layout
 import { useAuth } from '../../components/AuthContext';
 
 export default function IssueReport() {
@@ -199,7 +199,8 @@ export default function IssueReport() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ headerTitle: 'Reportar Problema' }} />
+      {/* <Stack.Screen options={{ headerTitle: 'Reportar Problema' }} /> */}
+      {/* Header manejado por el layout */}
       
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 

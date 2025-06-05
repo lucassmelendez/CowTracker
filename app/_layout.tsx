@@ -41,6 +41,8 @@ function RootLayoutNav() {
             fontWeight: 'bold',
             color: '#ffffff'
           },
+          headerBackVisible: false, // Deshabilitar el botón de navegación nativo
+          gestureEnabled: false, // Opcional: deshabilitar gestos de navegación
         }}
       >
         {currentUser ? (
@@ -51,56 +53,72 @@ function RootLayoutNav() {
               name="cattle-details" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Detalles del Ganado" /> 
+                headerTitle: () => <CustomHeader title="Detalles del Ganado" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
             <Stack.Screen 
               name="add-cattle" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Gestionar Ganado" /> 
+                headerTitle: () => <CustomHeader title="Gestionar Ganado" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
             <Stack.Screen 
               name="profile" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Mi Perfil" /> 
+                headerTitle: () => <CustomHeader title="Mi Perfil" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
             <Stack.Screen 
               name="qr-scanner" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Escáner QR" /> 
+                headerTitle: () => <CustomHeader title="Escáner QR" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
             <Stack.Screen 
               name="farms" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Granjas" /> 
+                headerTitle: () => <CustomHeader title="Granjas" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
             <Stack.Screen 
               name="sales" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Ventas" /> 
+                headerTitle: () => <CustomHeader title="Ventas" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
             <Stack.Screen 
               name="report" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Informe" /> 
+                headerTitle: () => <CustomHeader title="Informe" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
             <Stack.Screen 
               name="vinculacion" 
               options={{ 
                 headerShown: true,
-                headerTitle: () => <CustomHeader title="Vincular a Finca" /> 
+                headerTitle: () => <CustomHeader title="Vincular a Finca" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
               }} 
             />
           </>

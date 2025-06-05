@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { API_URL } from '../config/api';
+import { supabase } from '../config/supabase'; // Importar supabase
 import { 
   RegisterData, 
   LoginCredentials, 
@@ -21,8 +22,31 @@ const instance: AxiosInstance = axios.create({
   timeout: 10000, // 10 segundos de timeout
 });
 
+// Función segura para obtener el token de Supabase
+const getSupabaseToken = async (): Promise<string | null> => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data?.session?.access_token || null;
+  } catch (error) {
+    console.error('Error al obtener token de Supabase:', error);
+    return null;
+  }
+};
+
+// Interceptor de petición que agrega el token de Supabase automáticamente
 instance.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    try {
+      const token = await getSupabaseToken();
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log('Token de Supabase agregado a la petición:', token.substring(0, 20) + '...');
+      } else {
+        console.log('No se encontró token de Supabase para la petición');
+      }
+    } catch (error) {
+      console.error('Error en interceptor de petición:', error);
+    }
     return config;
   },
   (error) => {

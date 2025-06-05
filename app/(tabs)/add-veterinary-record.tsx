@@ -15,10 +15,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../../lib/services/api';
+import { supabase } from '../../lib/config/supabase'; // Importar supabase para verificar sesión
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();
-  const params = useLocalSearchParams();  // Asegurarse de que cattleId sea un string único y no un array
+  const params = useLocalSearchParams();
   const cattleId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
   
   // Validar que tengamos un cattleId válido
@@ -33,20 +34,19 @@ export default function AddVeterinaryRecordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Datos del formulario
-  const [diagnosis, setDiagnosis] = useState('');
-  const [treatment, setTreatment] = useState('');
-  const [notes, setNotes] = useState('');
-  const [date, setDate] = useState(new Date());
+  // Datos del formulario - ajustados a la estructura de Supabase
+  const [diagnostico, setDiagnostico] = useState('');
+  const [tratamiento, setTratamiento] = useState('');
+  const [nota, setNota] = useState('');
+  const [fechaTratamiento, setFechaTratamiento] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   
   // Cargar datos del ganado
   useEffect(() => {
     const loadCattleData = async () => {
       if (!cattleId) return;
-        try {
+      try {
         setLoading(true);
-        // Convertir cattleId a string si es un array
         const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
         const data = await api.cattle.getById(id);
         setCattle(data);
@@ -62,7 +62,7 @@ export default function AddVeterinaryRecordPage() {
   }, [cattleId]);
   
   const handleSubmit = async () => {
-    if (!diagnosis.trim()) {
+    if (!diagnostico.trim()) {
       Alert.alert('Campo requerido', 'Por favor, ingresa un diagnóstico');
       return;
     }
@@ -75,42 +75,41 @@ export default function AddVeterinaryRecordPage() {
     try {
       setSubmitting(true);
       
-      // Adaptamos los nombres de campo para que coincidan con el modelo del backend
-      // El backend espera: fecha_tratamiento, diagnostico, tratamiento, nota
-      const recordData = {
-        // Campos para el backend
-        fecha_tratamiento: date.toISOString(),
-        diagnostico: diagnosis.trim(),
-        tratamiento: treatment.trim() || '',
-        nota: notes.trim() || '',
-        
-        // Estos campos no son necesarios, pero los dejamos por compatibilidad
-        // con otras partes del código que podrían esperarlos
-        fecha: date.toISOString(),
-        date: date.toISOString(),
-        diagnosis: diagnosis.trim(),
-        treatment: treatment.trim() || '',
-        notes: notes.trim() || '',
-        veterinarian: 'Dr. Veterinario',
-      };
-        // Asegurar que cattleId es un string y no un array
-      // (esto debería estar ya manejado pero lo hacemos de nuevo por seguridad)
-      const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
+      // Verificar sesión de Supabase antes de hacer la petición
+      console.log('=== VERIFICACIÓN DE AUTENTICACIÓN ===');
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('Sesión de Supabase:', sessionData?.session ? 'Activa' : 'No activa');
+      console.log('Token de Supabase:', sessionData?.session?.access_token ? 'Presente' : 'Ausente');
+      if (sessionError) {
+        console.error('Error al obtener sesión:', sessionError);
+      }
       
-      // Asegurar que el id es una cadena de texto
+      // Datos ajustados según lo que espera el backend (ver supabaseGanadoModel.js líneas 620-625)
+      const recordData = {
+        fecha: fechaTratamiento.toISOString(), // El backend busca 'fecha', no 'fecha_tratamiento'
+        diagnostico: diagnostico.trim(),
+        tratamiento: tratamiento.trim() || '',
+        nota: nota.trim() || '',
+        // También incluir campos alternativos que el backend puede usar
+        fecha_tratamiento: fechaTratamiento.toISOString(),
+        descripcion: diagnostico.trim(), // Campo alternativo para diagnóstico
+        notas: nota.trim() || '' // Campo alternativo para notas
+      };
+      
+      const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
       const cattleIdString = id?.toString() || '';
       
       if (!cattleIdString) {
         throw new Error('El ID del ganado no es válido');
       }
       
-      console.log('Enviando datos médicos para ganado con ID:', cattleIdString);      console.log('Enviando datos médicos formateados:', JSON.stringify(recordData, null, 2));
+      console.log('=== DEBUG INFO ===');
+      console.log('Enviando datos médicos para ganado con ID:', cattleIdString);
+      console.log('Datos a enviar:', JSON.stringify(recordData, null, 2));
+      console.log('URL completa:', `cattle/${cattleIdString}/medical`);
       
       const resultado = await api.cattle.addMedicalRecord(cattleIdString, recordData);
       console.log('Respuesta del servidor:', resultado);
-      
-      // Para que se actualicen los datos al volver a la pantalla anterior
-      // con useFocusEffect se recargará automáticamente
       
       Alert.alert(
         'Éxito',
@@ -118,20 +117,29 @@ export default function AddVeterinaryRecordPage() {
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error: any) {
+      console.error('=== ERROR COMPLETO ===');
       console.error('Error adding medical record:', error);
+      console.error('Error response:', error.response);
+      console.error('Error data:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      
       let errorMsg = 'No se pudo agregar el registro veterinario';
       
-      // Intentar extraer un mensaje de error más específico
       if (error.response?.data?.message) {
         errorMsg = error.response.data.message;
       } else if (error.message) {
         errorMsg = error.message;
       }
       
-      // Si recibimos una respuesta con código de error, mostrarlo
       const statusCode = error.response?.status || '';
       if (statusCode) {
         errorMsg += ` (Código: ${statusCode})`;
+      }
+      
+      // Si el error contiene HTML, es probable que sea un error del servidor
+      if (typeof error.response?.data === 'string' && error.response.data.includes('<!DOCTYPE html>')) {
+        errorMsg = `Error del servidor (${statusCode}). El endpoint podría no existir o tener un problema.`;
       }
       
       Alert.alert(
@@ -156,7 +164,7 @@ export default function AddVeterinaryRecordPage() {
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setDate(selectedDate);
+      setFechaTratamiento(selectedDate);
     }
   };
   
@@ -193,39 +201,40 @@ export default function AddVeterinaryRecordPage() {
         <View style={styles.header}>
           <Text style={styles.title}>Agregar Registro Veterinario</Text>
           <Text style={styles.subtitle}>
-            {cattle.name || cattle.identificationNumber || 'Sin identificación'}
+            {cattle.nombre || cattle.name || cattle.numero_identificacion || cattle.identificationNumber || 'Sin identificación'}
           </Text>
         </View>
         
         <View style={styles.formContainer}>
-          {/* Fecha */}
+          {/* Fecha de Tratamiento */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Fecha</Text>
+            <Text style={styles.label}>Fecha de Tratamiento</Text>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => setShowDatePicker(true)}
             >
-              <Text style={styles.dateButtonText}>{formatDate(date)}</Text>
+              <Text style={styles.dateButtonText}>{formatDate(fechaTratamiento)}</Text>
               <Ionicons name="calendar" size={22} color="#27ae60" />
             </TouchableOpacity>
             
             {showDatePicker && (
               <DateTimePicker
-                value={date}
+                value={fechaTratamiento}
                 mode="date"
                 display="default"
                 onChange={handleDateChange}
-              />            )}
+              />
+            )}
           </View>
           
           {/* Diagnóstico */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Diagnóstico <Text style={styles.required}>*</Text></Text>
             <TextInput
-              style={[styles.inputLarge, diagnosis.trim() === '' && { borderColor: '#e74c3c' }]}
-              placeholder="Ingrese el diagnóstico"
-              value={diagnosis}
-              onChangeText={setDiagnosis}
+              style={[styles.inputLarge, diagnostico.trim() === '' && { borderColor: '#e74c3c' }]}
+              placeholder="Ingrese el diagnóstico del animal"
+              value={diagnostico}
+              onChangeText={setDiagnostico}
               multiline
               numberOfLines={3}
             />
@@ -236,22 +245,22 @@ export default function AddVeterinaryRecordPage() {
             <Text style={styles.label}>Tratamiento</Text>
             <TextInput
               style={styles.inputLarge}
-              placeholder="Ingrese el tratamiento recomendado"
-              value={treatment}
-              onChangeText={setTreatment}
+              placeholder="Ingrese el tratamiento aplicado o recomendado"
+              value={tratamiento}
+              onChangeText={setTratamiento}
               multiline
               numberOfLines={3}
             />
           </View>
           
-          {/* Notas */}
+          {/* Nota */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Notas adicionales</Text>
+            <Text style={styles.label}>Nota</Text>
             <TextInput
               style={styles.inputLarge}
-              placeholder="Ingrese notas adicionales"
-              value={notes}
-              onChangeText={setNotes}
+              placeholder="Ingrese observaciones adicionales"
+              value={nota}
+              onChangeText={setNota}
               multiline
               numberOfLines={3}
             />
@@ -266,13 +275,14 @@ export default function AddVeterinaryRecordPage() {
             >
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
-              <TouchableOpacity
+            
+            <TouchableOpacity
               style={[
                 styles.submitButton,
-                (submitting || diagnosis.trim() === '') && { opacity: 0.7 }
+                (submitting || diagnostico.trim() === '') && { opacity: 0.7 }
               ]}
               onPress={handleSubmit}
-              disabled={submitting || diagnosis.trim() === ''}
+              disabled={submitting || diagnostico.trim() === ''}
             >
               {submitting ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -416,7 +426,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     alignItems: 'center',
-  },  submitButtonText: {
+  },
+  submitButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,

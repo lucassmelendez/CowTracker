@@ -94,10 +94,17 @@ export interface CattleItem {
 export interface MedicalRecord {
   _id?: string;
   id?: string;
-  cattleId: string;
-  date: string;
-  treatment: string;
-  veterinarian: string;
+  id_informacion_veterinaria?: number;
+  cattleId?: string;
+  id_ganado?: string | number;
+  fecha_tratamiento: string;
+  diagnostico: string;
+  tratamiento?: string;
+  nota?: string;
+  // Campos de compatibilidad con versiones anteriores
+  date?: string;
+  treatment?: string;
+  veterinarian?: string;
   notes?: string;
   medication?: string;
   dosage?: string;

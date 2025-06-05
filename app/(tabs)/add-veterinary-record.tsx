@@ -18,8 +18,15 @@ import api from '../../lib/services/api';
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const cattleId = params?.id;
+  const params = useLocalSearchParams();  // Asegurarse de que cattleId sea un string único y no un array
+  const cattleId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+  
+  // Validar que tengamos un cattleId válido
+  if (!cattleId) {
+    console.error('No se proporcionó un ID de ganado válido en los parámetros de URL');
+  } else {
+    console.log('ID de ganado recibido:', cattleId);
+  }
   
   const [cattle, setCattle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -37,8 +44,7 @@ export default function AddVeterinaryRecordPage() {
   useEffect(() => {
     const loadCattleData = async () => {
       if (!cattleId) return;
-      
-      try {
+        try {
         setLoading(true);
         // Convertir cattleId a string si es un array
         const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
@@ -56,32 +62,84 @@ export default function AddVeterinaryRecordPage() {
   }, [cattleId]);
   
   const handleSubmit = async () => {
-    if (!cattleId) return;
+    if (!diagnosis.trim()) {
+      Alert.alert('Campo requerido', 'Por favor, ingresa un diagnóstico');
+      return;
+    }
+    
+    if (!cattleId) {
+      Alert.alert('Error', 'No se pudo identificar el ganado');
+      return;
+    }
     
     try {
       setSubmitting(true);
       
+      // Adaptamos los nombres de campo para que coincidan con el modelo del backend
+      // El backend espera: fecha_tratamiento, diagnostico, tratamiento, nota
       const recordData = {
+        // Campos para el backend
+        fecha_tratamiento: date.toISOString(),
+        diagnostico: diagnosis.trim(),
+        tratamiento: treatment.trim() || '',
+        nota: notes.trim() || '',
+        
+        // Estos campos no son necesarios, pero los dejamos por compatibilidad
+        // con otras partes del código que podrían esperarlos
+        fecha: date.toISOString(),
         date: date.toISOString(),
+        diagnosis: diagnosis.trim(),
         treatment: treatment.trim() || '',
-        veterinarian: 'Dr. Veterinario', // Placeholder
         notes: notes.trim() || '',
-        medication: '',
-        dosage: ''
+        veterinarian: 'Dr. Veterinario',
       };
-      
-      // Convertir cattleId a string si es un array
+        // Asegurar que cattleId es un string y no un array
+      // (esto debería estar ya manejado pero lo hacemos de nuevo por seguridad)
       const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
-      await api.cattle.addMedicalRecord(id, recordData);
+      
+      // Asegurar que el id es una cadena de texto
+      const cattleIdString = id?.toString() || '';
+      
+      if (!cattleIdString) {
+        throw new Error('El ID del ganado no es válido');
+      }
+      
+      console.log('Enviando datos médicos para ganado con ID:', cattleIdString);      console.log('Enviando datos médicos formateados:', JSON.stringify(recordData, null, 2));
+      
+      const resultado = await api.cattle.addMedicalRecord(cattleIdString, recordData);
+      console.log('Respuesta del servidor:', resultado);
+      
+      // Para que se actualicen los datos al volver a la pantalla anterior
+      // con useFocusEffect se recargará automáticamente
       
       Alert.alert(
         'Éxito',
         'Registro veterinario agregado correctamente',
         [{ text: 'OK', onPress: () => router.back() }]
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding medical record:', error);
-      Alert.alert('Error', 'No se pudo agregar el registro veterinario');
+      let errorMsg = 'No se pudo agregar el registro veterinario';
+      
+      // Intentar extraer un mensaje de error más específico
+      if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      // Si recibimos una respuesta con código de error, mostrarlo
+      const statusCode = error.response?.status || '';
+      if (statusCode) {
+        errorMsg += ` (Código: ${statusCode})`;
+      }
+      
+      Alert.alert(
+        'Error al agregar registro médico', 
+        errorMsg,
+        [{ text: 'Entendido' }]
+      );
+      setError(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -157,15 +215,14 @@ export default function AddVeterinaryRecordPage() {
                 mode="date"
                 display="default"
                 onChange={handleDateChange}
-              />
-            )}
+              />            )}
           </View>
           
           {/* Diagnóstico */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Diagnóstico <Text style={styles.required}>*</Text></Text>
             <TextInput
-              style={styles.inputLarge}
+              style={[styles.inputLarge, diagnosis.trim() === '' && { borderColor: '#e74c3c' }]}
               placeholder="Ingrese el diagnóstico"
               value={diagnosis}
               onChangeText={setDiagnosis}
@@ -209,11 +266,13 @@ export default function AddVeterinaryRecordPage() {
             >
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.submitButton}
+              <TouchableOpacity
+              style={[
+                styles.submitButton,
+                (submitting || diagnosis.trim() === '') && { opacity: 0.7 }
+              ]}
               onPress={handleSubmit}
-              disabled={submitting}
+              disabled={submitting || diagnosis.trim() === ''}
             >
               {submitting ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -357,10 +416,14 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     alignItems: 'center',
-  },
-  submitButtonText: {
+  },  submitButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  validationError: {
+    color: '#e74c3c',
+    fontSize: 12,
+    marginTop: 5,
   },
 }); 

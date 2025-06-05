@@ -18,9 +18,15 @@ import api from '../../lib/services/api';
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  // Asegurarse de que cattleId sea un string único y no un array
+  const params = useLocalSearchParams();  // Asegurarse de que cattleId sea un string único y no un array
   const cattleId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+  
+  // Validar que tengamos un cattleId válido
+  if (!cattleId) {
+    console.error('No se proporcionó un ID de ganado válido en los parámetros de URL');
+  } else {
+    console.log('ID de ganado recibido:', cattleId);
+  }
   
   const [cattle, setCattle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -34,32 +40,19 @@ export default function AddVeterinaryRecordPage() {
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   
-  // Cargar datos del ganado  useEffect(() => {
+  // Cargar datos del ganado
+  useEffect(() => {
     const loadCattleData = async () => {
-      if (!cattleId) {
-        setError('No se especificó un ID de ganado válido');
-        setLoading(false);
-        return;
-      }
-      
-      try {
+      if (!cattleId) return;
+        try {
         setLoading(true);
-        setError(null);
-        console.log('Cargando datos para el ganado ID:', cattleId);
-        
-        const data = await api.cattle.getById(cattleId);
-        
-        if (!data) {
-          throw new Error('No se encontraron datos para este ganado');
-        }
-        
-        console.log('Datos del ganado cargados:', data);
+        // Convertir cattleId a string si es un array
+        const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
+        const data = await api.cattle.getById(id);
         setCattle(data);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error loading cattle data:', error);
-        const errorMsg = error.message || 'No se pudo cargar la información del ganado';
-        setError(errorMsg);
-        Alert.alert('Error', errorMsg);
+        Alert.alert('Error', 'No se pudo cargar la información del ganado');
       } finally {
         setLoading(false);
       }
@@ -67,7 +60,8 @@ export default function AddVeterinaryRecordPage() {
 
     loadCattleData();
   }, [cattleId]);
-    const handleSubmit = async () => {
+  
+  const handleSubmit = async () => {
     if (!diagnosis.trim()) {
       Alert.alert('Campo requerido', 'Por favor, ingresa un diagnóstico');
       return;
@@ -82,40 +76,48 @@ export default function AddVeterinaryRecordPage() {
       setSubmitting(true);
       
       // Adaptamos los nombres de campo para que coincidan con el modelo del backend
+      // El backend espera: fecha_tratamiento, diagnostico, tratamiento, nota
       const recordData = {
-        fecha: date.toISOString(),           // fecha_tratamiento en backend
-        fecha_tratamiento: date.toISOString(), // campo directo en backend
-        diagnostico: diagnosis.trim(),       // diagnostico en backend
-        tratamiento: treatment.trim() || '', // tratamiento en backend
-        nota: notes.trim() || '',            // nota en backend
+        // Campos para el backend
+        fecha_tratamiento: date.toISOString(),
+        diagnostico: diagnosis.trim(),
+        tratamiento: treatment.trim() || '',
+        nota: notes.trim() || '',
         
-        // Mantenemos campos para frontend por compatibilidad
+        // Estos campos no son necesarios, pero los dejamos por compatibilidad
+        // con otras partes del código que podrían esperarlos
+        fecha: date.toISOString(),
         date: date.toISOString(),
         diagnosis: diagnosis.trim(),
         treatment: treatment.trim() || '',
         notes: notes.trim() || '',
         veterinarian: 'Dr. Veterinario',
-        
-        // Campos adicionales opcionales
-        medicamentos: '',
-        dosis: '',
       };
-      
-      // Convertir cattleId a string si es un array
+        // Asegurar que cattleId es un string y no un array
+      // (esto debería estar ya manejado pero lo hacemos de nuevo por seguridad)
       const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
       
-      console.log('Enviando datos médicos:', recordData);
-      console.log('Para ganado con ID:', id);
+      // Asegurar que el id es una cadena de texto
+      const cattleIdString = id?.toString() || '';
       
-      await api.cattle.addMedicalRecord(id, recordData);
-        // Para que se actualicen los datos al volver a la pantalla anterior
+      if (!cattleIdString) {
+        throw new Error('El ID del ganado no es válido');
+      }
+      
+      console.log('Enviando datos médicos para ganado con ID:', cattleIdString);      console.log('Enviando datos médicos formateados:', JSON.stringify(recordData, null, 2));
+      
+      const resultado = await api.cattle.addMedicalRecord(cattleIdString, recordData);
+      console.log('Respuesta del servidor:', resultado);
+      
+      // Para que se actualicen los datos al volver a la pantalla anterior
       // con useFocusEffect se recargará automáticamente
       
       Alert.alert(
         'Éxito',
         'Registro veterinario agregado correctamente',
         [{ text: 'OK', onPress: () => router.back() }]
-      );    } catch (error: any) {
+      );
+    } catch (error: any) {
       console.error('Error adding medical record:', error);
       let errorMsg = 'No se pudo agregar el registro veterinario';
       
@@ -213,9 +215,10 @@ export default function AddVeterinaryRecordPage() {
                 mode="date"
                 display="default"
                 onChange={handleDateChange}
-              />
-            )}
-          </View>          {/* Diagnóstico */}
+              />            )}
+          </View>
+          
+          {/* Diagnóstico */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Diagnóstico <Text style={styles.required}>*</Text></Text>
             <TextInput

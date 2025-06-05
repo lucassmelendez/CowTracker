@@ -59,13 +59,14 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
   const { invalidateCache } = useCacheManager();
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
   const [priceDisplay, setPriceDisplay] = useState<string>('$10.000');
-  const [setIsLoadingPrice] = useState<(loading: boolean) => void>(() => {});
+  const [isLoadingPrice, setIsLoadingPrice] = useState<boolean>(false);
   
   // Nuevos estados para el WebView
   const [showWebView, setShowWebView] = useState<boolean>(false);
   const [webViewUrl, setWebViewUrl] = useState<string>('');
   const [paymentToken, setPaymentToken] = useState<string>('');
   const [isWebViewLoading, setIsWebViewLoading] = useState<boolean>(true);
+  const [currentBuyOrder, setCurrentBuyOrder] = useState<string>('');
   
   // Estado para el modal de felicitaciones
   const [showCongratulations, setShowCongratulations] = useState<boolean>(false);
@@ -106,6 +107,43 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
     }
   }, [visible]);
 
+  // Función para hacer polling del estado del pago en web
+  const startPaymentPolling = (buyOrder: string) => {
+    console.log('🔄 Iniciando polling para verificar pago:', buyOrder);
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        // Verificar el estado del pago en el backend
+        const response = await fetchWithCORS(`https://ct-fastapi.vercel.app/webpay/status/${buyOrder}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (result.success && result.status === 'AUTHORIZED') {
+            console.log('✅ Pago confirmado por polling:', result);
+            clearInterval(pollInterval);
+            
+            // Simular datos de pago exitoso
+            handlePaymentSuccess({
+              buy_order: buyOrder,
+              amount: 10000,
+              authorization_code: result.authorization_code || 'WEB_' + Date.now(),
+              transaction_date: new Date().toISOString()
+            });
+          }
+        }
+      } catch (error) {
+        console.log('⏳ Verificando estado del pago...', error);
+      }
+    }, 3000); // Verificar cada 3 segundos
+
+    // Limpiar el polling después de 5 minutos
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      console.log('⏰ Polling de pago terminado por timeout');
+    }, 300000);
+  };
+
   // Función para procesar el pago premium
   const handlePremiumUpgrade = async (): Promise<void> => {
     try {
@@ -138,11 +176,19 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       const result: PaymentResponse = await response.json();
 
       if (result.success && result.url && result.token) {
-        // En lugar de abrir un navegador externo, mostrar el WebView
         const webpayUrl = `${result.url}?token_ws=${result.token}`;
         setWebViewUrl(webpayUrl);
         setPaymentToken(result.token);
+        setCurrentBuyOrder(buyOrder);
+        
+        // En web y móvil, usar el modal integrado
         setShowWebView(true);
+        
+        // En web, iniciar polling para verificar el estado del pago
+        if (Platform.OS === 'web') {
+          startPaymentPolling(buyOrder);
+        }
+        
         setIsProcessingPayment(false);
       } else {
         console.error('❌ Respuesta inválida:', result);
@@ -469,7 +515,14 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
               </View>
 
               <View style={styles.priceContainer}>
-                <Text style={styles.priceText}>{priceDisplay}</Text>
+                {isLoadingPrice ? (
+                  <View style={styles.priceLoadingContainer}>
+                    <ActivityIndicator size="small" color="#27ae60" />
+                    <Text style={styles.priceLoadingText}>Cargando precio...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.priceText}>{priceDisplay}</Text>
+                )}
                 <Text style={styles.priceSubtext}>Pago único - Acceso de por vida</Text>
               </View>
             </View>
@@ -479,16 +532,23 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
               <TouchableOpacity
                 style={[
                   styles.upgradeButton,
-                  isProcessingPayment && styles.disabledButton
+                  (isProcessingPayment || isLoadingPrice) && styles.disabledButton
                 ]}
                 onPress={handlePremiumUpgrade}
-                disabled={isProcessingPayment}
+                disabled={isProcessingPayment || isLoadingPrice}
               >
                 {isProcessingPayment ? (
                   <>
                     <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
                     <Text style={styles.upgradeButtonText}>
                       Procesando...
+                    </Text>
+                  </>
+                ) : isLoadingPrice ? (
+                  <>
+                    <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                    <Text style={styles.upgradeButtonText}>
+                      Cargando...
                     </Text>
                   </>
                 ) : (
@@ -550,6 +610,24 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
             <View style={styles.webViewSecurityIndicator}>
               <Ionicons name="shield-checkmark" size={20} color="#27ae60" />
             </View>
+            
+            {/* Botón de prueba solo en web */}
+            {Platform.OS === 'web' && (
+              <TouchableOpacity
+                style={styles.testButton}
+                onPress={() => {
+                  console.log('🧪 Simulando pago exitoso para pruebas...');
+                  handlePaymentSuccess({
+                    buy_order: currentBuyOrder,
+                    amount: 10000,
+                    authorization_code: 'TEST_' + Date.now(),
+                    transaction_date: new Date().toISOString()
+                  });
+                }}
+              >
+                <Text style={styles.testButtonText}>✓ Simular Éxito</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Indicador de carga */}
@@ -562,43 +640,61 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
             </View>
           )}
 
-          {/* WebView */}
+          {/* WebView o iframe dependiendo de la plataforma */}
           {webViewUrl && (
-            <WebView
-              source={{ uri: webViewUrl }}
-              style={styles.webView}
-              onLoadStart={() => setIsWebViewLoading(true)}
-              onLoadEnd={() => setIsWebViewLoading(false)}
-              onNavigationStateChange={handleWebViewNavigationStateChange}
-              onMessage={handleWebViewMessage}
-              javaScriptEnabled={true}
-              domStorageEnabled={true}
-              startInLoadingState={true}
-              scalesPageToFit={true}
-              mixedContentMode="compatibility"
-              allowsInlineMediaPlayback={true}
-              mediaPlaybackRequiresUserAction={false}
-              onError={(syntheticEvent) => {
-                const { nativeEvent } = syntheticEvent;
-                console.error('❌ Error en WebView:', nativeEvent);
-                Alert.alert(
-                  'Error de Conexión',
-                  'No se pudo cargar el sistema de pago. Verifica tu conexión a internet.',
-                  [
-                    {
-                      text: 'Reintentar',
-                      onPress: () => {
-                        setIsWebViewLoading(true);
+            Platform.OS === 'web' ? (
+              <iframe
+                src={webViewUrl}
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  backgroundColor: '#fff'
+                }}
+                onLoad={() => {
+                  setIsWebViewLoading(false);
+                  console.log('🌐 Iframe cargado en web');
+                }}
+                title="Webpay Plus - Pago Seguro"
+              />
+            ) : (
+              <WebView
+                source={{ uri: webViewUrl }}
+                style={styles.webView}
+                onLoadStart={() => setIsWebViewLoading(true)}
+                onLoadEnd={() => setIsWebViewLoading(false)}
+                onNavigationStateChange={handleWebViewNavigationStateChange}
+                onMessage={handleWebViewMessage}
+                javaScriptEnabled={true}
+                domStorageEnabled={true}
+                startInLoadingState={true}
+                scalesPageToFit={true}
+                mixedContentMode="compatibility"
+                allowsInlineMediaPlayback={true}
+                mediaPlaybackRequiresUserAction={false}
+                onError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.error('❌ Error en WebView:', nativeEvent);
+                  Alert.alert(
+                    'Error de Conexión',
+                    'No se pudo cargar el sistema de pago. Verifica tu conexión a internet.',
+                    [
+                      {
+                        text: 'Reintentar',
+                        onPress: () => {
+                          setIsWebViewLoading(true);
+                        }
+                      },
+                      {
+                        text: 'Cancelar',
+                        onPress: handleCloseWebView
                       }
-                    },
-                    {
-                      text: 'Cancelar',
-                      onPress: handleCloseWebView
-                    }
-                  ]
-                );
-              }}
-            />
+                    ]
+                  );
+                }}
+              />
+            )
           )}
         </View>
       </Modal>
@@ -858,6 +954,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#7f8c8d',
     textAlign: 'center',
+  },
+  // Estilos para el indicador de carga del precio
+  priceLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  priceLoadingText: {
+    fontSize: 16,
+    color: '#27ae60',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  // Estilos para el botón de prueba en web
+  testButton: {
+    backgroundColor: '#f39c12',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

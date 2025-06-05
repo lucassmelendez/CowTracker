@@ -7,18 +7,22 @@ import {
   StyleSheet,
   ActivityIndicator,
   ScrollView,
-  FlatList
+  FlatList,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/services/api';
 import { useCustomModal } from '../../components/CustomModal';
+import { useCacheManager } from '../../hooks/useCachedData';
 
 export default function VinculacionTab() {
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
   const [fincasVinculadas, setFincasVinculadas] = useState<any[]>([]);
   const [loadingFincas, setLoadingFincas] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { showSuccess, showError, ModalComponent } = useCustomModal();
+  const { invalidateCache } = useCacheManager();
 
   useEffect(() => {
     cargarFincasVinculadas();
@@ -35,6 +39,26 @@ export default function VinculacionTab() {
       showError('No se pudieron cargar las fincas vinculadas');
     } finally {
       setLoadingFincas(false);
+      setRefreshing(false);
+    }
+  };
+
+  // Función para refrescar datos
+  const onRefresh = async () => {
+    console.log('Refrescando datos de vinculación...');
+    try {
+      setRefreshing(true);
+      // Invalidar caché antes de refrescar para obtener datos frescos del servidor
+      await invalidateCache('farms');
+      await invalidateCache('users');
+      
+      // Recargar las fincas vinculadas desde el servidor
+      await cargarFincasVinculadas();
+      
+      console.log('Datos de vinculación refrescados desde el servidor');
+    } catch (error) {
+      console.error('Error al refrescar datos:', error);
+      setRefreshing(false);
     }
   };
 
@@ -101,7 +125,16 @@ export default function VinculacionTab() {
 
   return (
     <View style={styles.container}>
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#27ae60']}
+            tintColor="#27ae60"
+          />
+        }
+      >
         <View style={styles.card}>
           <Text style={styles.title}>Vincular a Finca</Text>
           <Text style={styles.subtitle}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +36,7 @@ export default function ProfilePage() {
   const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [congratulationsData, setCongratulationsData] = useState<any>(null);
@@ -236,6 +237,26 @@ export default function ProfilePage() {
     setFormData({...userData});
   };
 
+  // Función para refrescar datos con pull-to-refresh
+  const onRefresh = async () => {
+    console.log('Refrescando datos de perfil...');
+    try {
+      setRefreshing(true);
+      
+      // Invalidar caché antes de refrescar para obtener datos frescos del servidor
+      await invalidateCache('users');
+      
+      // Refrescar usando el hook de caché
+      await refreshProfile();
+      
+      console.log('Datos de perfil refrescados desde el servidor');
+    } catch (error) {
+      console.error('Error al refrescar datos:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleRefreshProfile = async () => {
     try {
       setIsLoading(true);
@@ -318,7 +339,16 @@ export default function ProfilePage() {
         <Text style={styles.subtitle}>Gestiona tu información personal</Text>
       </View>
       
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[tw.colors.primary]}
+            tintColor={tw.colors.primary}
+          />
+        }
+      >
         <View style={styles.card}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>

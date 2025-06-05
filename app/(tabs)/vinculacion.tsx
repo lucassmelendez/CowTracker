@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/services/api';
 import { useCustomModal } from '../../components/CustomModal';
 import { useCacheManager } from '../../hooks/useCachedData';
+import { useAuth } from '../../components/AuthContext';
 
 export default function VinculacionTab() {
   const [codigo, setCodigo] = useState('');
@@ -21,8 +22,10 @@ export default function VinculacionTab() {
   const [fincasVinculadas, setFincasVinculadas] = useState<any[]>([]);
   const [loadingFincas, setLoadingFincas] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { showSuccess, showError, ModalComponent } = useCustomModal();
+  const [eliminandoVinculacion, setEliminandoVinculacion] = useState<string | null>(null);
+  const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
   const { invalidateCache } = useCacheManager();
+  const { userInfo, isTrabajador, isVeterinario } = useAuth();
 
   useEffect(() => {
     cargarFincasVinculadas();
@@ -59,6 +62,62 @@ export default function VinculacionTab() {
     } catch (error) {
       console.error('Error al refrescar datos:', error);
       setRefreshing(false);
+    }
+  };
+
+  // Función para eliminar vinculación de una finca
+  const handleEliminarVinculacion = (finca: any) => {
+    showConfirm(
+      'Eliminar vinculación',
+      `¿Estás seguro de que deseas eliminar tu vinculación con la finca "${finca.name}"?\n\nYa no podrás acceder a los datos de esta finca.`,
+      () => confirmarEliminacionVinculacion(finca),
+      'Eliminar',
+      'Cancelar'
+    );
+  };
+
+  const confirmarEliminacionVinculacion = async (finca: any) => {
+    try {
+      setEliminandoVinculacion(finca._id);
+      
+      // Determinar el tipo de usuario y usar el endpoint correcto
+      const userId = userInfo?.id?.toString() || 'current-user';
+      
+      if (isVeterinario()) {
+        await api.farms.removeVeterinarian(finca._id, userId);
+      } else if (isTrabajador()) {
+        await api.farms.removeWorker(finca._id, userId);
+      } else {
+        throw new Error('Tipo de usuario no válido para eliminar vinculación');
+      }
+      
+      // Invalidar caché para refrescar datos
+      await invalidateCache('farms');
+      await invalidateCache('users');
+      
+      showSuccess(
+        'Vinculación eliminada correctamente',
+        () => {
+          cargarFincasVinculadas(); // Recargar la lista
+        }
+      );
+    } catch (error: any) {
+      console.error('Error al eliminar vinculación:', error);
+      let mensaje = 'No se pudo eliminar la vinculación. Inténtalo de nuevo.';
+      
+      if (error?.message && typeof error.message === 'string') {
+        if (error.message.includes('autorización') || error.message.includes('permisos')) {
+          mensaje = 'No tienes permisos para eliminar esta vinculación.';
+        } else if (error.message.includes('encontrado')) {
+          mensaje = 'La vinculación ya no existe o ha sido eliminada.';
+        } else if (error.message.includes('usuario no válido')) {
+          mensaje = 'Tu tipo de usuario no puede eliminar vinculaciones.';
+        }
+      }
+      
+      showError(mensaje);
+    } finally {
+      setEliminandoVinculacion(null);
     }
   };
 
@@ -113,12 +172,24 @@ export default function VinculacionTab() {
         <Ionicons name="business" size={24} color="#27ae60" />
         <View style={styles.fincaTexts}>
           <Text style={styles.fincaName}>{item.name}</Text>
-          <Text style={styles.fincaLocation}>{item.location || 'Ubicación no especificada'}</Text>
-        </View>
+          <View style={styles.fincaStatus}>
+            <Ionicons name="checkmark-circle" size={20} color="#2ecc71" />
+            <Text style={styles.statusText}>Vinculada</Text>
+          </View>
+          </View>
       </View>
-      <View style={styles.fincaStatus}>
-        <Ionicons name="checkmark-circle" size={24} color="#2ecc71" />
-        <Text style={styles.statusText}>Vinculada</Text>
+      <View style={styles.fincaActions}>
+        <TouchableOpacity
+          style={[styles.deleteButton, eliminandoVinculacion === item._id && styles.disabledButton]}
+          onPress={() => handleEliminarVinculacion(item)}
+          disabled={eliminandoVinculacion === item._id}
+        >
+          {eliminandoVinculacion === item._id ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="trash-outline" size={18} color="#fff" />
+          )}
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -166,7 +237,7 @@ export default function VinculacionTab() {
           </TouchableOpacity>
 
           <Text style={styles.infoText}>
-            Como veterinario, podrás acceder a todas las vacas registradas en esta finca.
+            Una vez vinculado, podrás acceder a los datos de ganado de esta finca según tu rol.
           </Text>
         </View>
 
@@ -296,6 +367,11 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     marginTop: 2
   },
+  fincaActions: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 8
+  },
   fincaStatus: {
     flexDirection: 'row',
     alignItems: 'center'
@@ -303,7 +379,16 @@ const styles = StyleSheet.create({
   statusText: {
     marginLeft: 5,
     color: '#2ecc71',
-    fontSize: 14
+    fontSize: 12
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c',
+    borderRadius: 6,
+    padding: 8,
+    minWidth: 36,
+    minHeight: 36,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   loadingFincas: {
     marginVertical: 20

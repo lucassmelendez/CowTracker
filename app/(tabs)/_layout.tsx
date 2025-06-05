@@ -324,6 +324,15 @@ export default function TabLayout() {
           headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
+      <Stack.Screen
+        name="add-cattle"
+        options={{
+          headerTitle: () => <SimpleHeader title="Gestionar Ganado" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
     </Stack>
   );
 }

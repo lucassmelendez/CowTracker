@@ -210,7 +210,7 @@ export default function CattleTab() {
   };
 
   const navigateToAdd = () => {
-    router.push('/add-cattle');
+    router.push('/(tabs)/add-cattle');
   };
 
   const renderCattleItem = ({ item }: { item: CattleItem }) => {

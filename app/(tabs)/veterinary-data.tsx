@@ -398,7 +398,7 @@ export default function VeterinaryDataPage() {
         </Text>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => router.push('/add-cattle')}
+          onPress={() => router.push('/(tabs)/add-cattle')}
         >
           <Text style={styles.addButtonText}>Agregar ganado</Text>
         </TouchableOpacity>

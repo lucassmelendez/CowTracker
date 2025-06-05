@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '../components/AuthContext';
-import api from '../lib/services/api';
-import { supabase } from '../lib/config/supabase';
-import { useCacheManager } from '../hooks/useCachedData';
+import { useAuth } from '../../components/AuthContext';
+import api from '../../lib/services/api';
+import { supabase } from '../../lib/config/supabase';
+import { useCacheManager } from '../../hooks/useCachedData';
 
 interface Farm {
   _id: string;
@@ -119,8 +119,8 @@ export default function AddCattlePage() {
         if (userFarms && userFarms.length > 0) {
           // Procesar y normalizar los datos de las granjas
           finalFarms = userFarms
-            .filter(userFarm => userFarm.finca) // Filtrar solo las que tienen datos de finca
-            .map((userFarm, index) => {
+            .filter((userFarm: any) => userFarm.finca) // Filtrar solo las que tienen datos de finca
+            .map((userFarm: any, index: number) => {
               const farmArray = userFarm.finca;
               // Si finca es un array, tomar el primer elemento
               const farm = Array.isArray(farmArray) ? farmArray[0] : farmArray;
@@ -194,7 +194,7 @@ export default function AddCattlePage() {
       }
 
       // Extraer los IDs de las granjas
-      const farmIds = userFarms.map(farm => farm.id_finca);
+      const farmIds = userFarms.map((farm: any) => farm.id_finca);
 
       // Obtener el conteo de ganado en las granjas del usuario
       const { data: cattle, error: cattleError } = await supabase

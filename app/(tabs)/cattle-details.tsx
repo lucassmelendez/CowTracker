@@ -106,7 +106,7 @@ export default function CattleDetailPage() {
 
   const handleEdit = () => {
     router.push({
-      pathname: '/add-cattle',
+              pathname: '/(tabs)/add-cattle',
       params: { id: cattleId, mode: 'edit' }
     });
   };

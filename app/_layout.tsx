@@ -90,15 +90,7 @@ function RootLayoutNav() {
                 gestureEnabled: false,
               }} 
             />
-            <Stack.Screen 
-              name="add-cattle" 
-              options={{ 
-                headerShown: true,
-                headerTitle: () => <CustomHeader title="Gestionar Ganado" />,
-                headerBackVisible: false,
-                gestureEnabled: false,
-              }} 
-            />
+
             <Stack.Screen 
               name="profile" 
               options={{ 

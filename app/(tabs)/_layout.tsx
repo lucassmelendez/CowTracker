@@ -19,6 +19,10 @@ function SimpleHeader({ title }: { title: string }) {
     }
   };
 
+  const handleTitlePress = () => {
+    router.replace('/(tabs)');
+  };
+
   return (
     <View style={styles.simpleHeaderContainer}>
       <TouchableOpacity 
@@ -27,7 +31,9 @@ function SimpleHeader({ title }: { title: string }) {
       >
         <Ionicons name="arrow-back" size={24} color="#ffffff" />
       </TouchableOpacity>
-      <Text style={styles.simpleHeaderTitle}>{title}</Text>
+      <TouchableOpacity onPress={handleTitlePress} style={styles.simpleTitleContainer}>
+        <Text style={styles.simpleHeaderTitle}>{title}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -61,6 +67,10 @@ function CustomHeader({ title, showBackButton = false }: { title: string; showBa
     }
   };
 
+  const handleTitlePress = () => {
+    router.replace('/(tabs)');
+  };
+
   return (
     <View style={styles.headerContainer}>
       {showBackButton && (
@@ -71,7 +81,9 @@ function CustomHeader({ title, showBackButton = false }: { title: string; showBa
           <Ionicons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
       )}
-      <Text style={[styles.headerTitle, !showBackButton && styles.headerTitleNoBack]}>{title}</Text>
+      <TouchableOpacity onPress={handleTitlePress} style={styles.titleContainer}>
+        <Text style={[styles.headerTitle, !showBackButton && styles.headerTitleNoBack]}>{title}</Text>
+      </TouchableOpacity>
       
       <View style={styles.headerRightContainer}>
         <FarmSelector 
@@ -326,11 +338,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  titleContainer: {
+    flex: 1,
+  },
   headerTitle: {
     fontWeight: 'bold',
     fontSize: 18,
     color: '#ffffff',
-    flex: 1,
   },
   headerTitleNoBack: {
     marginLeft: 5,
@@ -342,11 +356,13 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingRight: 5,
   },
+  simpleTitleContainer: {
+    flex: 1,
+  },
   simpleHeaderTitle: {
     fontWeight: 'bold',
     fontSize: 18,
     color: '#ffffff',
-    flex: 1,
   },
   headerRightContainer: {
     flexDirection: 'row',

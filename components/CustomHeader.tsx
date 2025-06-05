@@ -45,6 +45,10 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({ title, showBackButton = tru
     }
   };
 
+  const handleTitlePress = (): void => {
+    router.replace('/(tabs)');
+  };
+
   return (
     <View style={styles.headerContainer}>
       {showBackButton && (
@@ -55,7 +59,9 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({ title, showBackButton = tru
           <Ionicons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
       )}
-      <Text style={[styles.headerTitle, !showBackButton && styles.headerTitleNoBack]}>{title}</Text>
+      <TouchableOpacity onPress={handleTitlePress} style={styles.titleContainer}>
+        <Text style={[styles.headerTitle, !showBackButton && styles.headerTitleNoBack]}>{title}</Text>
+      </TouchableOpacity>
       
       <View style={styles.headerRightContainer}>
         <View style={styles.farmSelectorWrapper}>
@@ -146,11 +152,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  titleContainer: {
+    flex: 1,
+  },
   headerTitle: {
     fontWeight: 'bold',
     fontSize: 20,
     color: '#ffffff',
-    flex: 1,
   },
   headerTitleNoBack: {
     marginLeft: 10,

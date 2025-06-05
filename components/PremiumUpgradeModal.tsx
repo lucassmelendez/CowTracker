@@ -14,6 +14,9 @@ import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { WEBPAY_URLS, fetchWithCORS } from '../lib/config/api';
 import { useAuth } from './AuthContext';
+import { useRouter } from 'expo-router';
+import { useCacheManager } from '../hooks/useCachedData';
+import CongratulationsModal from './CongratulationsModal';
 
 interface PremiumUpgradeModalProps {
   visible: boolean;
@@ -51,6 +54,8 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
   subtitle = "Desbloquea todo el potencial de CowTracker" 
 }) => {
   const { userInfo, updateProfile } = useAuth();
+  const router = useRouter();
+  const { invalidateCache } = useCacheManager();
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
   const [priceDisplay, setPriceDisplay] = useState<string>('$10.000');
   const [setIsLoadingPrice] = useState<(loading: boolean) => void>(() => {});
@@ -60,6 +65,10 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
   const [webViewUrl, setWebViewUrl] = useState<string>('');
   const [paymentToken, setPaymentToken] = useState<string>('');
   const [isWebViewLoading, setIsWebViewLoading] = useState<boolean>(true);
+  
+  // Estado para el modal de felicitaciones
+  const [showCongratulations, setShowCongratulations] = useState<boolean>(false);
+  const [congratulationsData, setCongratulationsData] = useState<any>(null);
 
   // Función para obtener la conversión de precio
   const fetchPriceConversion = async (): Promise<void> => {
@@ -202,21 +211,31 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
     setIsWebViewLoading(true);
     
     try {
+      console.log('🔄 Iniciando proceso de activación Premium...');
+      
       // Activar Premium en el backend
       await activatePremiumAccount(paymentData);
       
-      Alert.alert(
-        '¡Pago Exitoso!',
-        `Tu cuenta Premium ha sido activada exitosamente.\n\nOrden: ${paymentData.buy_order}\nMonto: $${paymentData.amount.toLocaleString()} CLP`,
-        [
-          {
-            text: 'Continuar',
-            onPress: () => {
-              onClose();
-            }
-          }
-        ]
-      );
+      console.log('✅ Premium activado, iniciando navegación...');
+      
+      // Cerrar el modal actual
+      onClose();
+      
+      // Limpiar caché para que se cargue el nuevo estado
+      console.log('🗑️ Limpiando caché...');
+      await invalidateCache('users/profile');
+      await invalidateCache('farms');
+      
+      // Navegar al perfil
+      console.log('🧭 Navegando al perfil...');
+      router.push('/(tabs)/profile');
+      
+      // Mostrar modal de felicitaciones después de un breve delay
+      setTimeout(() => {
+        setCongratulationsData(paymentData);
+        setShowCongratulations(true);
+      }, 1000);
+      
     } catch (error) {
       console.error('❌ Error al activar Premium:', error);
       Alert.alert(
@@ -232,6 +251,13 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
         ]
       );
     }
+  };
+
+  // Función para cerrar el modal de felicitaciones
+  const handleCloseCongratulations = () => {
+    setShowCongratulations(false);
+    setCongratulationsData(null);
+    console.log('🎊 Usuario confirmó modal de felicitaciones');
   };
 
   // Función para activar la cuenta Premium
@@ -548,6 +574,13 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
           )}
         </View>
       </Modal>
+
+      {/* Modal de Felicitaciones */}
+      <CongratulationsModal
+        visible={showCongratulations}
+        onClose={handleCloseCongratulations}
+        paymentData={congratulationsData}
+      />
     </>
   );
 };

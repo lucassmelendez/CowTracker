@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, Modal, Platform } from 'react-native';
 import FarmSelector from '../../components/FarmSelector';
 import { useFarm } from '../../components/FarmContext';
 import { useAuth } from '../../components/AuthContext';
@@ -163,96 +163,144 @@ export default function TabLayout() {
         name="index"
         options={{
           headerTitle: () => <CustomHeader title="AgroControl" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="explore"
         options={{
           headerTitle: () => <CustomHeader title="Ganado" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="admin"
         options={{
           headerTitle: () => <CustomHeader title="Administrar" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="production"
         options={{
           headerTitle: () => <CustomHeader title="Producción" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="veterinary-data"
         options={{
           headerTitle: () => <CustomHeader title="Datos Veterinarios" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="report"
         options={{
           headerTitle: () => <CustomHeader title="Informes" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="sales"
         options={{
           headerTitle: () => <CustomHeader title="Ventas" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="profile"
         options={{
-          headerTitle: () => <SimpleHeader title="Mi Perfil" />,
+          headerTitle: () => <SimpleHeader title="Perfil" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="farms"
         options={{
           headerTitle: () => <SimpleHeader title="Granjas" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="cattle-details"
         options={{
           headerTitle: () => <SimpleHeader title="Detalles del Ganado" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="add-veterinary-record"
         options={{
           headerTitle: () => <SimpleHeader title="Agregar Registro Veterinario" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="vinculacion"
         options={{
           headerTitle: () => <SimpleHeader title="Vincular a Finca" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="issue-report"
         options={{
           headerTitle: () => <SimpleHeader title="Reportar Problema" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="cattle-sale"
         options={{
           headerTitle: () => <SimpleHeader title="Venta de Ganado" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="milk-sale"
         options={{
           headerTitle: () => <SimpleHeader title="Venta de Leche" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
       <Stack.Screen
         name="help"
         options={{
           headerTitle: () => <SimpleHeader title="Ayuda" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
     </Stack>

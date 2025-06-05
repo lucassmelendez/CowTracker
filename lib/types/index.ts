@@ -39,7 +39,6 @@ export interface UpdateProfileData {
   email?: string;
   password?: string;
   id_premium?: number;
-  is_premium?: boolean;
 }
 
 export interface LoginCredentials {

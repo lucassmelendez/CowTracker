@@ -343,41 +343,54 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       }
 
       console.log('🔄 Activando cuenta Premium...');
+      console.log('📊 Datos actuales del usuario:', {
+        id_rol: userInfo?.id_rol,
+        email: userInfo?.email,
+        id_premium: userInfo?.id_premium
+      });
       
-      // Llamar al backend para activar Premium
-      const response = await fetchWithCORS('https://ct-backend-gray.vercel.app/api/users/premium', {
-        method: 'PUT',
+      // Crear un endpoint específico que solo actualice Premium sin tocar otros campos
+      const response = await fetchWithCORS('https://ct-backend-gray.vercel.app/api/users/activate-premium', {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          id_premium: 2, // Activar premium
-          payment_data: paymentData // Incluir datos del pago para auditoría
+          payment_data: paymentData // Solo para auditoría
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al activar premium en el servidor');
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.user) {
-        console.log('✅ Premium activado en el backend');
+        console.log('❌ Error en activación, intentando con updateProfile...');
         
-        // Actualizar el contexto de autenticación
-        if (updateProfile) {
-          await updateProfile({
-            id_premium: data.user.id_premium,
-            is_premium: data.user.is_premium
-          });
-          console.log('✅ Contexto de usuario actualizado');
-        }
+        // Fallback: usar updateProfile pero con todos los datos actuales del usuario
+        const currentData = {
+          primer_nombre: userInfo.primer_nombre,
+          segundo_nombre: userInfo.segundo_nombre,
+          primer_apellido: userInfo.primer_apellido,
+          segundo_apellido: userInfo.segundo_apellido,
+          email: userInfo.email,
+          id_premium: 2
+          // Notar que NO incluimos id_rol para evitar sobrescribirlo
+        };
+        
+        console.log('📋 Actualizando con datos preservados:', currentData);
+        await updateProfile(currentData);
       } else {
-        throw new Error(data.message || 'Respuesta inválida del servidor');
+        const data = await response.json();
+        console.log('✅ Premium activado con endpoint específico:', data);
+        
+        // Actualizar el contexto local con los nuevos datos
+        if (updateProfile && data.user) {
+          await updateProfile({
+            id_premium: data.user.id_premium
+          });
+        }
       }
+
+      console.log('✅ Premium activado en el backend preservando datos del usuario');
+      
     } catch (error: any) {
       console.error('❌ Error en activatePremiumAccount:', error);
       throw error;

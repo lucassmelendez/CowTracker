@@ -32,36 +32,28 @@ export default function PremiumActivateScreen() {
         throw new Error('No se encontró el token de autenticación');
       }
 
-      // Llamar al backend de Express para activar premium (usando localhost)
-      const response = await fetch('https://ct-backend-gray.vercel.app/api/users/premium', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          id_premium: 2 // Activar premium
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al activar premium');
-      }
-
-      if (data.success) {
-        // Actualizar la información del usuario en el contexto
-        if (updateProfile && data.user) {
-          try {
-            await updateProfile({
-              id_premium: data.user.id_premium,
-              is_premium: data.user.is_premium
-            });
-          } catch (updateError) {
-            console.warn('⚠️ Error al actualizar perfil en contexto:', updateError);
-          }
+            // Usar updateProfile preservando todos los datos actuales del usuario
+      if (updateProfile && userInfo) {
+        try {
+          const currentData = {
+            primer_nombre: userInfo.primer_nombre,
+            segundo_nombre: userInfo.segundo_nombre,
+            primer_apellido: userInfo.primer_apellido,
+            segundo_apellido: userInfo.segundo_apellido,
+            email: userInfo.email,
+            id_premium: 2
+            // Notar que NO incluimos id_rol para evitar sobrescribirlo
+          };
+          
+          console.log('📋 Activando Premium con datos preservados:', currentData);
+          await updateProfile(currentData);
+        } catch (updateError) {
+          console.warn('⚠️ Error al actualizar perfil en contexto:', updateError);
+          throw updateError;
         }
+      } else {
+        throw new Error('updateProfile o userInfo no están disponibles');
+      }
         
         setActivationSuccess(true);
         setIsActivating(false);
@@ -70,9 +62,6 @@ export default function PremiumActivateScreen() {
         setTimeout(() => {
           router.replace('/(tabs)/profile');
         }, 2000);
-      } else {
-        throw new Error(data.message || 'Error al activar premium');
-      }
     } catch (error: any) {
       console.error('❌ Error al activar premium:', error);
       setError(error.message || 'Error al activar premium');

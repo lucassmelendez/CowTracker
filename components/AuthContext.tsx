@@ -45,7 +45,6 @@ interface UpdateProfileData {
   email?: string;
   password?: string;
   id_premium?: number;
-  is_premium?: boolean;
 }
 
 interface AuthContextType {
@@ -340,10 +339,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
       
+      console.log('🔄 AuthContext updateProfile iniciado...');
+      console.log('📊 Datos a enviar:', data);
+      console.log('📊 Estado actual del usuario ANTES:', {
+        id_rol: userInfo?.id_rol,
+        email: userInfo?.email,
+        id_premium: userInfo?.id_premium,
+        premium_type: userInfo?.premium_type
+      });
+      
       const updatedUser = await api.users.updateProfile(data); // Ya no necesita .data
+      
+      console.log('📥 Usuario actualizado recibido del backend:', {
+        id_rol: updatedUser?.id_rol,
+        email: updatedUser?.email,
+        id_premium: updatedUser?.id_premium,
+        premium_type: updatedUser?.premium_type
+      });
       
       setUserInfo(updatedUser);
       setCurrentUser(updatedUser);
+      
+      console.log('✅ Estado del contexto actualizado');
+      console.log('📊 Estado actual del usuario DESPUÉS:', {
+        id_rol: updatedUser?.id_rol,
+        email: updatedUser?.email,
+        id_premium: updatedUser?.id_premium,
+        premium_type: updatedUser?.premium_type
+      });
       
       // Si se actualiza el email, actualizarlo también en Supabase
       if (data.email && data.email !== userInfo?.email) {
@@ -365,7 +388,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       return updatedUser;
     } catch (error: any) {
-      console.error('Error al actualizar perfil:', error);
+      console.error('❌ Error al actualizar perfil:', error);
       setError(error.message || 'Error al actualizar perfil');
       throw error;
     } finally {

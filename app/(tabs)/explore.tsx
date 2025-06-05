@@ -11,6 +11,7 @@ import api from '../../lib/services/api';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useFarm } from '../../components/FarmContext';
+import { useAuth } from '../../components/AuthContext';
 import { useAllFarms, useFarmCattle, useAllCattleWithFarmInfo, useCacheManager } from '../../hooks/useCachedData';
 import { createStyles, tw } from '../../styles/tailwind';
 
@@ -50,6 +51,7 @@ interface CattleItem {
 export default function CattleTab() {
   const router = useRouter();
   const { selectedFarm } = useFarm();
+  const { isAdmin, isTrabajador } = useAuth();
   const [cattle, setCattle] = useState<CattleItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { invalidateCache } = useCacheManager();
@@ -344,16 +346,20 @@ export default function CattleTab() {
                 : `No hay ganado en la granja "${selectedFarm?.name || 'seleccionada'}"`
               }
             </Text>
-            <TouchableOpacity style={styles.addButton} onPress={navigateToAdd}>
-              <Text style={styles.addButtonText}>Agregar Ganado</Text>
-            </TouchableOpacity>
+            {(isAdmin() || isTrabajador()) && (
+              <TouchableOpacity style={styles.addButton} onPress={navigateToAdd}>
+                <Text style={styles.addButtonText}>Agregar Ganado</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={navigateToAdd}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      {(isAdmin() || isTrabajador()) && (
+        <TouchableOpacity style={styles.fab} onPress={navigateToAdd}>
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

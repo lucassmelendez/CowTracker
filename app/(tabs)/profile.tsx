@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { supabase } from '../../lib/config/supabase';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 import { useUserProfile, useCacheManager } from '../../hooks/useCachedData';
 import cachedApi from '../../lib/services/cachedApi';
+import { createStyles, tw } from '../../styles/tailwind';
 
 interface UserData {
   email: string;
@@ -50,6 +51,35 @@ export default function ProfilePage() {
     error: profileError,
     refresh: refreshProfile 
   } = useUserProfile();
+
+  const styles = {
+    container: createStyles(tw.container),
+    header: createStyles(`${tw.header} p-5 pt-10`),
+    title: createStyles('text-2xl font-bold text-white'),
+    subtitle: createStyles('text-base text-white opacity-80 mt-1'),
+    card: createStyles('bg-white m-5 rounded-lg p-5'),
+    avatarContainer: createStyles('items-center mb-5'),
+    avatar: createStyles('w-20 h-20 rounded-full bg-green-600 justify-center items-center mb-2'),
+    avatarText: createStyles('text-2xl font-bold text-white'),
+    role: createStyles('text-base text-gray-600 font-semibold'),
+    infoContainer: createStyles('mb-5'),
+    label: createStyles(tw.label + ' mt-2'),
+    infoText: createStyles('text-base text-gray-600 mb-2 py-2 px-3 bg-gray-50 rounded-lg'),
+    input: createStyles(tw.input),
+    buttonContainer: createStyles('gap-4'),
+    button: createStyles('py-3 px-5 rounded-lg items-center'),
+    editButton: createStyles(tw.primaryButton + ' py-3 px-5'),
+    saveButton: createStyles(tw.primaryButton + ' py-3 px-5'),
+    cancelButton: createStyles('bg-gray-100 py-3 px-5 rounded-lg items-center border border-gray-300'),
+    logoutButton: createStyles('bg-red-500 py-3 px-5 rounded-lg items-center mt-4'),
+    buttonText: createStyles('text-white text-base font-semibold'),
+    cancelText: createStyles('text-gray-800 text-base font-semibold'),
+    loadingContainer: createStyles(tw.loadingContainer),
+    premiumBadge: createStyles('bg-yellow-500 px-2 py-1 rounded-full'),
+    premiumText: createStyles('text-white text-xs font-bold'),
+    upgradeButton: createStyles('bg-yellow-500 py-2 px-4 rounded-lg mt-2'),
+    upgradeButtonText: createStyles('text-white text-sm font-semibold'),
+  };
 
   // Cargar datos del perfil al montar el componente
   useEffect(() => {
@@ -201,22 +231,16 @@ export default function ProfilePage() {
   };
 
   const getInitials = () => {
-    const primerNombre = userData.primer_nombre || '';
-    const primerApellido = userData.primer_apellido || '';
-    
-    if (!primerNombre && !primerApellido) return '?';
-    
-    const inicialNombre = primerNombre ? primerNombre.charAt(0) : '';
-    const inicialApellido = primerApellido ? primerApellido.charAt(0) : '';
-    
-    return (inicialNombre + inicialApellido).toUpperCase();
+    const firstName = userData.primer_nombre || '';
+    const lastName = userData.primer_apellido || '';
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#27ae60" />
-        <Text style={{ marginTop: 10 }}>Cargando perfil...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={tw.colors.primary} />
+        <Text style={styles.subtitle}>Cargando perfil...</Text>
       </View>
     );
   }
@@ -234,82 +258,71 @@ export default function ProfilePage() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials()}</Text>
             </View>
-            <Text style={styles.role}>{userData.roleDisplay}</Text>
+            <View style={createStyles('flex-row items-center')}>
+              <Text style={styles.role}>{userData.roleDisplay}</Text>
+              {userData.id_premium === 2 && (
+                <View style={styles.premiumBadge}>
+                  <Text style={styles.premiumText}>PREMIUM</Text>
+                </View>
+              )}
+            </View>
+            {userData.id_premium === 1 && (
+              <TouchableOpacity 
+                style={styles.upgradeButton}
+                onPress={() => setShowPremiumModal(true)}
+              >
+                <Text style={styles.upgradeButtonText}>Actualizar a Premium</Text>
+              </TouchableOpacity>
+            )}
           </View>
           
           <View style={styles.infoContainer}>
+            <Text style={styles.label}>Primer nombre</Text>
             {isEditing ? (
-              <>
-                <Text style={styles.label}>Primer nombre</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.primer_nombre}
-                  onChangeText={(text) => setFormData({...formData, primer_nombre: text})}
-                  placeholder="Primer nombre"
-                />
-                
-                <Text style={styles.label}>Segundo nombre</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.segundo_nombre}
-                  onChangeText={(text) => setFormData({...formData, segundo_nombre: text})}
-                  placeholder="Segundo nombre (opcional)"
-                />
-                
-                <Text style={styles.label}>Primer apellido</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.primer_apellido}
-                  onChangeText={(text) => setFormData({...formData, primer_apellido: text})}
-                  placeholder="Primer apellido"
-                />
-                
-                <Text style={styles.label}>Segundo apellido</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.segundo_apellido}
-                  onChangeText={(text) => setFormData({...formData, segundo_apellido: text})}
-                  placeholder="Segundo apellido (opcional)"
-                />    
-
-                <Text style={styles.label}>Suscripción</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.premium_type || (formData.id_premium === 2 ? 'Premium' : 'Free')}
-                  editable={false}
-                />
-
-              </>
+              <TextInput
+                style={styles.input}
+                value={formData.primer_nombre}
+                onChangeText={(text) => setFormData({...formData, primer_nombre: text})}
+                placeholder="Primer nombre"
+              />
             ) : (
-              <>
-                <Text style={styles.label}>Primer nombre</Text>
-                <Text style={styles.infoText}>{userData.primer_nombre || 'No especificado'}</Text>
-                
-                <Text style={styles.label}>Segundo nombre</Text>
-                <Text style={styles.infoText}>{userData.segundo_nombre || 'No especificado'}</Text>
-                
-                <Text style={styles.label}>Primer apellido</Text>
-                <Text style={styles.infoText}>{userData.primer_apellido || 'No especificado'}</Text>
-                
-                <Text style={styles.label}>Segundo apellido</Text>
-                <Text style={styles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
-
-                <Text style={styles.label}>Suscripción</Text>
-                <Text style={styles.infoText}>
-                  {userData.premium_type || (userData.id_premium === 2 ? 'Premium' : 'Free')}
-                </Text>
-                
-                {userData.id_premium !== 2 && (
-                  <TouchableOpacity 
-                    style={[styles.button, { backgroundColor: '#27ae60', marginTop: 10 }]}
-                    onPress={() => setShowPremiumModal(true)}
-                  >
-                    <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
-                      Actualizar a Premium
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </>
+              <Text style={styles.infoText}>{userData.primer_nombre}</Text>
+            )}
+            
+            <Text style={styles.label}>Segundo nombre</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.segundo_nombre}
+                onChangeText={(text) => setFormData({...formData, segundo_nombre: text})}
+                placeholder="Segundo nombre (opcional)"
+              />
+            ) : (
+              <Text style={styles.infoText}>{userData.segundo_nombre || 'No especificado'}</Text>
+            )}
+            
+            <Text style={styles.label}>Primer apellido</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.primer_apellido}
+                onChangeText={(text) => setFormData({...formData, primer_apellido: text})}
+                placeholder="Primer apellido"
+              />
+            ) : (
+              <Text style={styles.infoText}>{userData.primer_apellido}</Text>
+            )}
+            
+            <Text style={styles.label}>Segundo apellido</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.segundo_apellido}
+                onChangeText={(text) => setFormData({...formData, segundo_apellido: text})}
+                placeholder="Segundo apellido (opcional)"
+              />
+            ) : (
+              <Text style={styles.infoText}>{userData.segundo_apellido || 'No especificado'}</Text>
             )}
             
             <Text style={styles.label}>Correo electrónico</Text>
@@ -378,132 +391,4 @@ export default function ProfilePage() {
       />
     </View>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#27ae60',
-    padding: 20,
-    paddingTop: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 5,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    margin: 20,
-    borderRadius: 10,
-    padding: 20,
-  },
-  avatarContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#27ae60',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  avatarText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  role: {
-    fontSize: 16,
-    color: '#777777',
-    fontWeight: '600',
-  },
-  infoContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 5,
-    marginTop: 10,
-  },
-  infoText: {
-    fontSize: 16,
-    color: '#666666',
-    marginBottom: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#dddddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#ffffff',
-    marginBottom: 10,
-  },
-  buttonContainer: {
-    gap: 10,
-  },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  editButton: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  saveButton: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#dddddd',
-  },
-  logoutButton: {
-    backgroundColor: '#e74c3c',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  cancelText: {
-    color: '#333333',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-}); 
+} 

@@ -32,7 +32,7 @@ export default function VinculacionTab() {
     cargarFincasVinculadas();
   }, []);
 
-  const cargarFincasVinculadas = async () => {
+  const cargarFincasVinculadas = async (silentError = false) => {
     try {
       setLoadingFincas(true);
       const response = await api.farms.getAll();
@@ -40,7 +40,9 @@ export default function VinculacionTab() {
       setFincasVinculadas(fincasData);
     } catch (error) {
       console.error('Error al cargar fincas vinculadas:', error);
-      showError('Error', 'No se pudieron cargar las fincas vinculadas');
+      if (!silentError) {
+        showError('Error', 'No se pudieron cargar las fincas vinculadas');
+      }
     } finally {
       setLoadingFincas(false);
       setRefreshing(false);
@@ -106,7 +108,7 @@ export default function VinculacionTab() {
         'Éxito',
         'Vinculación eliminada correctamente',
         () => {
-          cargarFincasVinculadas(); // Recargar la lista
+          cargarFincasVinculadas(true); // Recargar la lista sin mostrar errores
         }
       );
     } catch (error: any) {
@@ -146,7 +148,7 @@ export default function VinculacionTab() {
           'Éxito',
           'Has sido vinculado correctamente a la finca',
           () => {
-            cargarFincasVinculadas(); // Recargar la lista de fincas
+            cargarFincasVinculadas(true); // Recargar la lista de fincas sin mostrar errores
             setCodigo(''); // Limpiar el código
           }
         );

@@ -68,6 +68,7 @@ export const CustomModal: React.FC<CustomModalProps> = ({
   const handleConfirm = () => {
     if (onConfirm) {
       onConfirm();
+      onClose(); // Cerrar el modal después de ejecutar el callback
     } else {
       onClose();
     }

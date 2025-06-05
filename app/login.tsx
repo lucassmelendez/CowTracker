@@ -43,8 +43,7 @@ export default function LoginScreen() {
     
     try {
       await login(email, password);
-      // Navegar a la pantalla principal después del login exitoso
-      router.push('/(tabs)');
+      // La navegación se maneja automáticamente en _layout.tsx
     } catch (error: any) {
       console.error('Error en login:', error);
       setLocalError(error.message || 'Error al iniciar sesión. Por favor, inténtalo de nuevo.');

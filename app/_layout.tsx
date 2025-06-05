@@ -9,17 +9,9 @@ import CustomHeader from '../components/CustomHeader';
 function RootLayoutNav() {
   const { currentUser, loading } = useAuth();
   const router = useRouter();
-  useEffect(() => {
-    if (!loading && !currentUser) {
-      try {
-        setTimeout(() => {
-          router.replace('/login');
-        }, 100);
-      } catch (e) {
-        console.error('Error al redirigir a login:', e);
-      }
-    }
-  }, [currentUser, loading]);
+  
+  // Eliminamos la redirección automática aquí para evitar conflictos
+  // El index.tsx se encargará de las redirecciones
 
   if (loading) {
     return (

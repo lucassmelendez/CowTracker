@@ -303,8 +303,7 @@ export default function ProfilePage() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials()}</Text>
             </View>
-            <View style={createStyles('flex-row items-center')}>
-              <Text style={styles.role}>{userData.roleDisplay}</Text>
+            <View style={createStyles('flex-row items-center justify-center')}>
               {userData.id_premium === 2 && (
                 <View style={styles.premiumBadge}>
                   <Text style={styles.premiumText}>PREMIUM</Text>

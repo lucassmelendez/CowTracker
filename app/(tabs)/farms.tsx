@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
 import { useAuth } from '../../components/AuthContext';
+import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 import api from '../../lib/services/api';
 import { createStyles } from '../../styles/tailwind';
 
@@ -26,7 +27,7 @@ interface Farm {
 
 export default function FarmsPage() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { isAdmin, userInfo } = useAuth();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -38,6 +39,7 @@ export default function FarmsPage() {
 
   const [modalMessage, setModalMessage] = useState('');
   const [messageModalVisible, setMessageModalVisible] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Usar hooks con caché
   const { 
@@ -70,6 +72,16 @@ export default function FarmsPage() {
       if (!formData.name) {
         setErrorMessage('El nombre de la granja es obligatorio');
         return;
+      }
+
+      // Verificar límite de granjas para usuarios no premium
+      if (!editingFarm) { // Solo validar al crear, no al editar
+        const isPremium = userInfo?.id_premium === 2 || userInfo?.id_premium === 3; // 2 = Premium, 3 = Empleado
+        
+        if (!isPremium && farms && farms.length >= 1) {
+          setShowPremiumModal(true);
+          return;
+        }
       }
 
       const farmData = {
@@ -239,7 +251,10 @@ export default function FarmsPage() {
                   No tienes granjas registradas
                 </Text>
                 <Text style={createStyles('text-base text-gray-400 mt-2 text-center')}>
-                  Agrega una nueva granja para comenzar
+                  {(userInfo?.id_premium === 2 || userInfo?.id_premium === 3)
+                    ? 'Agrega una nueva granja para comenzar'
+                    : 'Agrega tu primera granja (máximo 1 para usuarios no premium)'
+                  }
                 </Text>
               </View>
             }
@@ -249,7 +264,14 @@ export default function FarmsPage() {
           {isAdmin() && (
             <TouchableOpacity 
               style={createStyles('absolute bottom-5 right-5 bg-green-600 w-14 h-14 rounded-full justify-center items-center shadow-lg')}
-              onPress={() => setModalVisible(true)}
+              onPress={() => {
+                const isPremium = userInfo?.id_premium === 2 || userInfo?.id_premium === 3; // 2 = Premium, 3 = Empleado
+                if (!isPremium && farms && farms.length >= 1) {
+                  setShowPremiumModal(true);
+                } else {
+                  setModalVisible(true);
+                }
+              }}
             >
               <Ionicons name="add" size={28} color="#ffffff" />
             </TouchableOpacity>
@@ -334,6 +356,14 @@ export default function FarmsPage() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal de Premium */}
+      <PremiumUpgradeModal
+        visible={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        title="¡Actualiza tu cuenta a Premium!"
+        subtitle="Los usuarios no premium solo pueden tener máximo 1 granja. Actualiza a premium para agregar granjas ilimitadas."
+      />
     </View>
   );
 } 

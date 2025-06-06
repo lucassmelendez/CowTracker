@@ -344,7 +344,7 @@ export default function FarmsPage() {
           <Text style={styles.statLabel}>Hectáreas</Text>
         </View>
         <View style={styles.statCard}>
-          <Ionicons name="browsers-outline" size={24} color="#3498db" />
+          <Ionicons name="paw-outline" size={24} color="#3498db" />
           <Text style={styles.statNumber}>{item.cattleCount || 0}</Text>
           <Text style={styles.statLabel}>Animales</Text>
         </View>

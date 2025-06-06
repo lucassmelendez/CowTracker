@@ -678,7 +678,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
     marginTop: 5,
   },
   addRecordButton: {
@@ -687,9 +686,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 5,
-    flex: 1,
+    width: '48%',
     minHeight: 36,
   },
   addRecordButtonText: {
@@ -705,9 +704,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 5,
-    flex: 1,
+    width: '48%',
     minHeight: 36,
   },
   editRecordButtonText: {

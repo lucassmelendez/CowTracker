@@ -219,67 +219,47 @@ export default function FarmsPage() {
   };
 
   const renderItem = ({ item }: { item: Farm }) => (
-    <View style={styles.farmCard}>
-      {/* Header de la card con gradiente */}
+    <View style={styles.farmItem}>
       <View style={styles.cardHeader}>
-        <View style={styles.farmTitleContainer}>
-          <Text style={styles.farmName}>{item.name}</Text>
-          <View style={styles.statusIndicator}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusText}>Activa</Text>
-          </View>
+        <Text style={styles.farmName}>{item.name}</Text>
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => openEditModal(item)}
+          >
+            <Ionicons name="create-outline" size={20} color="#27ae60" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => openDeleteModal(item._id)}
+          >
+            <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+          </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={styles.infoContainer}>
+        <View style={styles.infoItem}>
+          <Ionicons name="location-outline" size={18} color="#555" />
+          <Text style={styles.infoText}>{item.location}</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Ionicons name="resize-outline" size={18} color="#555" />
+          <Text style={styles.infoText}>{item.size} hectáreas</Text>
+        </View>
+        <View style={styles.infoItem}>
+          <Ionicons name="browsers-outline" size={18} color="#555" />
+          <Text style={styles.infoText}>{item.cattleCount || 0} animales</Text>
+        </View>
+      </View>
+
+      <View style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={styles.viewCattleButton}
+          style={styles.viewButton}
           onPress={() => handleViewCattle(item)}
         >
-          <Ionicons name="eye-outline" size={16} color="#059669" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Estadísticas en grid */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <View style={[styles.statIcon, { backgroundColor: '#dbeafe' }]}>
-            <Ionicons name="resize-outline" size={20} color="#2563eb" />
-          </View>
-          <Text style={styles.statValue}>{item.size || 0}</Text>
-          <Text style={styles.statLabel}>Hectáreas</Text>
-        </View>
-        
-        <View style={styles.statItem}>
-          <View style={[styles.statIcon, { backgroundColor: '#fed7aa' }]}>
-            <Ionicons name="browsers-outline" size={20} color="#ea580c" />
-          </View>
-          <Text style={styles.statValue}>{item.cattleCount || 0}</Text>
-          <Text style={styles.statLabel}>Animales</Text>
-        </View>
-      </View>
-
-      {/* Información adicional */}
-      {item.location && (
-        <View style={styles.locationContainer}>
-          <Ionicons name="location-outline" size={16} color="#6b7280" />
-          <Text style={styles.locationText}>{item.location}</Text>
-        </View>
-      )}
-
-      {/* Botones de acción */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity 
-          style={styles.editButton}
-          onPress={() => openEditModal(item)}
-        >
-          <Ionicons name="create-outline" size={16} color="#ffffff" />
-          <Text style={styles.buttonText}>Editar</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.deleteButton}
-          onPress={() => confirmDelete(item)}
-        >
-          <Ionicons name="trash-outline" size={16} color="#ffffff" />
-          <Text style={styles.buttonText}>Eliminar</Text>
+          <Ionicons name="eye-outline" size={16} color="#fff" />
+          <Text style={styles.buttonText}>Ver Ganado</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -288,438 +268,250 @@ export default function FarmsPage() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#f8fafc',
+      backgroundColor: '#f5f5f5',
     },
     header: {
-      backgroundColor: '#059669',
-      paddingTop: 50,
-      paddingBottom: 30,
-      paddingHorizontal: 20,
-    },
-    headerContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 15,
-    },
-    headerLeft: {
-      flex: 1,
+      backgroundColor: '#27ae60',
+      padding: 20,
+      paddingTop: 40,
     },
     title: {
-      fontSize: 28,
+      fontSize: 24,
       fontWeight: 'bold',
       color: '#ffffff',
-      marginBottom: 5,
     },
     subtitle: {
       fontSize: 16,
-      color: 'rgba(255,255,255,0.9)',
-    },
-    headerIcon: {
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      borderRadius: 50,
-      padding: 15,
-    },
-    statsHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 20,
-    },
-    headerStat: {
-      backgroundColor: 'rgba(255,255,255,0.15)',
-      borderRadius: 12,
-      padding: 15,
-      flex: 1,
-      marginHorizontal: 5,
-    },
-    headerStatLabel: {
       color: 'rgba(255,255,255,0.8)',
-      fontSize: 14,
-      marginBottom: 5,
-    },
-    headerStatValue: {
-      color: '#ffffff',
-      fontSize: 24,
-      fontWeight: 'bold',
+      marginTop: 5,
     },
     loadingContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: '#ffffff',
-      margin: 20,
-      borderRadius: 16,
-      padding: 40,
     },
     loadingText: {
       fontSize: 16,
-      color: '#6b7280',
-      marginTop: 15,
-      fontWeight: '500',
+      color: '#777777',
+      marginTop: 10,
     },
     emptyContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      padding: 40,
-    },
-    emptyCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: 20,
-      padding: 40,
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-    },
-    emptyIconContainer: {
-      backgroundColor: '#f0fdf4',
-      borderRadius: 50,
       padding: 20,
-      marginBottom: 20,
     },
     emptyText: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#374151',
+      fontSize: 18,
+      color: '#777777',
       textAlign: 'center',
-      marginBottom: 10,
+      marginTop: 10,
     },
     emptySubtext: {
       fontSize: 16,
-      color: '#6b7280',
+      color: '#777777',
       textAlign: 'center',
-      lineHeight: 24,
+      marginTop: 5,
     },
     listContainer: {
-      padding: 15,
-      paddingBottom: 100,
+      padding: 10,
+      paddingBottom: 80,
     },
-    farmCard: {
+    farmItem: {
       backgroundColor: '#ffffff',
-      borderRadius: 16,
-      marginBottom: 15,
-      padding: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 4,
-      borderWidth: 1,
-      borderColor: '#f1f5f9',
+      borderRadius: 10,
+      marginHorizontal: 10,
+      marginVertical: 6,
+      padding: 15,
     },
     cardHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: 20,
-    },
-    farmTitleContainer: {
-      flex: 1,
+      alignItems: 'center',
+      marginBottom: 10,
     },
     farmName: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: 'bold',
-      color: '#1f2937',
-      marginBottom: 8,
+      color: '#333333',
     },
-    statusIndicator: {
+    actionsContainer: {
       flexDirection: 'row',
       alignItems: 'center',
     },
-    statusDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: '#10b981',
-      marginRight: 6,
+    actionButton: {
+      marginLeft: 10,
+      padding: 5,
     },
-    statusText: {
+    infoContainer: {
+      marginTop: 5,
+    },
+    infoItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 5,
+    },
+    infoText: {
       fontSize: 14,
-      color: '#10b981',
-      fontWeight: '600',
+      color: '#777777',
+      marginLeft: 8,
     },
-    viewCattleButton: {
-      backgroundColor: '#f0fdf4',
-      borderRadius: 8,
-      padding: 8,
-      borderWidth: 1,
-      borderColor: '#bbf7d0',
-    },
-    statsContainer: {
+    buttonContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 20,
+      justifyContent: 'center',
+      marginTop: 10,
     },
-    statItem: {
+    viewButton: {
       flex: 1,
+      flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#f8fafc',
-      borderRadius: 12,
-      padding: 15,
-      marginHorizontal: 5,
-    },
-    statIcon: {
-      borderRadius: 25,
+      justifyContent: 'center',
+      backgroundColor: '#3498db',
       padding: 10,
-      marginBottom: 8,
-    },
-    statValue: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#1f2937',
-      marginBottom: 4,
-    },
-    statLabel: {
-      fontSize: 12,
-      color: '#6b7280',
-      fontWeight: '500',
-    },
-    locationContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#f8fafc',
       borderRadius: 8,
-      padding: 12,
-      marginBottom: 20,
-    },
-    locationText: {
-      fontSize: 14,
-      color: '#6b7280',
-      marginLeft: 8,
-      flex: 1,
-    },
-    actionButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    editButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#059669',
-      padding: 12,
-      borderRadius: 10,
-      marginRight: 8,
-    },
-    deleteButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#dc2626',
-      padding: 12,
-      borderRadius: 10,
-      marginLeft: 8,
     },
     buttonText: {
       color: '#ffffff',
-      fontSize: 14,
-      fontWeight: '600',
-      marginLeft: 6,
+      fontSize: 12,
+      marginLeft: 5,
     },
     addButton: {
       position: 'absolute',
       right: 20,
       bottom: 20,
-      backgroundColor: '#059669',
+      backgroundColor: '#27ae60',
       width: 60,
       height: 60,
       borderRadius: 30,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
     },
     modalContainer: {
       flex: 1,
-      justifyContent: 'flex-end',
+      justifyContent: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: 20,
     },
     modalContent: {
       backgroundColor: '#ffffff',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 25,
-      maxHeight: '80%',
-    },
-    modalHandle: {
-      width: 40,
-      height: 4,
-      backgroundColor: '#d1d5db',
-      borderRadius: 2,
-      alignSelf: 'center',
-      marginBottom: 20,
-    },
-    modalHeader: {
-      alignItems: 'center',
-      marginBottom: 25,
-    },
-    modalIconContainer: {
-      backgroundColor: '#f0fdf4',
-      borderRadius: 50,
-      padding: 15,
-      marginBottom: 15,
+      borderRadius: 10,
+      padding: 20,
     },
     modalTitle: {
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: 'bold',
-      color: '#1f2937',
-      marginBottom: 8,
-    },
-    modalSubtitle: {
-      fontSize: 16,
-      color: '#6b7280',
+      color: '#333333',
+      marginBottom: 20,
       textAlign: 'center',
     },
-    formContainer: {
-      marginBottom: 25,
+    modalText: {
+      fontSize: 16,
+      color: '#333333',
+      textAlign: 'center',
+      marginVertical: 15,
     },
     label: {
       fontSize: 16,
       fontWeight: '600',
-      color: '#374151',
-      marginBottom: 8,
-    },
-    inputContainer: {
-      backgroundColor: '#f8fafc',
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: '#e5e7eb',
-      paddingHorizontal: 15,
-      paddingVertical: 12,
-      marginBottom: 20,
+      color: '#333333',
+      marginBottom: 5,
     },
     input: {
-      fontSize: 16,
-      color: '#1f2937',
-    },
-    errorContainer: {
-      backgroundColor: '#fef2f2',
-      borderRadius: 8,
-      padding: 12,
-      marginBottom: 20,
       borderWidth: 1,
-      borderColor: '#fecaca',
-    },
-    errorText: {
-      color: '#dc2626',
-      fontSize: 14,
-      textAlign: 'center',
+      borderColor: '#dddddd',
+      borderRadius: 5,
+      padding: 10,
+      marginBottom: 15,
+      fontSize: 16,
     },
     modalButtons: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-    },
-    cancelButton: {
-      flex: 1,
-      backgroundColor: '#f8fafc',
-      padding: 15,
-      borderRadius: 12,
-      alignItems: 'center',
-      marginRight: 10,
-      borderWidth: 1,
-      borderColor: '#e5e7eb',
+      marginTop: 10,
     },
     saveButton: {
       flex: 1,
-      backgroundColor: '#059669',
-      padding: 15,
-      borderRadius: 12,
+      backgroundColor: '#27ae60',
+      padding: 12,
+      borderRadius: 5,
       alignItems: 'center',
-      marginLeft: 10,
+      marginLeft: 5,
     },
-    cancelButtonText: {
-      color: '#374151',
-      fontSize: 16,
-      fontWeight: '600',
+    cancelButton: {
+      flex: 1,
+      backgroundColor: '#f5f5f5',
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginRight: 5,
+      borderWidth: 1,
+      borderColor: '#dddddd',
     },
     saveButtonText: {
       color: '#ffffff',
+      fontWeight: 'bold',
       fontSize: 16,
-      fontWeight: '600',
     },
-    messageModalContainer: {
+    cancelButtonText: {
+      color: '#333333',
+      fontSize: 16,
+    },
+    confirmButton: {
+      flex: 1,
+      backgroundColor: '#e74c3c',
+      padding: 12,
+      borderRadius: 5,
+      alignItems: 'center',
+      marginLeft: 5,
+    },
+    confirmButtonText: {
+      color: '#ffffff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    modalOverlay: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: 20,
     },
-    messageModalContent: {
-      backgroundColor: '#ffffff',
-      borderRadius: 16,
-      padding: 25,
+    modalButton: {
+      backgroundColor: '#27ae60',
+      padding: 12,
+      borderRadius: 5,
       alignItems: 'center',
-      maxWidth: 300,
+      marginTop: 10,
       width: '100%',
     },
-    messageIconContainer: {
-      backgroundColor: '#f0fdf4',
-      borderRadius: 50,
-      padding: 15,
-      marginBottom: 15,
-    },
-    messageText: {
-      fontSize: 16,
-      color: '#374151',
-      textAlign: 'center',
-      marginBottom: 20,
-      lineHeight: 24,
-    },
-    messageButton: {
-      backgroundColor: '#059669',
-      paddingHorizontal: 30,
-      paddingVertical: 12,
-      borderRadius: 10,
-      width: '100%',
-    },
-    messageButtonText: {
+    modalButtonText: {
       color: '#ffffff',
+      fontWeight: 'bold',
       fontSize: 16,
-      fontWeight: '600',
-      textAlign: 'center',
+    },
+    errorContainer: {
+      backgroundColor: '#ffebee',
+      padding: 10,
+      margin: 10,
+      borderRadius: 5,
+      borderLeftWidth: 4,
+      borderLeftColor: '#e74c3c',
+    },
+    errorText: {
+      color: '#e74c3c',
+      fontSize: 14,
     },
   });
 
   return (
     <View style={styles.container}>
-      {/* Header mejorado */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.title}>Mis Granjas</Text>
-            <Text style={styles.subtitle}>Gestiona y supervisa tus propiedades</Text>
-          </View>
-          <View style={styles.headerIcon}>
-            <Ionicons name="leaf" size={28} color="#ffffff" />
-          </View>
-        </View>
-        
-        {/* Estadísticas rápidas */}
-        <View style={styles.statsHeader}>
-          <View style={styles.headerStat}>
-            <Text style={styles.headerStatLabel}>Total Granjas</Text>
-            <Text style={styles.headerStatValue}>{farms?.length || 0}</Text>
-          </View>
-          <View style={styles.headerStat}>
-            <Text style={styles.headerStatLabel}>Total Animales</Text>
-            <Text style={styles.headerStatValue}>
-              {farms?.reduce((total, farm) => total + (farm.cattleCount || 0), 0) || 0}
-            </Text>
-          </View>
-        </View>
+        <Text style={styles.title}>Mis Granjas</Text>
+        <Text style={styles.subtitle}>Gestiona tus propiedades</Text>
       </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#059669" />
+          <ActivityIndicator size="large" color="#27ae60" />
           <Text style={styles.loadingText}>Cargando granjas...</Text>
         </View>
       ) : (
@@ -735,29 +527,22 @@ export default function FarmsPage() {
             renderItem={renderItem}
             keyExtractor={item => item._id}
             contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <View style={styles.emptyCard}>
-                  <View style={styles.emptyIconContainer}>
-                    <Ionicons name="leaf-outline" size={48} color="#059669" />
-                  </View>
-                  <Text style={styles.emptyText}>¡Comienza tu aventura!</Text>
-                  <Text style={styles.emptySubtext}>
-                    Agrega tu primera granja y comienza a gestionar tu ganado de manera profesional.
-                  </Text>
-                </View>
+                <Ionicons name="leaf-outline" size={60} color="#ddd" />
+                <Text style={styles.emptyText}>No tienes granjas registradas</Text>
+                <Text style={styles.emptySubtext}>Agrega una nueva granja para comenzar</Text>
               </View>
             }
           />
 
           <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-            <Ionicons name="add" size={28} color="#ffffff" />
+            <Ionicons name="add" size={30} color="#fff" />
           </TouchableOpacity>
         </>
       )}
 
-      {/* Modal mejorado para agregar/editar granja */}
+      {/* Modal para agregar/editar granja */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -766,57 +551,30 @@ export default function FarmsPage() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-            
-            <View style={styles.modalHeader}>
-              <View style={styles.modalIconContainer}>
-                <Ionicons 
-                  name={editingFarm ? "create-outline" : "add-outline"} 
-                  size={28} 
-                  color="#059669" 
-                />
-              </View>
-              <Text style={styles.modalTitle}>
-                {editingFarm ? 'Editar Granja' : 'Nueva Granja'}
-              </Text>
-              <Text style={styles.modalSubtitle}>
-                {editingFarm 
-                  ? 'Actualiza la información de tu granja' 
-                  : 'Completa los datos para crear tu granja'
-                }
-              </Text>
-            </View>
+            <Text style={styles.modalTitle}>
+              {editingFarm ? 'Editar Granja' : 'Agregar Granja'}
+            </Text>
 
-            <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
-              <Text style={styles.label}>Nombre de la granja *</Text>
-              <View style={styles.inputContainer}>
-                <TextInput 
-                  style={styles.input}
-                  value={formData.name}
-                  onChangeText={(text) => setFormData({ ...formData, name: text })}
-                  placeholder="Ej. Granja San José"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
+            <Text style={styles.label}>Nombre</Text>
+            <TextInput 
+              style={styles.input}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
+              placeholder="Nombre de la granja"
+            />
 
-              <Text style={styles.label}>Tamaño (hectáreas)</Text>
-              <View style={styles.inputContainer}>
-                <TextInput 
-                  style={styles.input}
-                  value={formData.size}
-                  onChangeText={(text) => setFormData({ ...formData, size: text })}
-                  placeholder="Ej. 150"
-                  placeholderTextColor="#9ca3af"
-                  keyboardType="numeric"
-                />
-              </View>
+            <Text style={styles.label}>Tamaño</Text>
+            <TextInput 
+              style={styles.input}
+              value={formData.size}
+              onChangeText={(text) => setFormData({ ...formData, size: text })}
+              placeholder="Ej. 150 hectáreas"
+              keyboardType="numeric"
+            />
 
-              {errorMessage ? (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{errorMessage}</Text>
-                </View>
-              ) : null}
-            </ScrollView>
+            {errorMessage ? (
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            ) : null}
 
             <View style={styles.modalButtons}>
               <TouchableOpacity 
@@ -833,30 +591,25 @@ export default function FarmsPage() {
                 style={styles.saveButton}
                 onPress={handleCreateFarm}
               >
-                <Text style={styles.saveButtonText}>
-                  {editingFarm ? 'Actualizar' : 'Crear Granja'}
-                </Text>
+                <Text style={styles.saveButtonText}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Modal de mensaje mejorado */}
+      {/* Modal de mensaje */}
       <Modal
         animationType="fade"
         transparent={true}
         visible={messageModalVisible}
         onRequestClose={closeModal}
       >
-        <View style={styles.messageModalContainer}>
-          <View style={styles.messageModalContent}>
-            <View style={styles.messageIconContainer}>
-              <Ionicons name="checkmark-circle-outline" size={32} color="#059669" />
-            </View>
-            <Text style={styles.messageText}>{modalMessage}</Text>
-            <TouchableOpacity style={styles.messageButton} onPress={closeModal}>
-              <Text style={styles.messageButtonText}>Perfecto</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>{modalMessage}</Text>
+            <TouchableOpacity style={styles.modalButton} onPress={closeModal}>
+              <Text style={styles.modalButtonText}>Cerrar</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -869,13 +622,10 @@ export default function FarmsPage() {
         visible={deleteModalVisible}
         onRequestClose={closeDeleteModal}
       >
-        <View style={styles.messageModalContainer}>
-          <View style={styles.messageModalContent}>
-            <View style={[styles.messageIconContainer, { backgroundColor: '#fef2f2' }]}>
-              <Ionicons name="alert-circle-outline" size={32} color="#dc2626" />
-            </View>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Confirmar eliminación</Text>
-            <Text style={styles.messageText}>
+            <Text style={styles.modalText}>
               ¿Estás seguro de que deseas eliminar esta granja?
             </Text>
             <View style={styles.modalButtons}>
@@ -886,14 +636,14 @@ export default function FarmsPage() {
                 <Text style={styles.cancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: '#dc2626' }]}
+                style={styles.confirmButton}
                 onPress={() => {
                   if (farmToDelete) {
                     handleDeleteFarm(farmToDelete);
                   }
                 }}
               >
-                <Text style={styles.saveButtonText}>Eliminar</Text>
+                <Text style={styles.confirmButtonText}>Eliminar</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -73,13 +73,17 @@ export default function FarmsPage() {
     setFarmToDelete(null);
   };
 
+  // Efecto principal: cargar granjas cuando los datos de ganado estén listos
   useEffect(() => {
-    loadFarms();
-  }, []);
+    if (!cattleLoading && allCattleWithFarmInfo !== null) {
+      console.log('Datos de ganado listos, cargando granjas...');
+      loadFarms();
+    }
+  }, [cattleLoading, allCattleWithFarmInfo]);
 
-  // Efecto para recalcular las granjas cuando cambien los datos de ganado
+  // Efecto para recalcular las granjas cuando cambien los datos de ganado (solo si ya hay granjas)
   useEffect(() => {
-    if (allCattleWithFarmInfo && farms.length > 0) {
+    if (allCattleWithFarmInfo && farms.length > 0 && !loading) {
       console.log('Recalculando cantidad de ganado por granja...');
       const updatedFarms = farms.map(farm => {
         const cattleCount = allCattleWithFarmInfo.filter((cattle: any) => {
@@ -113,11 +117,8 @@ export default function FarmsPage() {
       await invalidateCache('farms');
       await invalidateCache('cattle');
       
-      // Refrescar tanto granjas como ganado
-      await Promise.all([
-        loadFarms(),
-        refreshAllCattle()
-      ]);
+      // Solo refrescar ganado, el useEffect se encargará de cargar las granjas
+      await refreshAllCattle();
       
       console.log('Datos de granjas refrescados desde el servidor');
     } catch (error) {
@@ -141,15 +142,8 @@ export default function FarmsPage() {
       console.log('Pantalla de granjas obtuvo foco, refrescando datos...');
       lastRefreshRef.current = now;
       
-      // Refrescar inmediatamente sin esperar
-      const refreshData = async () => {
-        await Promise.all([
-          loadFarms(),
-          refreshAllCattle()
-        ]);
-      };
-      
-      refreshData();
+      // Solo refrescar ganado, el useEffect se encargará de cargar las granjas
+      refreshAllCattle();
     }, []) // Sin dependencias para evitar bucle
   );
 
@@ -173,6 +167,7 @@ export default function FarmsPage() {
       
       console.log(`Se han cargado ${response.length} granjas`);
       console.log('Datos de ganado disponibles:', allCattleWithFarmInfo?.length || 0, 'animales');
+      console.log('Estado de carga de ganado:', cattleLoading ? 'Cargando...' : 'Listo');
       
       // Procesar y validar cada granja, calculando la cantidad de ganado desde allCattleWithFarmInfo
       const processedFarms = response.map((farm: any) => {

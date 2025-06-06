@@ -295,14 +295,13 @@ export default function AddCattlePage() {
         });
       } else {
         // Crear nuevo ganado usando Supabase directo (método original que funcionaba)
-        // Primero crear la información veterinaria
+        // Crear un registro básico de información veterinaria (requerido por la BD)
         const { data: infoVetData, error: infoVetError } = await supabase
           .from('informacion_veterinaria')
           .insert({
-            fecha_tratamiento: new Date().toISOString(),
-            diagnostico: healthStatus === 'Enfermo' ? 'Requiere revisión' : 'Sin diagnóstico',
+            diagnostico: '',
             tratamiento: '',
-            nota: notes || ''
+            nota: ''
           })
           .select()
           .single();

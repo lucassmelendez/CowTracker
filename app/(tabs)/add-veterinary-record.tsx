@@ -385,17 +385,6 @@ export default function AddVeterinaryRecordPage() {
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
             
-            {isEditMode && (
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={handleDelete}
-                disabled={submitting}
-              >
-                <Ionicons name="trash" size={16} color="#fff" />
-                <Text style={styles.deleteButtonText}>Eliminar</Text>
-              </TouchableOpacity>
-            )}
-            
             <TouchableOpacity
               style={[
                 styles.submitButton,
@@ -413,6 +402,18 @@ export default function AddVeterinaryRecordPage() {
               )}
             </TouchableOpacity>
           </View>
+
+          {/* Botón de eliminar solo en modo edición */}
+          {isEditMode && (
+            <TouchableOpacity
+              style={styles.deleteButtonFull}
+              onPress={handleDelete}
+              disabled={submitting}
+            >
+              <Ionicons name="trash" size={16} color="#fff" />
+              <Text style={styles.deleteButtonText}>Eliminar Tratamiento</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
       <ModalComponent />
@@ -550,13 +551,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  deleteButton: {
+  deleteButtonFull: {
     backgroundColor: '#e74c3c',
     paddingVertical: 12,
-    paddingHorizontal: 15,
+    paddingHorizontal: 20,
     borderRadius: 5,
-    flex: 1,
-    marginHorizontal: 5,
+    marginTop: 10,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',

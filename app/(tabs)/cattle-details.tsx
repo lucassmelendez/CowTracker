@@ -24,7 +24,7 @@ export default function CattleDetailPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = params?.id;
-  const { userInfo, isAdmin, isTrabajador } = useAuth();
+  const { userInfo, isAdmin, isTrabajador, isVeterinario } = useAuth();
   const { showSuccess, showError, ModalComponent } = useCustomModal();
   
   const [cattle, setCattle] = useState<any>(null);
@@ -345,6 +345,19 @@ export default function CattleDetailPage() {
             >
               <Ionicons name="trash-outline" size={20} color="#fff" />
               <Text style={styles.buttonText}>Eliminar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Botón Agregar Tratamiento - Solo para veterinarios */}
+        {isVeterinario() && (
+          <View style={styles.veterinaryButtonContainer}>
+            <TouchableOpacity 
+              style={styles.addTreatmentButton}
+              onPress={() => router.push(`/add-veterinary-record?id=${cattleId}`)}
+            >
+              <Ionicons name="medical" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Agregar Tratamiento Médico</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -685,5 +698,17 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     backgroundColor: '#e0e0e0',
+  },
+  veterinaryButtonContainer: {
+    padding: 10,
+    marginBottom: 30,
+  },
+  addTreatmentButton: {
+    backgroundColor: '#27ae60',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 8,
   },
 }); 

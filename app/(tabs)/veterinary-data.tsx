@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../lib/services/api';
 import { useFarm } from '../../components/FarmContext';
+import { useAuth } from '../../components/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function VeterinaryDataPage() {
@@ -22,6 +23,7 @@ export default function VeterinaryDataPage() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const router = useRouter();
   const { selectedFarm } = useFarm();
+  const { isVeterinario } = useAuth();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -275,10 +277,6 @@ export default function VeterinaryDataPage() {
 
         <View style={styles.cattleInfo}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Raza:</Text>
-            <Text style={styles.infoValue}>{item.breed || item.raza || 'No especificada'}</Text>
-          </View>
-          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Género:</Text>
             <Text style={styles.infoValue}>
               {getGenderText(item)}
@@ -287,10 +285,6 @@ export default function VeterinaryDataPage() {
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Estado de salud:</Text>
             <Text style={styles.infoValue}>{item.healthStatus || (item.estado_salud && item.estado_salud.descripcion) || 'No especificado'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Granja:</Text>
-            <Text style={styles.infoValue}>{getFarmName()}</Text>
           </View>
         </View>
         
@@ -381,18 +375,21 @@ export default function VeterinaryDataPage() {
           </View>
         )}
         
-        <TouchableOpacity
-          style={styles.addRecordButton}
-          onPress={() => navigateToAddVeterinaryRecord(item)}
-        >
-          <Ionicons name="medical" size={16} color="#fff" />
-          <Text style={styles.addRecordButtonText}>
-            {hasVeterinaryInfo 
-              ? 'Actualizar registro médico'
-              : 'Agregar registro médico'
-            }
-          </Text>
-        </TouchableOpacity>
+        {/* Botón de agregar registro médico - Solo para veterinarios */}
+        {isVeterinario() && (
+          <TouchableOpacity
+            style={styles.addRecordButton}
+            onPress={() => navigateToAddVeterinaryRecord(item)}
+          >
+            <Ionicons name="medical" size={16} color="#fff" />
+            <Text style={styles.addRecordButtonText}>
+              {hasVeterinaryInfo 
+                ? 'Actualizar registro médico'
+                : 'Agregar registro médico'
+              }
+            </Text>
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     );
   };
@@ -401,7 +398,10 @@ export default function VeterinaryDataPage() {
     if (selectedFarm && selectedFarm._id !== 'all-farms') {
       return `Granja: ${selectedFarm.name}`;
     }
-    return "Seleccione un ganado para ver o agregar registros veterinarios";
+    if (isVeterinario()) {
+      return "Seleccione un ganado para ver o agregar registros veterinarios";
+    }
+    return "Visualización de registros veterinarios";
   };
 
   if (loading && !refreshing && !dataLoaded) {

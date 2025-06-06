@@ -21,6 +21,7 @@ export default function AddVeterinaryRecordPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cattleId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+  const isEditMode = params?.mode === 'edit';
   const { showSuccess, showError, ModalComponent } = useCustomModal();
   
   // Validar que tengamos un cattleId válido
@@ -45,15 +46,20 @@ export default function AddVeterinaryRecordPage() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   
-  // Cargar datos del ganado
+  // Cargar datos del ganado y datos existentes si está en modo edición
   useEffect(() => {
-    const loadCattleData = async () => {
+    const loadData = async () => {
       if (!cattleId) return;
       try {
         setLoading(true);
         const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
         const data = await api.cattle.getById(id);
         setCattle(data);
+
+        // Si está en modo edición, cargar los datos existentes desde los parámetros
+        if (isEditMode) {
+          loadExistingData();
+        }
       } catch (error) {
         console.error('Error loading cattle data:', error);
         showError('Error', 'No se pudo cargar la información del ganado');
@@ -62,8 +68,29 @@ export default function AddVeterinaryRecordPage() {
       }
     };
 
-    loadCattleData();
-  }, [cattleId]);
+    loadData();
+  }, [cattleId, isEditMode]);
+
+  // Función para cargar datos existentes desde los parámetros de URL
+  const loadExistingData = () => {
+    if (params.diagnostico) setDiagnostico(Array.isArray(params.diagnostico) ? params.diagnostico[0] : params.diagnostico);
+    if (params.tratamiento) setTratamiento(Array.isArray(params.tratamiento) ? params.tratamiento[0] : params.tratamiento);
+    if (params.nota) setNota(Array.isArray(params.nota) ? params.nota[0] : params.nota);
+    if (params.medicamento) setMedicamento(Array.isArray(params.medicamento) ? params.medicamento[0] : params.medicamento);
+    if (params.dosis) setDosis(Array.isArray(params.dosis) ? params.dosis[0] : params.dosis);
+    if (params.cantidad_horas) setCantidadHoras(Array.isArray(params.cantidad_horas) ? params.cantidad_horas[0] : params.cantidad_horas);
+    
+    // Cargar fechas
+    if (params.fecha_ini_tratamiento) {
+      const fechaInicio = Array.isArray(params.fecha_ini_tratamiento) ? params.fecha_ini_tratamiento[0] : params.fecha_ini_tratamiento;
+      setFechaTratamiento(new Date(fechaInicio));
+    }
+    
+    if (params.fecha_fin_tratamiento) {
+      const fechaFin = Array.isArray(params.fecha_fin_tratamiento) ? params.fecha_fin_tratamiento[0] : params.fecha_fin_tratamiento;
+      setFechaFinTratamiento(new Date(fechaFin));
+    }
+  };
   
   const handleSubmit = async () => {
     if (!cattleId) {
@@ -107,7 +134,7 @@ export default function AddVeterinaryRecordPage() {
       
       showSuccess(
         'Éxito',
-        'Registro veterinario agregado correctamente',
+        isEditMode ? 'Registro veterinario actualizado correctamente' : 'Registro veterinario agregado correctamente',
         () => router.back()
       );
     } catch (error: any) {
@@ -196,7 +223,9 @@ export default function AddVeterinaryRecordPage() {
     >
       <ScrollView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Agregar Registro Veterinario</Text>
+          <Text style={styles.title}>
+            {isEditMode ? 'Editar Registro Veterinario' : 'Agregar Registro Veterinario'}
+          </Text>
           <Text style={styles.subtitle}>
             {cattle.nombre || cattle.name || cattle.numero_identificacion || cattle.identificationNumber || 'Sin identificación'}
           </Text>
@@ -350,7 +379,9 @@ export default function AddVeterinaryRecordPage() {
               {submitting ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.submitButtonText}>Guardar</Text>
+                <Text style={styles.submitButtonText}>
+                  {isEditMode ? 'Actualizar' : 'Guardar'}
+                </Text>
               )}
             </TouchableOpacity>
           </View>

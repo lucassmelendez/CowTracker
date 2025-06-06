@@ -108,6 +108,28 @@ export default function VeterinaryDataPage() {
     router.push(`/add-veterinary-record?id=${cattleId}`);
   };
 
+  const navigateToEditVeterinaryRecord = (cattle: any) => {
+    const cattleId = getReliableCattleId(cattle);
+    // Pasar los datos existentes como parámetros de consulta
+    const vetInfo = getVeterinaryInfo(cattle).vetInfo;
+    
+    const params = new URLSearchParams({
+      id: cattleId,
+      mode: 'edit',
+      // Pasar los datos existentes
+      ...(vetInfo.fecha_ini_tratamiento && { fecha_ini_tratamiento: vetInfo.fecha_ini_tratamiento }),
+      ...(vetInfo.fecha_fin_tratamiento && { fecha_fin_tratamiento: vetInfo.fecha_fin_tratamiento }),
+      ...(vetInfo.diagnostico && { diagnostico: vetInfo.diagnostico }),
+      ...(vetInfo.tratamiento && { tratamiento: vetInfo.tratamiento }),
+      ...(vetInfo.nota && { nota: vetInfo.nota }),
+      ...(vetInfo.medicamento && { medicamento: vetInfo.medicamento }),
+      ...(vetInfo.dosis && { dosis: vetInfo.dosis }),
+      ...(vetInfo.cantidad_horas && { cantidad_horas: vetInfo.cantidad_horas.toString() }),
+    });
+    
+    router.push(`/add-veterinary-record?${params.toString()}`);
+  };
+
   const navigateToCattleDetail = (cattle: any) => {
     const cattleId = getReliableCattleId(cattle);
     router.push({
@@ -375,20 +397,35 @@ export default function VeterinaryDataPage() {
           </View>
         )}
         
-        {/* Botón de agregar registro médico - Solo para veterinarios */}
+        {/* Botones de acción - Solo para veterinarios */}
         {isVeterinario() && (
-          <TouchableOpacity
-            style={styles.addRecordButton}
-            onPress={() => navigateToAddVeterinaryRecord(item)}
-          >
-            <Ionicons name="medical" size={16} color="#fff" />
-            <Text style={styles.addRecordButtonText}>
-              {hasVeterinaryInfo 
-                ? 'Actualizar registro médico'
-                : 'Agregar registro médico'
-              }
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              style={styles.addRecordButton}
+              onPress={() => navigateToAddVeterinaryRecord(item)}
+            >
+              <Ionicons name="medical" size={16} color="#fff" />
+              <Text style={styles.addRecordButtonText}>
+                {hasVeterinaryInfo 
+                  ? 'Actualizar registro médico'
+                  : 'Agregar registro médico'
+                }
+              </Text>
+            </TouchableOpacity>
+
+            {/* Botón de editar - Solo si ya tiene información veterinaria */}
+            {hasVeterinaryInfo && (
+              <TouchableOpacity
+                style={styles.editRecordButton}
+                onPress={() => navigateToEditVeterinaryRecord(item)}
+              >
+                <Ionicons name="create-outline" size={16} color="#fff" />
+                <Text style={styles.editRecordButtonText}>
+                  Editar información
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </TouchableOpacity>
     );
@@ -610,19 +647,6 @@ const styles = StyleSheet.create({
     color: '#333333',
     flex: 1,
   },
-  addRecordButton: {
-    backgroundColor: '#27ae60',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-    borderRadius: 5,
-  },
-  addRecordButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginLeft: 5,
-  },
   veterinaryInfoContainer: {
     backgroundColor: '#f9f9f9',
     padding: 12,
@@ -649,5 +673,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#777777',
     fontStyle: 'italic',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+  },
+  addRecordButton: {
+    backgroundColor: '#27ae60',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+  },
+  addRecordButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 5,
+    fontSize: 12,
+  },
+  editRecordButton: {
+    backgroundColor: '#3498db',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+  },
+  editRecordButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 5,
+    fontSize: 12,
   },
 });

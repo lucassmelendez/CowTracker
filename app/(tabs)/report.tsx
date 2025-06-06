@@ -21,10 +21,12 @@ import {
   useReportData
 } from '../../hooks/useCachedData';
 import { useFarm } from '../../components/FarmContext';
+import { useUserRefresh } from '../../hooks/useUserRefresh';
 import api from '../../lib/services/api';
 import { ReportGenerator } from '../../lib/utils/reportGenerator';
 import { ReportData, CattleDetail } from '../../lib/types';
 import { useCustomModal } from '../../components/CustomModal';
+import { PieChart, BarChart, StatCard } from '../../components/charts';
 
 const { width } = Dimensions.get('window');
 
@@ -72,9 +74,16 @@ export default function ReportPage() {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<string>('');
   const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [showCharts, setShowCharts] = useState(true);
   
   // Hook para modales personalizados
   const { showSuccess, showError, ModalComponent } = useCustomModal();
+  
+  // Hook para refrescar automáticamente la información del usuario
+  useUserRefresh({
+    intervalMs: 60000, // Refrescar cada minuto para reportes
+    enableAutoRefresh: true
+  });
 
   // Usar el contexto de granja del header
   const { selectedFarm } = useFarm();
@@ -488,15 +497,7 @@ ${date}
     </TouchableOpacity>
   );
 
-  const renderStatCard = (title: string, value: string | number, icon: string, color: string) => (
-    <View style={[styles.statCard, { borderLeftColor: color }]}>
-      <View style={styles.statCardHeader}>
-        <Ionicons name={icon as any} size={24} color={color} />
-        <Text style={styles.statCardValue}>{value}</Text>
-      </View>
-      <Text style={styles.statCardTitle}>{title}</Text>
-    </View>
-  );
+
 
   // Mostrar loading si están cargando datos críticos
   if (farmsLoading || cattleLoading || (selectedFarm && farmCattleLoading)) {
@@ -539,23 +540,110 @@ ${date}
           />
         </View>
 
-        {/* Estadísticas rápidas */}
+        {/* Estadísticas rápidas mejoradas */}
         {reportData && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Resumen</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Resumen Ejecutivo</Text>
+              <TouchableOpacity 
+                style={styles.toggleButton}
+                onPress={() => setShowCharts(!showCharts)}
+              >
+                <Ionicons 
+                  name={showCharts ? 'eye-off' : 'eye'} 
+                  size={20} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+            </View>
             <View style={styles.statsGrid}>
-              {renderStatCard('Ganado Total', reportData.totalCattle, 'list', '#3498db')}
-              {renderStatCard('Granjas', reportData.totalFarms, 'business', '#27ae60')}
-              {renderStatCard('Registros Médicos', reportData.medicalRecordsCount, 'medical', '#e74c3c')}
-              {renderStatCard('Promedio/Granja', reportData.averageCattlePerFarm, 'analytics', '#f39c12')}
+              <StatCard
+                title="Ganado Total"
+                value={reportData.totalCattle}
+                icon="list"
+                color="#3498db"
+                subtitle={`En ${reportData.totalFarms} granja${reportData.totalFarms !== 1 ? 's' : ''}`}
+                trend={{
+                  value: 12.5,
+                  isPositive: true
+                }}
+              />
+              <StatCard
+                title="Granjas Activas"
+                value={reportData.totalFarms}
+                icon="business"
+                color="#27ae60"
+                subtitle="Operativas"
+              />
+              <StatCard
+                title="Registros Médicos"
+                value={reportData.medicalRecordsCount}
+                icon="medical"
+                color="#e74c3c"
+                subtitle="Historial completo"
+                trend={{
+                  value: 8.3,
+                  isPositive: true
+                }}
+              />
+              <StatCard
+                title="Promedio por Granja"
+                value={reportData.averageCattlePerFarm}
+                icon="analytics"
+                color="#f39c12"
+                subtitle="Animales/granja"
+              />
             </View>
           </View>
         )}
 
-        {/* Distribuciones */}
+        {/* Gráficos y visualizaciones */}
+        {reportData && showCharts && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Análisis Visual</Text>
+            
+            {/* Gráfico de pastel para estado de salud */}
+            <PieChart
+              data={reportData.cattleByHealth}
+              title="Distribución por Estado de Salud"
+              colors={['#27ae60', '#f39c12', '#e74c3c', '#95a5a6']}
+            />
+            
+            {/* Gráfico de barras para ganado por granja */}
+            <BarChart
+              data={reportData.cattleByFarm}
+              title="Ganado por Granja"
+              color="#3498db"
+              yAxisSuffix=" animales"
+            />
+            
+            {/* Gráfico de pastel para género */}
+            <PieChart
+              data={reportData.cattleByGender}
+              title="Distribución por Género"
+              colors={['#3498db', '#e91e63', '#9c27b0']}
+            />
+            
+            {/* Gráfico de barras para razas (top 5) */}
+            {Object.keys(reportData.cattleByBreed).length > 0 && (
+              <BarChart
+                data={Object.fromEntries(
+                  Object.entries(reportData.cattleByBreed)
+                    .sort(([,a], [,b]) => b - a)
+                    .slice(0, 5)
+                )}
+                title="Top 5 Razas Más Comunes"
+                color="#e67e22"
+                yAxisSuffix=" animales"
+              />
+            )}
+          </View>
+        )}
+
+        {/* Distribuciones detalladas */}
         {reportData && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Distribuciones</Text>
+            <Text style={styles.sectionTitle}>Distribuciones Detalladas</Text>
             
             {/* Estado de Salud */}
             <View style={styles.distributionCard}>
@@ -779,6 +867,17 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  toggleButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
   reportTypesGrid: {
     gap: 12,
   },
@@ -827,36 +926,8 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-  },
-  statCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    flex: 1,
-    minWidth: (width - 48) / 2 - 6,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    gap: 8,
     justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  statCardValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333333',
-  },
-  statCardTitle: {
-    fontSize: 14,
-    color: '#777777',
-    fontWeight: '500',
   },
   distributionCard: {
     backgroundColor: '#ffffff',

@@ -87,10 +87,10 @@ export default function AddVeterinaryRecordPage() {
         tratamiento: tratamiento.trim() || '',
         nota: nota.trim() || '',
         fecha_tratamiento: fechaTratamiento.toISOString(),
-        fecha_fin_tratamiento: fechaFinTratamiento ? fechaFinTratamiento.toISOString() : null,
+        fecha_fin_tratamiento: fechaFinTratamiento ? fechaFinTratamiento.toISOString() : undefined,
         medicamento: medicamento.trim() || '',
         dosis: dosis.trim() || '',
-        cantidad_horas: cantidadHoras.trim() ? parseInt(cantidadHoras) : null,
+        cantidad_horas: cantidadHoras.trim() ? parseInt(cantidadHoras) : undefined,
         // Campos alternativos que el backend puede usar
         descripcion: diagnostico.trim() || '',
         notas: nota.trim() || ''

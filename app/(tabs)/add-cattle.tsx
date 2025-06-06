@@ -55,11 +55,7 @@ export default function AddCattlePage() {
   const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
 
   // Estado para el manejo de errores y advertencias
-  const [showCattleWarning, setShowCattleWarning] = useState(false);
-  const [cattleCount, setCattleCount] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [priceDisplay] = useState('$10.000');
 
   // Estados del formulario
   const [identifier, setIdentifier] = useState('');
@@ -161,74 +157,9 @@ export default function AddCattlePage() {
     }
   };
 
-  // Verificar el número de vacas del usuario
-  const checkCattleCount = async (): Promise<boolean> => {
-    try {
-      // Primero verificar si el usuario es premium
-      const { data: userData, error: userError } = await supabase
-        .from('usuario')
-        .select('id_premium')
-        .eq('id_autentificar', userInfo?.uid)
-        .single();
-
-      if (userError) throw userError;
-
-      // Obtener el ID numérico del usuario
-      const { data: userNumericData, error: userNumericError } = await supabase
-        .from('usuario')
-        .select('id_usuario')
-        .eq('id_autentificar', userInfo?.uid)
-        .single();
-
-      if (userNumericError) throw userNumericError;
-
-      // Obtener las granjas del usuario a través de la tabla usuario_finca
-      const { data: userFarms, error: farmsError } = await supabase
-        .from('usuario_finca')
-        .select('id_finca')
-        .eq('id_usuario', userNumericData.id_usuario);
-
-      if (farmsError) throw farmsError;
-
-      if (!userFarms || userFarms.length === 0) {
-        // Si el usuario no tiene granjas, no tiene ganado
-        setCattleCount(0);
-        return true;
-      }
-
-      // Extraer los IDs de las granjas
-      const farmIds = userFarms.map((farm: any) => farm.id_finca);
-
-      // Obtener el conteo de ganado en las granjas del usuario
-      const { data: cattle, error: cattleError } = await supabase
-        .from('ganado')
-        .select('id_ganado')
-        .in('id_finca', farmIds);
-      
-      if (cattleError) throw cattleError;
-      
-      const count = cattle ? cattle.length : 0;
-      setCattleCount(count);
-      
-      // Si no es premium (id_premium !== 2) y ya tiene 2 o más cabezas de ganado, mostrar advertencia
-      if (userData?.id_premium !== 2 && count >= 2 && !isEditMode) {
-        setShowCattleWarning(true);
-        // Retornar false para evitar que continúe con el registro
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error al verificar el número de vacas:', error);
-      // En caso de error, permitir continuar para no bloquear al usuario
-      return true;
-    }
-  };
-
   useEffect(() => {
     if (userInfo) {
       loadFarms();
-      checkCattleCount();
     }
   }, [userInfo]);
   
@@ -316,12 +247,6 @@ export default function AddCattlePage() {
 
   const handleSave = async () => {
     try {
-      // Verificar límite de ganado antes de continuar
-      const canAddCattle = await checkCattleCount();
-      if (!canAddCattle) {
-        return;
-      }
-
       // Validaciones con mensajes específicos
       if (!identifier) {
         showError('Campo requerido', 'Por favor, ingresa un número de identificación para el ganado');
@@ -432,23 +357,6 @@ export default function AddCattlePage() {
       }
       
       showError('Error', errorMessage);
-    }
-  };
-
-  // Función para procesar el pago premium (simplificada)
-  const handlePremiumUpgrade = async () => {
-    try {
-      setIsProcessingPayment(true);
-      
-      // Redirigir a la página de premium
-      setShowCattleWarning(false);
-      router.push('/premium/activate');
-      
-    } catch (error) {
-      console.error('Error al procesar el pago premium:', error);
-      showError('Error', 'No se pudo procesar la actualización a Premium. Inténtalo de nuevo.');
-    } finally {
-      setIsProcessingPayment(false);
     }
   };
 
@@ -708,103 +616,6 @@ export default function AddCattlePage() {
             </View>
           </View>
         </Modal>
-        
-        {/* Modal de advertencia de cantidad de ganado */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={showCattleWarning}
-          onRequestClose={() => setShowCattleWarning(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.premiumModalContent}>
-              {/* Header con gradiente */}
-              <View style={styles.premiumModalHeader}>
-                <View style={styles.iconContainer}>
-                  <Ionicons name="diamond" size={50} color="#fff" />
-                </View>
-                <Text style={styles.premiumModalTitle}>
-                  ¡Actualiza a Premium!
-                </Text>
-                <Text style={styles.premiumModalSubtitle}>
-                  Desbloquea todo el potencial de CowTracker
-                </Text>
-              </View>
-              
-              {/* Contenido principal */}
-              <View style={styles.premiumModalBody}>
-                <View style={styles.limitWarning}>
-                  <Ionicons name="warning" size={24} color="#f39c12" />
-                  <Text style={styles.limitText}>
-                    Has alcanzado el límite de <Text style={styles.boldText}>2 animales</Text> en tu cuenta gratuita. 
-                    Actualmente tienes <Text style={styles.boldText}>{cattleCount} animales</Text> registrados.
-                  </Text>
-                </View>
-
-                <Text style={styles.benefitsTitle}>
-                  Con Premium obtienes:
-                </Text>
-
-                <View style={styles.benefitsList}>
-                  <View style={styles.benefitItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
-                    <Text style={styles.benefitText}>Registro ilimitado de ganado</Text>
-                  </View>
-                  
-                  <View style={styles.benefitItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
-                    <Text style={styles.benefitText}>Reportes avanzados y estadísticas</Text>
-                  </View>
-                  
-                  <View style={styles.benefitItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
-                    <Text style={styles.benefitText}>Exportación de datos a Excel/PDF</Text>
-                  </View>
-                  
-                  <View style={styles.benefitItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
-                    <Text style={styles.benefitText}>Soporte prioritario 24/7</Text>
-                  </View>
-                  
-                  <View style={styles.benefitItem}>
-                    <Ionicons name="checkmark-circle" size={20} color="#27ae60" />
-                    <Text style={styles.benefitText}>Sincronización en la nube</Text>
-                  </View>
-                </View>
-
-                <View style={styles.priceContainer}>
-                  <Text style={styles.priceText}>{priceDisplay}</Text>
-                  <Text style={styles.priceSubtext}>Pago único - Sin suscripciones</Text>
-                </View>
-              </View>
-              
-              {/* Botones */}
-              <View style={styles.premiumModalButtons}>
-                <TouchableOpacity
-                  style={[styles.upgradeButton, isProcessingPayment && styles.disabledButton]}
-                  onPress={handlePremiumUpgrade}
-                  disabled={isProcessingPayment}
-                >
-                  {isProcessingPayment ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <>
-                      <Ionicons name="diamond" size={20} color="#fff" style={{marginRight: 8}} />
-                      <Text style={styles.upgradeButtonText}>Actualizar a Premium</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={styles.laterButton}
-                  onPress={() => setShowCattleWarning(false)}
-                >
-                  <Text style={styles.laterButtonText}>Tal vez más tarde</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
       </View>
       
       {/* Modal personalizado */}
@@ -1017,144 +828,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     marginHorizontal: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  premiumModalContent: {
-    width: '90%',
-    maxWidth: 400,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  premiumModalHeader: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 30,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  premiumModalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  premiumModalSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-  },
-  premiumModalBody: {
-    padding: 24,
-  },
-  limitWarning: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#fff3cd',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#f39c12',
-  },
-  limitText: {
-    fontSize: 15,
-    marginLeft: 12,
-    color: '#856404',
-    flex: 1,
-    lineHeight: 22,
-  },
-  boldText: {
-    fontWeight: 'bold',
-    color: '#e67e22',
-  },
-  benefitsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#2c3e50',
-    textAlign: 'center',
-  },
-  benefitsList: {
-    marginBottom: 20,
-  },
-  benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingLeft: 8,
-  },
-  benefitText: {
-    fontSize: 15,
-    marginLeft: 12,
-    color: '#34495e',
-    flex: 1,
-  },
-  priceContainer: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  priceText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#27ae60',
-    marginBottom: 4,
-  },
-  priceSubtext: {
-    fontSize: 14,
-    color: '#7f8c8d',
-  },
-  premiumModalButtons: {
-    padding: 24,
-    paddingTop: 0,
-    gap: 12,
-  },
-  upgradeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: '#27ae60',
-  },
-  upgradeButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  laterButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#bdc3c7',
-    backgroundColor: '#fff',
-  },
-  laterButtonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#7f8c8d',
-  },
-  disabledButton: {
-    opacity: 0.6,
   },
 });

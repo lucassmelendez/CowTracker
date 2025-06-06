@@ -566,53 +566,6 @@ ${date}
           </View>
         )}
 
-        {/* Distribuciones detalladas */}
-        {reportData && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Distribuciones Detalladas</Text>
-            
-            {/* Estado de Salud */}
-            <View style={styles.distributionCard}>
-              <View style={styles.distributionHeader}>
-                <Ionicons name="medical" size={20} color="#e74c3c" />
-                <Text style={styles.distributionTitle}>Estado de Salud</Text>
-              </View>
-              {Object.entries(reportData.cattleByHealth).map(([health, count]) => (
-                <View key={health} style={styles.distributionItem}>
-                  <Text style={styles.distributionLabel}>{health}</Text>
-                  <View style={styles.distributionValueContainer}>
-                    <Text style={styles.distributionValue}>{count}</Text>
-                    <Text style={styles.distributionPercentage}>
-                      ({((count/reportData.totalCattle)*100).toFixed(1)}%)
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-
-            {/* Género */}
-            <View style={styles.distributionCard}>
-              <View style={styles.distributionHeader}>
-                <Ionicons name="people" size={20} color="#9b59b6" />
-                <Text style={styles.distributionTitle}>Género</Text>
-              </View>
-              {Object.entries(reportData.cattleByGender).map(([gender, count]) => (
-                <View key={gender} style={styles.distributionItem}>
-                  <Text style={styles.distributionLabel}>{gender}</Text>
-                  <View style={styles.distributionValueContainer}>
-                    <Text style={styles.distributionValue}>{count}</Text>
-                    <Text style={styles.distributionPercentage}>
-                      ({((count/reportData.totalCattle)*100).toFixed(1)}%)
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-
-
-          </View>
-        )}
-
         {/* Botones de acción */}
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity

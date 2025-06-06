@@ -16,7 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../../lib/services/api';
-import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
+import { useUserFarms, useCacheManager, useAllCattleWithFarmInfo } from '../../hooks/useCachedData';
+import { CattleItem } from '../../lib/types';
 
 interface Farm {
   _id: string;
@@ -34,6 +35,14 @@ export default function FarmsPage() {
   const { invalidateCache } = useCacheManager();
   const lastRefreshRef = useRef<number>(0);
   const REFRESH_COOLDOWN = 2000; // 2 segundos de cooldown entre refreshes
+
+  // Hook para obtener todo el ganado con información de granja
+  const { 
+    data: allCattleWithFarmInfo, 
+    loading: cattleLoading, 
+    error: cattleError,
+    refresh: refreshAllCattle 
+  } = useAllCattleWithFarmInfo();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,6 +77,33 @@ export default function FarmsPage() {
     loadFarms();
   }, []);
 
+  // Efecto para recalcular las granjas cuando cambien los datos de ganado
+  useEffect(() => {
+    if (allCattleWithFarmInfo && farms.length > 0) {
+      console.log('Recalculando cantidad de ganado por granja...');
+      const updatedFarms = farms.map(farm => {
+        const cattleCount = allCattleWithFarmInfo.filter((cattle: any) => {
+          const cattleFarmId = cattle.id_finca || cattle.farmId || cattle.finca?._id || cattle.finca?.id_finca;
+          const cattleFarmName = cattle.finca?.nombre || cattle.farmName;
+          
+          return (cattleFarmId && cattleFarmId.toString() === farm._id.toString()) ||
+                 (cattleFarmName && cattleFarmName === farm.name);
+        }).length;
+        
+        if (cattleCount !== farm.cattleCount) {
+          console.log(`Actualizando ${farm.name}: ${farm.cattleCount} -> ${cattleCount} animales`);
+        }
+        
+        return {
+          ...farm,
+          cattleCount: cattleCount
+        };
+      });
+      
+      setFarms(updatedFarms);
+    }
+  }, [allCattleWithFarmInfo]);
+
   // Función para refrescar con invalidación de caché
   const onRefresh = async () => {
     console.log('Refrescando granjas manualmente...');
@@ -77,7 +113,11 @@ export default function FarmsPage() {
       await invalidateCache('farms');
       await invalidateCache('cattle');
       
-      await loadFarms();
+      // Refrescar tanto granjas como ganado
+      await Promise.all([
+        loadFarms(),
+        refreshAllCattle()
+      ]);
       
       console.log('Datos de granjas refrescados desde el servidor');
     } catch (error) {
@@ -102,7 +142,14 @@ export default function FarmsPage() {
       lastRefreshRef.current = now;
       
       // Refrescar inmediatamente sin esperar
-      loadFarms();
+      const refreshData = async () => {
+        await Promise.all([
+          loadFarms(),
+          refreshAllCattle()
+        ]);
+      };
+      
+      refreshData();
     }, []) // Sin dependencias para evitar bucle
   );
 
@@ -125,9 +172,10 @@ export default function FarmsPage() {
       }
       
       console.log(`Se han cargado ${response.length} granjas`);
+      console.log('Datos de ganado disponibles:', allCattleWithFarmInfo?.length || 0, 'animales');
       
-      // Procesar y validar cada granja, obteniendo la cantidad real de ganado
-      const processedFarms = await Promise.all(response.map(async (farm: any) => {
+      // Procesar y validar cada granja, calculando la cantidad de ganado desde allCattleWithFarmInfo
+      const processedFarms = response.map((farm: any) => {
         const farmId = farm._id || farm.id_finca || farm.id;
         const farmName = farm.name || farm.nombre;
         
@@ -138,16 +186,21 @@ export default function FarmsPage() {
           console.warn('Granja sin nombre encontrada:', farm);
         }
         
-        // Obtener la cantidad real de ganado para esta granja
+        // Contar ganado para esta granja desde allCattleWithFarmInfo
         let cattleCount = 0;
-        try {
-          const cattle = await api.farms.getCattle(farmId);
-          cattleCount = Array.isArray(cattle) ? cattle.length : 0;
-          console.log(`Granja ${farmName}: ${cattleCount} animales`);
-        } catch (cattleError) {
-          console.warn(`Error al obtener ganado para granja ${farmName}:`, cattleError);
-          cattleCount = 0;
+        if (allCattleWithFarmInfo && Array.isArray(allCattleWithFarmInfo)) {
+          cattleCount = allCattleWithFarmInfo.filter((cattle: any) => {
+            // Intentar diferentes formas de identificar la granja
+            const cattleFarmId = cattle.id_finca || cattle.farmId || cattle.finca?._id || cattle.finca?.id_finca;
+            const cattleFarmName = cattle.finca?.nombre || cattle.farmName;
+            
+            // Comparar por ID o por nombre
+            return (cattleFarmId && cattleFarmId.toString() === farmId.toString()) ||
+                   (cattleFarmName && cattleFarmName === farmName);
+          }).length;
         }
+        
+        console.log(`Granja ${farmName} (ID: ${farmId}): ${cattleCount} animales`);
         
         return {
           ...farm,
@@ -156,9 +209,9 @@ export default function FarmsPage() {
           // Asegurar que tenemos todas las propiedades necesarias
           size: farm.size || farm.tamano || 0,
           location: farm.location || farm.ubicacion || 'Ubicación no especificada',
-          cattleCount: cattleCount // Usar la cantidad real obtenida
+          cattleCount: cattleCount // Usar la cantidad calculada desde allCattleWithFarmInfo
         };
-      }));
+      });
       
       setFarms(processedFarms);
     } catch (error: any) {

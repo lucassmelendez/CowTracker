@@ -23,31 +23,11 @@ interface Farm {
   cattleCount?: number;
 }
 
-interface Worker {
-  _id: string;
-  name: string;
-  email?: string;
-}
-
-interface Veterinarian {
-  _id: string;
-  name: string;
-  email?: string;
-}
-
 export default function FarmsPage() {
   const router = useRouter();
   const [farms, setFarms] = useState<Farm[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
-  const [farmWorkers, setFarmWorkers] = useState<Worker[]>([]);
-  const [farmVeterinarians, setFarmVeterinarians] = useState<Veterinarian[]>([]);
-  const [farmCattle, setFarmCattle] = useState<any[]>([]);
-  const [availableWorkers, setAvailableWorkers] = useState<Worker[]>([]);
-  const [availableVeterinarians, setAvailableVeterinarians] = useState<Veterinarian[]>([]);
-  const [managingStaff, setManagingStaff] = useState(false);
-  const [loadingStaff, setLoadingStaff] = useState(false);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -225,139 +205,6 @@ export default function FarmsPage() {
     });
     setModalVisible(true);
   };
-
-  const handleManageStaff = async (farm: Farm) => {
-    setSelectedFarm(farm);
-    setLoadingStaff(true);
-    
-    try {
-      // Cargar trabajadores y veterinarios de la granja
-      const workers = await api.farms.getWorkers(farm._id);
-      const vets = await api.farms.getVeterinarians(farm._id);
-      
-      // Mapear UserInfo a Worker/Veterinarian con _id
-      setFarmWorkers(Array.isArray(workers) ? workers.map((worker: any) => ({
-        _id: worker.id || worker._id || worker.uid || `worker-${Math.random()}`,
-        name: worker.name || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: worker.email || 'Sin email'
-      })) : []);
-      
-      setFarmVeterinarians(Array.isArray(vets) ? vets.map((vet: any) => ({
-        _id: vet.id || vet._id || vet.uid || `vet-${Math.random()}`,
-        name: vet.name || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: vet.email || 'Sin email'
-      })) : []);
-      
-      // Cargar todos los usuarios y filtrar por rol
-      const allUsers = await api.users.getAll();
-      const allWorkers = Array.isArray(allUsers) ? allUsers.filter((user: any) => 
-        user.rol?.nombre_rol === 'trabajador' || user.role === 'trabajador'
-      ) : [];
-      const allVets = Array.isArray(allUsers) ? allUsers.filter((user: any) => 
-        user.rol?.nombre_rol === 'veterinario' || user.role === 'veterinario'
-      ) : [];
-      
-      // Filtrar los que no están ya asignados a esta granja
-      setAvailableWorkers(allWorkers.filter((worker: any) =>
-        !Array.isArray(workers) || !workers.some((w: any) => (w.id || w._id || w.uid) === (worker.id || worker._id || worker.uid))
-      ).map((worker: any) => ({
-        _id: worker.id || worker._id || worker.uid || `worker-${Math.random()}`,
-        name: worker.name || `${worker.primer_nombre || ''} ${worker.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: worker.email || 'Sin email'
-      })));
-      
-      setAvailableVeterinarians(allVets.filter((vet: any) =>
-        !Array.isArray(vets) || !vets.some((v: any) => (v.id || v._id || v.uid) === (vet.id || vet._id || vet.uid))
-      ).map((vet: any) => ({
-        _id: vet.id || vet._id || vet.uid || `vet-${Math.random()}`,
-        name: vet.name || `${vet.primer_nombre || ''} ${vet.primer_apellido || ''}`.trim() || 'Sin nombre',
-        email: vet.email || 'Sin email'
-      })));
-      
-      setManagingStaff(true);
-    } catch (error) {
-      console.error('Error loading staff:', error);
-      Alert.alert('Error', 'No se pudo cargar el personal');
-    } finally {
-      setLoadingStaff(false);
-    }
-  };
-  
-  const handleAddWorker = async (workerId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.addWorker(selectedFarm._id, workerId);
-      
-      const worker = availableWorkers.find(w => w._id === workerId);
-      if (worker) {
-        setFarmWorkers([...farmWorkers, worker]);
-        setAvailableWorkers(availableWorkers.filter(w => w._id !== workerId));
-      }
-      
-      showModal('Éxito: Trabajador añadido a la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al añadir trabajador:', error);
-      showModal('Error: No se pudo añadir el trabajador a la granja');
-    }
-  };
-  
-  const handleRemoveWorker = async (workerId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.removeWorker(selectedFarm._id, workerId);
-      
-      const worker = farmWorkers.find(w => w._id === workerId);
-      if (worker) {
-        setAvailableWorkers([...availableWorkers, worker]);
-        setFarmWorkers(farmWorkers.filter(w => w._id !== workerId));
-      }
-      
-      showModal('Éxito: Trabajador eliminado de la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al eliminar trabajador:', error);
-      showModal('Error: No se pudo eliminar el trabajador de la granja');
-    }
-  };
-  
-  const handleAddVeterinarian = async (vetId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.addVeterinarian(selectedFarm._id, vetId);
-      
-      const vet = availableVeterinarians.find(v => v._id === vetId);
-      if (vet) {
-        setFarmVeterinarians([...farmVeterinarians, vet]);
-        setAvailableVeterinarians(availableVeterinarians.filter(v => v._id !== vetId));
-      }
-      
-      showModal('Éxito: Veterinario añadido a la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al añadir veterinario:', error);
-      showModal('Error: No se pudo añadir el veterinario a la granja');
-    }
-  };
-  
-  const handleRemoveVeterinarian = async (vetId: string) => {
-    try {
-      if (!selectedFarm) return;
-      
-      await api.farms.removeVeterinarian(selectedFarm._id, vetId);
-      
-      const vet = farmVeterinarians.find(v => v._id === vetId);
-      if (vet) {
-        setAvailableVeterinarians([...availableVeterinarians, vet]);
-        setFarmVeterinarians(farmVeterinarians.filter(v => v._id !== vetId));
-      }
-      
-      showModal('Éxito: Veterinario eliminado de la granja correctamente');
-    } catch (error: any) {
-      console.error('Error al eliminar veterinario:', error);
-      showModal('Error: No se pudo eliminar el veterinario de la granja');
-    }
-  };
   
   const handleViewCattle = (farm: Farm) => {
     router.push({
@@ -407,14 +254,6 @@ export default function FarmsPage() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.manageButton}
-          onPress={() => handleManageStaff(item)}
-        >
-          <Ionicons name="people-outline" size={16} color="#fff" />
-          <Text style={styles.buttonText}>Gestionar Personal</Text>
-        </TouchableOpacity>
-        
         <TouchableOpacity 
           style={styles.viewButton}
           onPress={() => handleViewCattle(item)}
@@ -519,18 +358,8 @@ export default function FarmsPage() {
     },
     buttonContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 10,
-    },
-    manageButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#27ae60',
-      padding: 10,
-      borderRadius: 8,
-      marginRight: 5,
+      marginTop: 10,
     },
     viewButton: {
       flex: 1,
@@ -540,7 +369,6 @@ export default function FarmsPage() {
       backgroundColor: '#3498db',
       padding: 10,
       borderRadius: 8,
-      marginLeft: 5,
     },
     buttonText: {
       color: '#ffffff',
@@ -672,100 +500,6 @@ export default function FarmsPage() {
       color: '#e74c3c',
       fontSize: 14,
     },
-    // Estilos para la sección de personal
-    staffContainer: {
-      flex: 1,
-      backgroundColor: '#f5f5f5',
-    },
-    staffHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#27ae60',
-      padding: 15,
-    },
-    backButton: {
-      marginRight: 10,
-    },
-    staffTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#ffffff',
-      flex: 1,
-    },
-    staffScrollView: {
-      padding: 10,
-    },
-    staffSection: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 10,
-      marginBottom: 15,
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#333333',
-      marginBottom: 10,
-      marginLeft: 5,
-    },
-    staffCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 10,
-      borderRadius: 8,
-      backgroundColor: '#f9f9f9',
-      marginBottom: 8,
-    },
-    staffInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
-    },
-    staffName: {
-      fontSize: 15,
-      color: '#333333',
-      marginLeft: 10,
-    },
-    removeButton: {
-      padding: 5,
-    },
-    addStaffButton: {
-      padding: 5,
-    },
-    addStaffSection: {
-      marginTop: 15,
-      paddingTop: 15,
-      borderTopWidth: 1,
-      borderTopColor: '#dddddd',
-    },
-    addStaffTitle: {
-      fontSize: 15,
-      color: '#333333',
-      marginBottom: 10,
-      marginLeft: 5,
-    },
-    emptyStaffText: {
-      fontSize: 14,
-      color: '#777777',
-      textAlign: 'center',
-      marginVertical: 10,
-      fontStyle: 'italic',
-    },
-    viewCattleButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f5f5f5',
-      padding: 12,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#27ae60',
-    },
-    viewCattleButtonText: {
-      color: '#27ae60',
-      fontSize: 15,
-      marginRight: 8,
-    },
   });
 
   return (
@@ -779,125 +513,6 @@ export default function FarmsPage() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#27ae60" />
           <Text style={styles.loadingText}>Cargando granjas...</Text>
-        </View>
-      ) : managingStaff ? (
-        <View style={styles.staffContainer}>
-          <View style={styles.staffHeader}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => setManagingStaff(false)}
-            >
-              <Ionicons name="arrow-back" size={24} color="#27ae60" />
-            </TouchableOpacity>
-            <Text style={styles.staffTitle}>Gestionar Personal - {selectedFarm?.name}</Text>
-          </View>
-          
-          {loadingStaff ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#27ae60" />
-              <Text style={styles.loadingText}>Cargando personal...</Text>
-            </View>
-          ) : (
-            <ScrollView style={styles.staffScrollView}>
-              <View style={styles.staffSection}>
-                <Text style={styles.sectionTitle}>Trabajadores</Text>
-                
-                {farmWorkers.length > 0 ? (
-                  farmWorkers.map(worker => (
-                    <View key={worker._id} style={styles.staffCard}>
-                      <View style={styles.staffInfo}>
-                        <Ionicons name="person" size={20} color="#555" />
-                        <Text style={styles.staffName}>{worker.name}</Text>
-                      </View>
-                      <TouchableOpacity 
-                        style={styles.removeButton}
-                        onPress={() => handleRemoveWorker(worker._id)}
-                      >
-                        <Ionicons name="close-circle" size={20} color="#e74c3c" />
-                      </TouchableOpacity>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyStaffText}>No hay trabajadores asignados</Text>
-                )}
-                
-                {availableWorkers.length > 0 && (
-                  <View style={styles.addStaffSection}>
-                    <Text style={styles.addStaffTitle}>Añadir Trabajador:</Text>
-                    {availableWorkers.map(worker => (
-                      <View key={worker._id} style={styles.staffCard}>
-                        <View style={styles.staffInfo}>
-                          <Ionicons name="person-add" size={20} color="#555" />
-                          <Text style={styles.staffName}>{worker.name}</Text>
-                        </View>
-                        <TouchableOpacity 
-                          style={styles.addStaffButton}
-                          onPress={() => handleAddWorker(worker._id)}
-                        >
-                          <Ionicons name="add-circle" size={20} color="#27ae60" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-              
-              <View style={styles.staffSection}>
-                <Text style={styles.sectionTitle}>Veterinarios</Text>
-                
-                {farmVeterinarians.length > 0 ? (
-                  farmVeterinarians.map(vet => (
-                    <View key={vet._id} style={styles.staffCard}>
-                      <View style={styles.staffInfo}>
-                        <Ionicons name="medkit" size={20} color="#555" />
-                        <Text style={styles.staffName}>{vet.name}</Text>
-                      </View>
-                      <TouchableOpacity 
-                        style={styles.removeButton}
-                        onPress={() => handleRemoveVeterinarian(vet._id)}
-                      >
-                        <Ionicons name="close-circle" size={20} color="#e74c3c" />
-                      </TouchableOpacity>
-                    </View>
-                  ))
-                ) : (
-                  <Text style={styles.emptyStaffText}>No hay veterinarios asignados</Text>
-                )}
-                
-                {availableVeterinarians.length > 0 && (
-                  <View style={styles.addStaffSection}>
-                    <Text style={styles.addStaffTitle}>Añadir Veterinario:</Text>
-                    {availableVeterinarians.map(vet => (
-                      <View key={vet._id} style={styles.staffCard}>
-                        <View style={styles.staffInfo}>
-                          <Ionicons name="medkit" size={20} color="#555" />
-                          <Text style={styles.staffName}>{vet.name}</Text>
-                        </View>
-                        <TouchableOpacity 
-                          style={styles.addStaffButton}
-                          onPress={() => handleAddVeterinarian(vet._id)}
-                        >
-                          <Ionicons name="add-circle" size={20} color="#27ae60" />
-                        </TouchableOpacity>
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.staffSection}>
-                <Text style={styles.sectionTitle}>Ganado</Text>
-                
-                <TouchableOpacity 
-                  style={styles.viewCattleButton}
-                  onPress={() => handleViewCattle(selectedFarm!)}
-                >
-                  <Text style={styles.viewCattleButtonText}>Ver y Gestionar Ganado</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#27ae60" />
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          )}
         </View>
       ) : (
         <>

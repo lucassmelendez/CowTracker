@@ -143,6 +143,27 @@ export default function CattleDetailPage() {
     });
   };
 
+  const navigateToEditVeterinaryRecord = () => {
+    if (!cattle.informacion_veterinaria) return;
+    
+    const vetInfo = cattle.informacion_veterinaria;
+    const params = new URLSearchParams({
+      id: cattleId.toString(),
+      mode: 'edit',
+      // Pasar los datos existentes
+      ...(vetInfo.fecha_ini_tratamiento && { fecha_ini_tratamiento: vetInfo.fecha_ini_tratamiento }),
+      ...(vetInfo.fecha_fin_tratamiento && { fecha_fin_tratamiento: vetInfo.fecha_fin_tratamiento }),
+      ...(vetInfo.diagnostico && { diagnostico: vetInfo.diagnostico }),
+      ...(vetInfo.tratamiento && { tratamiento: vetInfo.tratamiento }),
+      ...(vetInfo.nota && { nota: vetInfo.nota }),
+      ...(vetInfo.medicamento && { medicamento: vetInfo.medicamento }),
+      ...(vetInfo.dosis && { dosis: vetInfo.dosis }),
+      ...(vetInfo.cantidad_horas && { cantidad_horas: vetInfo.cantidad_horas.toString() }),
+    });
+    
+    router.push(`/add-veterinary-record?${params.toString()}`);
+  };
+
   const handleShareQR = async () => {
     try {
       const deepLink = `cowtracker://cattle/${cattle?.id_ganado}`;
@@ -359,6 +380,17 @@ export default function CattleDetailPage() {
               <Ionicons name="medical" size={20} color="#fff" />
               <Text style={styles.buttonText}>Agregar Tratamiento Médico</Text>
             </TouchableOpacity>
+
+            {/* Botón de editar - Solo si ya tiene información veterinaria */}
+            {cattle.informacion_veterinaria && (
+              <TouchableOpacity 
+                style={styles.editTreatmentButton}
+                onPress={navigateToEditVeterinaryRecord}
+              >
+                <Ionicons name="create-outline" size={20} color="#fff" />
+                <Text style={styles.buttonText}>Editar Información Veterinaria</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -705,6 +737,15 @@ const styles = StyleSheet.create({
   },
   addTreatmentButton: {
     backgroundColor: '#27ae60',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  editTreatmentButton: {
+    backgroundColor: '#3498db',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

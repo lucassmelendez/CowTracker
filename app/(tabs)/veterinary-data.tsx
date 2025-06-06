@@ -404,11 +404,11 @@ export default function VeterinaryDataPage() {
               style={styles.addRecordButton}
               onPress={() => navigateToAddVeterinaryRecord(item)}
             >
-              <Ionicons name="medical" size={16} color="#fff" />
+              <Ionicons name="medical" size={14} color="#fff" />
               <Text style={styles.addRecordButtonText}>
                 {hasVeterinaryInfo 
-                  ? 'Actualizar registro médico'
-                  : 'Agregar registro médico'
+                  ? 'Actualizar'
+                  : 'Agregar'
                 }
               </Text>
             </TouchableOpacity>
@@ -419,9 +419,9 @@ export default function VeterinaryDataPage() {
                 style={styles.editRecordButton}
                 onPress={() => navigateToEditVeterinaryRecord(item)}
               >
-                <Ionicons name="create-outline" size={16} color="#fff" />
+                <Ionicons name="create-outline" size={14} color="#fff" />
                 <Text style={styles.editRecordButtonText}>
-                  Editar información
+                  Editar
                 </Text>
               </TouchableOpacity>
             )}
@@ -678,36 +678,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
+    marginTop: 5,
   },
   addRecordButton: {
     backgroundColor: '#27ae60',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: 5,
     flex: 1,
+    minHeight: 36,
   },
   addRecordButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    marginLeft: 5,
-    fontSize: 12,
+    marginLeft: 4,
+    fontSize: 11,
+    textAlign: 'center',
   },
   editRecordButton: {
     backgroundColor: '#3498db',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: 5,
     flex: 1,
+    minHeight: 36,
   },
   editRecordButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    marginLeft: 5,
-    fontSize: 12,
+    marginLeft: 4,
+    fontSize: 11,
+    textAlign: 'center',
   },
 });

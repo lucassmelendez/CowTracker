@@ -49,26 +49,19 @@ export default function VinculacionTab() {
     }
   };
 
-  // Función para refrescar datos
   const onRefresh = async () => {
-    console.log('Refrescando datos de vinculación...');
     try {
       setRefreshing(true);
-      // Invalidar caché antes de refrescar para obtener datos frescos del servidor
       await invalidateCache('farms');
       await invalidateCache('users');
-      
-      // Recargar las fincas vinculadas desde el servidor
       await cargarFincasVinculadas();
-      
-      console.log('Datos de vinculación refrescados desde el servidor');
+
     } catch (error) {
       console.error('Error al refrescar datos:', error);
       setRefreshing(false);
     }
   };
 
-  // Función para eliminar vinculación de una finca
   const handleEliminarVinculacion = (finca: any) => {
     showConfirm(
       'Eliminar vinculación',
@@ -83,19 +76,16 @@ export default function VinculacionTab() {
     try {
       setEliminandoVinculacion(finca._id);
       
-      // Obtener el ID del usuario actual
       const userId = userInfo?.uid;
       if (!userId) {
         throw new Error('No se pudo obtener la información del usuario');
       }
       
-      // Obtener el ID de la finca
       const farmId = finca._id || finca.id_finca?.toString();
       if (!farmId) {
         throw new Error('ID de granja no válido');
       }
       
-      // Usar cachedApi para eliminar la vinculación (invalida caché automáticamente)
       if (isVeterinario()) {
         await cachedApi.removeFarmVeterinarian(farmId, userId);
       } else if (isTrabajador()) {
@@ -108,7 +98,7 @@ export default function VinculacionTab() {
         'Éxito',
         'Vinculación eliminada correctamente',
         () => {
-          cargarFincasVinculadas(true); // Recargar la lista sin mostrar errores
+          cargarFincasVinculadas(true);
         }
       );
     } catch (error: any) {
@@ -148,8 +138,8 @@ export default function VinculacionTab() {
           'Éxito',
           'Has sido vinculado correctamente a la finca',
           () => {
-            cargarFincasVinculadas(true); // Recargar la lista de fincas sin mostrar errores
-            setCodigo(''); // Limpiar el código
+            cargarFincasVinculadas(true);
+            setCodigo('');
           }
         );
       } else {

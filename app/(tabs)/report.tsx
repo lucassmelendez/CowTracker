@@ -99,24 +99,18 @@ export default function ReportPage() {
     setError: setReportError
   } = useReportData(selectedFarm?._id || null);
 
-  // Efecto para cargar datos cuando cambia la granja
   useEffect(() => {
     const loadReportData = async () => {
-      // Intentar cargar desde caché primero
       const cacheLoaded = await loadFromCache();
       
       if (cacheLoaded && isDataFresh()) {
-        console.log('Usando datos del caché (frescos)');
         return;
       }
       
-      // Si no hay caché o los datos no están frescos, generar nuevos datos
-      console.log('Generando nuevos datos de informe');
       await generateReportData();
     };
 
     if (farms && allCattle) {
-      // Esperar a que los datos de la granja específica estén listos
       if (selectedFarm && farmCattleLoading) {
         return;
       }
@@ -124,7 +118,6 @@ export default function ReportPage() {
     }
   }, [farms, allCattle, farmCattle, selectedFarm, farmCattleLoading]);
 
-  // Efecto para refrescar datos de granja cuando cambia la selección
   useEffect(() => {
     if (selectedFarm?._id) {
       refreshFarmCattle();
@@ -136,7 +129,6 @@ export default function ReportPage() {
 
     setReportLoading(true);
     try {
-      // Usar los datos correctos según la granja seleccionada
       let cattleData;
       if (selectedFarm) {
         cattleData = farmCattle || [];
@@ -155,7 +147,6 @@ export default function ReportPage() {
         averageCattlePerFarm: selectedFarm ? cattleData.length : (farms.length > 0 ? Math.round(allCattle.length / farms.length) : 0)
       };
 
-      // Preparar detalles del ganado para exportación
       const details: CattleDetail[] = cattleData.map(cattle => ({
         id: cattle.id_ganado?.toString() || cattle._id || '',
         name: cattle.nombre || cattle.name || 'Sin nombre',
@@ -167,7 +158,6 @@ export default function ReportPage() {
         notes: cattle.nota || cattle.notes || ''
       }));
 
-      // Agrupar ganado por granja
       if (selectedFarm) {
         data.cattleByFarm[selectedFarm.name] = cattleData.length;
       } else {
@@ -177,25 +167,21 @@ export default function ReportPage() {
         });
       }
 
-      // Agrupar por estado de salud
       cattleData.forEach(cattle => {
         const health = cattle.estado_salud?.descripcion || cattle.healthStatus || 'No especificado';
         data.cattleByHealth[health] = (data.cattleByHealth[health] || 0) + 1;
       });
 
-      // Agrupar por género
       cattleData.forEach(cattle => {
         const gender = cattle.genero?.descripcion || cattle.gender || 'No especificado';
         data.cattleByGender[gender] = (data.cattleByGender[gender] || 0) + 1;
       });
 
-      // Agrupar por raza
       cattleData.forEach(cattle => {
         const breed = cattle.raza || cattle.breed || 'No especificado';
         data.cattleByBreed[breed] = (data.cattleByBreed[breed] || 0) + 1;
       });
 
-      // Contar registros médicos
       let totalMedicalRecords = 0;
       for (const cattle of cattleData) {
         try {
@@ -209,7 +195,6 @@ export default function ReportPage() {
       }
       data.medicalRecordsCount = totalMedicalRecords;
 
-      // Actualizar estado y guardar en caché
       setReportData(data);
       setCattleDetails(details);
       
@@ -225,7 +210,6 @@ export default function ReportPage() {
     }
   };
 
-  // Función para forzar actualización de datos
   const refreshReportData = async () => {
     await invalidateCache();
     await generateReportData();

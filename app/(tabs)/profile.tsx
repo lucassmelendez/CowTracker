@@ -114,7 +114,6 @@ export default function ProfilePage() {
     const checkPremiumActivation = async () => {
       const pendingActivation = await PremiumNotificationService.getPendingActivation();
       if (pendingActivation) {
-        console.log('🎊 Activación Premium detectada en perfil:', pendingActivation);
         setCongratulationsData(pendingActivation);
         setShowCongratulations(true);
       }
@@ -255,7 +254,6 @@ export default function ProfilePage() {
 
   // Función para refrescar datos con pull-to-refresh
   const onRefresh = async () => {
-    console.log('Refrescando datos de perfil...');
     try {
       setRefreshing(true);
       
@@ -265,7 +263,6 @@ export default function ProfilePage() {
       // Refrescar usando el hook de caché
       await refreshProfile();
       
-      console.log('Datos de perfil refrescados desde el servidor');
     } catch (error) {
       console.error('Error al refrescar datos:', error);
     } finally {
@@ -284,9 +281,6 @@ export default function ProfilePage() {
       const freshUserData = await api.users.getProfile();
       
       if (freshUserData) {
-        console.log('Datos frescos del backend:', freshUserData);
-        console.log('id_rol recibido:', freshUserData.id_rol);
-        
         const processedData: UserData = {
           email: freshUserData.email || '',
           role: freshUserData.id_rol?.toString() || '',
@@ -301,7 +295,6 @@ export default function ProfilePage() {
           premium_type: freshUserData.premium_type || 'Free'
         };
         
-        console.log('Rol procesado:', processedData.roleDisplay);
         setUserData(processedData);
         setFormData(processedData);
         
@@ -362,7 +355,6 @@ export default function ProfilePage() {
   const handleCloseCongratulations = () => {
     setShowCongratulations(false);
     setCongratulationsData(null);
-    console.log('🎊 Felicitaciones cerradas en perfil');
   };
 
   const getInitials = () => {

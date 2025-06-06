@@ -145,28 +145,20 @@ class CachedApiService {
   async getFarmCattle(farmId: string): Promise<CattleItem[]> {
     const cacheKey = 'cattle/by-farm';
     const params = { farmId };
-    
-    console.log('cachedApi.getFarmCattle - Buscando en caché para farmId:', farmId);
-    
     const cachedData = await cacheManager.get<CattleItem[]>(cacheKey, params);
+
     if (cachedData) {
-      console.log('cachedApi.getFarmCattle - Datos encontrados en caché:', cachedData.length, 'elementos');
-      console.log('cachedApi.getFarmCattle - Datos del caché:', cachedData);
       return cachedData;
     }
 
-    console.log('cachedApi.getFarmCattle - No hay datos en caché, consultando API...');
     const response = await api.farms.getCattle(farmId);
-    console.log('cachedApi.getFarmCattle - Respuesta completa de la API:', response);
     
-    // Extraer los datos del formato de respuesta de la API
     let data: CattleItem[] = [];
     if (Array.isArray(response)) {
       data = response;
     } else if (response && typeof response === 'object' && Array.isArray((response as any).data)) {
       data = (response as any).data;
     } else if (response && typeof response === 'object') {
-      // Intentar encontrar el array en diferentes propiedades posibles
       const possibleArrays = ['data', 'cattle', 'items', 'results'];
       for (const key of possibleArrays) {
         if ((response as any)[key] && Array.isArray((response as any)[key])) {
@@ -175,10 +167,6 @@ class CachedApiService {
         }
       }
     }
-    
-    console.log('cachedApi.getFarmCattle - Datos extraídos para guardar en caché:', data?.length || 0, 'elementos');
-    console.log('cachedApi.getFarmCattle - Datos finales:', data);
-    
     await cacheManager.set(cacheKey, data, CACHE_CONFIGS.cattle, params);
     
     return data;
@@ -187,7 +175,6 @@ class CachedApiService {
   async createCattle(cattleData: Partial<CattleItem>): Promise<CattleItem> {
     const data = await api.cattle.create(cattleData);
     
-    // Invalidar caché de ganado después de crear
     await cacheManager.invalidate('cattle');
     
     return data;
@@ -196,7 +183,6 @@ class CachedApiService {
   async updateCattle(id: string | number, cattleData: Partial<CattleItem>): Promise<CattleItem> {
     const data = await api.cattle.update(id, cattleData);
     
-    // Invalidar caché de ganado después de actualizar
     await cacheManager.invalidate('cattle');
     
     return data;
@@ -205,11 +191,8 @@ class CachedApiService {
   async deleteCattle(id: string | number): Promise<void> {
     await api.cattle.delete(id);
     
-    // Invalidar caché de ganado después de eliminar
     await cacheManager.invalidate('cattle');
   }
-
-  // ==================== MEDICAL RECORDS API ====================
 
   async getCattleMedicalRecords(cattleId: string | number): Promise<MedicalRecord[]> {
     const cacheKey = 'medical/by-cattle';
@@ -229,13 +212,10 @@ class CachedApiService {
   async addMedicalRecord(cattleId: string | number, recordData: Partial<MedicalRecord>): Promise<MedicalRecord> {
     const data = await api.cattle.addMedicalRecord(cattleId, recordData);
     
-    // Invalidar caché de registros médicos después de agregar
     await cacheManager.invalidate('medical');
     
     return data;
   }
-
-  // ==================== USERS API ====================
 
   async getAllUsers(): Promise<UserInfo[]> {
     const cacheKey = 'users/all';
@@ -295,8 +275,6 @@ class CachedApiService {
     return data;
   }
 
-  // ==================== WRITE OPERATIONS (No cache, but invalidate) ====================
-
   async registerUser(userData: RegisterData): Promise<any> {
     const data = await api.users.register(userData);
     await cacheManager.invalidate('users');
@@ -305,14 +283,12 @@ class CachedApiService {
 
   async loginUser(credentials: LoginCredentials): Promise<UserInfo> {
     const data = await api.users.login(credentials);
-    // Limpiar caché al hacer login (nuevo usuario)
     await cacheManager.clear();
     return data;
   }
 
   async logoutUser(): Promise<void> {
     await api.users.logout();
-    // Limpiar todo el caché al hacer logout
     await cacheManager.clear();
   }
 
@@ -344,8 +320,6 @@ class CachedApiService {
     await cacheManager.invalidate('users');
   }
 
-  // ==================== CACHE MANAGEMENT ====================
-
   async clearCache(): Promise<void> {
     await cacheManager.clear();
   }
@@ -362,19 +336,15 @@ class CachedApiService {
     return cacheManager.getStats();
   }
 
-  // ==================== REPORTS CACHE ====================
-
   async getCachedReportData(farmId: string | null): Promise<CachedReportData | null> {
     const cacheKey = 'reports/data';
     const params = { farmId: farmId || 'all' };
     
     const cachedData = await cacheManager.get<CachedReportData>(cacheKey, params);
     if (cachedData) {
-      console.log('Datos de informe encontrados en caché para granja:', farmId || 'todas');
       return cachedData;
     }
     
-    console.log('No hay datos de informe en caché para granja:', farmId || 'todas');
     return null;
   }
 
@@ -396,24 +366,17 @@ class CachedApiService {
     };
     
     await cacheManager.set(cacheKey, cachedReportData, CACHE_CONFIGS.reports, params);
-    console.log('Datos de informe guardados en caché para granja:', farmId || 'todas');
   }
 
   async invalidateReportCache(farmId?: string | null): Promise<void> {
     if (farmId) {
-      // Invalidar caché específico de una granja
       const cacheKey = 'reports/data';
       const params = { farmId };
       await cacheManager.invalidateKey(cacheKey, params);
-      console.log('Caché de informes invalidado para granja:', farmId);
     } else {
-      // Invalidar todo el caché de informes
       await cacheManager.invalidate('reports');
-      console.log('Todo el caché de informes invalidado');
     }
   }
-
-  // ==================== DIRECT API ACCESS (for non-cached operations) ====================
 
   get directApi() {
     return api;

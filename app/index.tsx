@@ -16,20 +16,17 @@ export default function Index() {
       // Verificar si hay una activación Premium pendiente
       const pendingActivation = await PremiumNotificationService.getPendingActivation();
       if (pendingActivation) {
-        console.log('🎊 Activación Premium detectada en index:', pendingActivation);
         setCongratulationsData(pendingActivation);
         setShowCongratulations(true);
       }
     };
 
     if (!loading) {
-      console.log('Index: Estado de autenticación:', !!currentUser);
       
       // Verificar activación Premium primero
       checkPremiumActivation();
       
       if (currentUser) {
-        console.log('Navegando a tabs desde index...');
         // Delay la navegación si hay felicitaciones que mostrar
         setTimeout(() => {
           if (!showCongratulations) {
@@ -37,7 +34,6 @@ export default function Index() {
           }
         }, 100);
       } else {
-        console.log('Navegando a login desde index...');
         router.replace('/login');
       }
     }
@@ -46,11 +42,10 @@ export default function Index() {
   const handleCloseCongratulations = () => {
     setShowCongratulations(false);
     setCongratulationsData(null);
-    console.log('🎊 Felicitaciones cerradas, navegando a tabs...');
     
     // Navegar a tabs después de cerrar felicitaciones
     if (currentUser) {
-      router.replace('/(tabs)/profile'); // Ir directamente al perfil
+      router.replace('/(tabs)/profile');
     } else {
       router.replace('/(tabs)');
     }

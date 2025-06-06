@@ -33,7 +33,6 @@ const getSupabaseToken = async (): Promise<string | null> => {
   }
 };
 
-// Interceptor de petición que agrega el token de Supabase automáticamente
 instance.interceptors.request.use(
   async (config) => {
     try {
@@ -53,7 +52,6 @@ instance.interceptors.request.use(
   }
 );
 
-// Interceptor de respuesta para extraer automáticamente los datos
 instance.interceptors.response.use(
   (response: AxiosResponse) => {
     return response.data;

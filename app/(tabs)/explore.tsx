@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -60,6 +60,8 @@ export default function CattleTab() {
   const [error, setError] = useState<string | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { invalidateCache } = useCacheManager();
+  const lastRefreshRef = useRef<number>(0);
+  const REFRESH_COOLDOWN = 2000; // 2 segundos de cooldown entre refreshes
 
   // Determinar si estamos mostrando todas las granjas o una específica
   const isShowingAllFarms = !selectedFarm || selectedFarm._id === 'all-farms';
@@ -152,7 +154,17 @@ export default function CattleTab() {
   // Refrescar datos cuando la pantalla obtiene foco
   useFocusEffect(
     React.useCallback(() => {
+      const now = Date.now();
+      
+      // Solo refrescar si ha pasado suficiente tiempo desde el último refresh
+      if (now - lastRefreshRef.current < REFRESH_COOLDOWN) {
+        console.log('Pantalla obtuvo foco, pero saltando refresh (cooldown activo)');
+        return;
+      }
+      
       console.log('Pantalla obtuvo foco, refrescando datos...');
+      lastRefreshRef.current = now;
+      
       // Refrescar inmediatamente sin esperar
       const refreshData = async () => {
         if (isShowingAllFarms) {
@@ -163,51 +175,35 @@ export default function CattleTab() {
       };
       
       refreshData();
-    }, [selectedFarm, isShowingAllFarms, refreshAllCattle, refreshFarms, refreshFarmCattle])
+    }, [selectedFarmId, isShowingAllFarms]) // Reducir dependencias para evitar bucle
   );
 
   // Agregar un efecto adicional para refrescar cuando cambian los datos del caché
   useEffect(() => {
-    console.log('Datos del caché cambiaron, actualizando vista...');
-    console.log('Usuario es admin:', isAdmin());
-    console.log('Usuario tiene granjas:', userHasFarms);
-    console.log('Granjas del usuario:', userFarms?.length || 0);
-    
     if (isShowingAllFarms) {
       // Si es admin, mostrar todo el ganado
       if (isAdmin()) {
-        console.log('Admin: Mostrando todo el ganado:', allCattleWithFarmInfo?.length || 0);
         setCattle(allCattleWithFarmInfo || []);
       } 
       // Si no es admin pero tiene granjas, filtrar ganado solo de sus granjas
       else if (userHasFarms && allCattleWithFarmInfo) {
         const userFarmIds = userFarms?.map(farm => farm._id || farm.id_finca) || [];
-        console.log('IDs de granjas del usuario:', userFarmIds);
         
         const filteredCattle = allCattleWithFarmInfo.filter(cattle => {
           // Intentar obtener el ID de la granja del ganado de diferentes formas
           const cattleFarmId = cattle.farmId || 
                               cattle.finca?.nombre; // Usar nombre como identificador
           
-          console.log('Ganado:', cattle.nombre || cattle.numero_identificacion, 'Granja ID:', cattleFarmId);
           return cattleFarmId && userFarmIds.includes(cattleFarmId.toString());
         });
         
-        console.log('Usuario con granjas: Mostrando ganado filtrado:', filteredCattle.length);
-        console.log('Ganado filtrado:', filteredCattle.map(c => ({ 
-          nombre: c.nombre, 
-          farmId: c.farmId || c.finca?.nombre 
-        })));
         setCattle(filteredCattle);
       }
       // Si no es admin y no tiene granjas, no mostrar ganado
       else {
-        console.log('Usuario sin granjas: No mostrando ganado');
         setCattle([]);
       }
     } else {
-      console.log('Mostrando ganado de granja específica:', farmCattle?.length || 0);
-      
       // Verificar si los datos están en formato incorrecto
       if (farmCattle && typeof farmCattle === 'object' && !Array.isArray(farmCattle)) {
         console.log('¡Datos en formato incorrecto detectados! Limpiando caché...');
@@ -217,29 +213,15 @@ export default function CattleTab() {
       
       setCattle(farmCattle || []);
     }
-  }, [allCattleWithFarmInfo, farmCattle, isShowingAllFarms, userFarms, userHasFarms, isAdmin]);
+  }, [allCattleWithFarmInfo, farmCattle, isShowingAllFarms, selectedFarmId]); // Reducir dependencias
 
   // Efecto separado para manejar cambios en la granja seleccionada
   useEffect(() => {
-    console.log('Granja seleccionada cambió:', selectedFarm);
-    console.log('Es todas las granjas:', isShowingAllFarms);
-    console.log('ID de granja seleccionada:', selectedFarmId);
-    
-    // Refrescar datos cuando cambia la granja seleccionada
-    const refreshOnFarmChange = async () => {
-      if (isShowingAllFarms) {
-        // Solo refrescar todo el ganado si es admin o si el usuario tiene granjas
-        if (isAdmin()) {
-          await refreshAllCattle();
-        }
-        await refreshFarms();
-      } else if (selectedFarmId) {
-        await refreshFarmCattle();
-      }
-    };
-    
-    refreshOnFarmChange();
-  }, [selectedFarm, selectedFarmId, isShowingAllFarms, isAdmin]);
+    // Solo log cuando realmente cambia la granja seleccionada
+    if (selectedFarmId) {
+      console.log('Granja seleccionada:', selectedFarmId);
+    }
+  }, [selectedFarmId]); // Solo log, sin refresh automático
 
   // Manejar errores
   useEffect(() => {

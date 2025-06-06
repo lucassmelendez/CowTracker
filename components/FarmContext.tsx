@@ -79,11 +79,8 @@ export const FarmProvider: React.FC<FarmProviderProps> = ({ children }) => {
 
   const clearAllFarmData = async (): Promise<void> => {
     try {
-      console.log('Limpiando todos los datos de granjas...');
       setSelectedFarm(null);
       await AsyncStorage.removeItem('selectedFarm');
-      
-      // Limpiar cualquier otro dato relacionado con granjas
       const allKeys = await AsyncStorage.getAllKeys();
       const farmKeys = allKeys.filter(key => 
         key.includes('farm_') || 
@@ -93,7 +90,6 @@ export const FarmProvider: React.FC<FarmProviderProps> = ({ children }) => {
       
       if (farmKeys.length > 0) {
         await AsyncStorage.multiRemove(farmKeys);
-        console.log('Datos de granjas limpiados:', farmKeys.length);
       }
     } catch (error) {
       console.error('Error al limpiar datos de granjas:', error);

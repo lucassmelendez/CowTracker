@@ -7,15 +7,15 @@ export interface CacheItem<T> {
 }
 
 export interface CacheConfig {
-  ttl?: number; // Time to live en milisegundos (por defecto 5 minutos)
-  maxAge?: number; // Edad máxima en milisegundos (por defecto 30 minutos)
+  ttl?: number;
+  maxAge?: number;
 }
 
 class CacheManager {
   private static instance: CacheManager;
   private memoryCache: Map<string, CacheItem<any>> = new Map();
-  private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutos
-  private readonly DEFAULT_MAX_AGE = 30 * 60 * 1000; // 30 minutos
+  private readonly DEFAULT_TTL = 5 * 60 * 1000;
+  private readonly DEFAULT_MAX_AGE = 30 * 60 * 1000;
 
   private constructor() {}
 
@@ -26,47 +26,32 @@ class CacheManager {
     return CacheManager.instance;
   }
 
-  /**
-   * Genera una clave de caché basada en el endpoint y parámetros
-   */
   private generateKey(endpoint: string, params?: Record<string, any>): string {
     const paramString = params ? JSON.stringify(params) : '';
     return `cache_${endpoint}_${paramString}`;
   }
 
-  /**
-   * Verifica si un elemento del caché es válido
-   */
   private isValid(item: CacheItem<any>): boolean {
     const now = Date.now();
     return now < item.expiresAt;
   }
 
-  /**
-   * Obtiene datos del caché (memoria primero, luego AsyncStorage)
-   */
   async get<T>(endpoint: string, params?: Record<string, any>): Promise<T | null> {
     const key = this.generateKey(endpoint, params);
 
-    // Verificar caché en memoria primero
     const memoryItem = this.memoryCache.get(key);
     if (memoryItem && this.isValid(memoryItem)) {
-      console.log(`Cache HIT (memory): ${key}`);
       return memoryItem.data;
     }
 
-    // Si no está en memoria o expiró, verificar AsyncStorage
     try {
       const storedItem = await AsyncStorage.getItem(key);
       if (storedItem) {
         const parsedItem: CacheItem<T> = JSON.parse(storedItem);
         if (this.isValid(parsedItem)) {
-          // Restaurar en memoria para acceso rápido
           this.memoryCache.set(key, parsedItem);
-          console.log(`Cache HIT (storage): ${key}`);
           return parsedItem.data;
         } else {
-          // Eliminar elemento expirado
           await AsyncStorage.removeItem(key);
           this.memoryCache.delete(key);
         }
@@ -74,14 +59,9 @@ class CacheManager {
     } catch (error) {
       console.error('Error al leer del caché:', error);
     }
-
-    console.log(`Cache MISS: ${key}`);
     return null;
   }
 
-  /**
-   * Almacena datos en el caché (memoria y AsyncStorage)
-   */
   async set<T>(
     endpoint: string, 
     data: T, 
@@ -98,25 +78,16 @@ class CacheManager {
       expiresAt: now + ttl
     };
 
-    // Almacenar en memoria
     this.memoryCache.set(key, cacheItem);
 
-    // Almacenar en AsyncStorage
     try {
       await AsyncStorage.setItem(key, JSON.stringify(cacheItem));
-      console.log(`Cache SET: ${key}`);
     } catch (error) {
       console.error('Error al escribir en el caché:', error);
     }
   }
 
-  /**
-   * Invalida caché por patrón de endpoint
-   */
   async invalidate(pattern: string): Promise<void> {
-    console.log(`Invalidando caché para patrón: ${pattern}`);
-
-    // Invalidar caché en memoria
     const keysToDelete: string[] = [];
     for (const key of this.memoryCache.keys()) {
       if (key.includes(pattern)) {
@@ -125,7 +96,6 @@ class CacheManager {
     }
     keysToDelete.forEach(key => this.memoryCache.delete(key));
 
-    // Invalidar caché en AsyncStorage
     try {
       const allKeys = await AsyncStorage.getAllKeys();
       const keysToRemove = allKeys.filter(key => key.includes(pattern));
@@ -137,12 +107,8 @@ class CacheManager {
     }
   }
 
-  /**
-   * Invalida una clave específica
-   */
   async invalidateKey(endpoint: string, params?: Record<string, any>): Promise<void> {
     const key = this.generateKey(endpoint, params);
-    console.log(`Invalidando clave específica: ${key}`);
 
     this.memoryCache.delete(key);
     try {
@@ -152,12 +118,7 @@ class CacheManager {
     }
   }
 
-  /**
-   * Limpia todo el caché
-   */
   async clear(): Promise<void> {
-    console.log('Limpiando todo el caché');
-    
     this.memoryCache.clear();
     
     try {
@@ -171,13 +132,7 @@ class CacheManager {
     }
   }
 
-  /**
-   * Limpia elementos expirados del caché
-   */
   async cleanup(): Promise<void> {
-    console.log('Limpiando elementos expirados del caché');
-
-    // Limpiar memoria
     const now = Date.now();
     const expiredKeys: string[] = [];
     
@@ -188,7 +143,6 @@ class CacheManager {
     }
     expiredKeys.forEach(key => this.memoryCache.delete(key));
 
-    // Limpiar AsyncStorage
     try {
       const allKeys = await AsyncStorage.getAllKeys();
       const cacheKeys = allKeys.filter(key => key.startsWith('cache_'));
@@ -207,9 +161,6 @@ class CacheManager {
     }
   }
 
-  /**
-   * Obtiene estadísticas del caché
-   */
   getStats(): { memorySize: number; totalKeys: number } {
     return {
       memorySize: this.memoryCache.size,

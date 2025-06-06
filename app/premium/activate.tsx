@@ -26,13 +26,11 @@ export default function PremiumActivateScreen() {
       setIsActivating(true);
       setError(null);
 
-      // Obtener el token del usuario
       const token = userInfo?.token;
       if (!token) {
         throw new Error('No se encontró el token de autenticación');
       }
 
-            // Usar updateProfile preservando todos los datos actuales del usuario
       if (updateProfile && userInfo) {
         try {
           const currentData = {
@@ -42,10 +40,7 @@ export default function PremiumActivateScreen() {
             segundo_apellido: userInfo.segundo_apellido,
             email: userInfo.email,
             id_premium: 2
-            // Notar que NO incluimos id_rol para evitar sobrescribirlo
           };
-          
-          console.log('📋 Activando Premium con datos preservados:', currentData);
           await updateProfile(currentData);
         } catch (updateError) {
           console.warn('⚠️ Error al actualizar perfil en contexto:', updateError);
@@ -58,7 +53,6 @@ export default function PremiumActivateScreen() {
         setActivationSuccess(true);
         setIsActivating(false);
         
-        // Redirigir directamente al perfil después de 2 segundos
         setTimeout(() => {
           router.replace('/(tabs)/profile');
         }, 2000);
@@ -148,7 +142,6 @@ export default function PremiumActivateScreen() {
     );
   }
 
-  // Error state
   return (
     <ScrollView style={styles.container}>
       <View style={styles.errorContainer}>

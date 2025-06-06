@@ -88,7 +88,6 @@ export default function Admin() {
 
   // Función para refrescar datos
   const onRefresh = async () => {
-    console.log('Refrescando datos de administrador...');
     try {
       // Invalidar caché antes de refrescar para obtener datos frescos del servidor
       await invalidateCache('users');
@@ -100,7 +99,6 @@ export default function Admin() {
         refreshVeterinarians()
       ]);
       
-      console.log('Datos de administrador refrescados desde el servidor');
     } catch (error) {
       console.error('Error al refrescar datos:', error);
     }

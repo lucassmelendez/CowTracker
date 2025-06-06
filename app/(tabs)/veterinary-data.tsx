@@ -407,7 +407,7 @@ export default function VeterinaryDataPage() {
               <Ionicons name="medical" size={14} color="#fff" />
               <Text style={styles.addRecordButtonText}>
                 {hasVeterinaryInfo 
-                  ? 'Actualizar'
+                  ? 'Agregar'
                   : 'Agregar'
                 }
               </Text>

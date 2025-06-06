@@ -191,6 +191,23 @@ export default function AddVeterinaryRecordPage() {
       setFechaFinTratamiento(selectedDate);
     }
   };
+
+  // Función para eliminar/limpiar todos los datos del tratamiento
+  const handleDelete = () => {
+    setDiagnostico('');
+    setTratamiento('');
+    setNota('');
+    setFechaTratamiento(new Date());
+    setFechaFinTratamiento(null);
+    setMedicamento('');
+    setDosis('');
+    setCantidadHoras('');
+    
+    showSuccess(
+      'Tratamiento Eliminado',
+      'Todos los datos del tratamiento han sido eliminados. Presiona "Actualizar" para guardar los cambios.',
+    );
+  };
   
   if (loading) {
     return (
@@ -368,6 +385,17 @@ export default function AddVeterinaryRecordPage() {
               <Text style={styles.cancelButtonText}>Cancelar</Text>
             </TouchableOpacity>
             
+            {isEditMode && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+                disabled={submitting}
+              >
+                <Ionicons name="trash" size={16} color="#fff" />
+                <Text style={styles.deleteButtonText}>Eliminar</Text>
+              </TouchableOpacity>
+            )}
+            
             <TouchableOpacity
               style={[
                 styles.submitButton,
@@ -521,6 +549,23 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  deleteButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    flex: 1,
+    marginHorizontal: 5,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: 5,
   },
   submitButton: {
     backgroundColor: '#27ae60',

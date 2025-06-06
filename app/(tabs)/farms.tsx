@@ -337,18 +337,16 @@ export default function FarmsPage() {
         <Text style={styles.farmName}>{item.name}</Text>
       </View>
 
-      <View style={styles.infoContainer}>
-        <View style={styles.infoItem}>
-          <Ionicons name="location-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>{item.location}</Text>
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Ionicons name="resize-outline" size={24} color="#27ae60" />
+          <Text style={styles.statNumber}>{item.size || 0}</Text>
+          <Text style={styles.statLabel}>Hectáreas</Text>
         </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="resize-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>{item.size} hectáreas</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="browsers-outline" size={18} color="#555" />
-          <Text style={styles.infoText}>{item.cattleCount || 0} animales</Text>
+        <View style={styles.statCard}>
+          <Ionicons name="browsers-outline" size={24} color="#3498db" />
+          <Text style={styles.statNumber}>{item.cattleCount || 0}</Text>
+          <Text style={styles.statLabel}>Animales</Text>
         </View>
       </View>
 
@@ -442,18 +440,32 @@ export default function FarmsPage() {
       color: '#333333',
     },
 
-    infoContainer: {
+    statsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      marginTop: 15,
+      marginBottom: 10,
+    },
+    statCard: {
+      alignItems: 'center',
+      backgroundColor: '#f8f9fa',
+      borderRadius: 8,
+      padding: 12,
+      minWidth: 80,
+      flex: 1,
+      marginHorizontal: 5,
+    },
+    statNumber: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#333333',
       marginTop: 5,
     },
-    infoItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 5,
-    },
-    infoText: {
-      fontSize: 14,
+    statLabel: {
+      fontSize: 12,
       color: '#777777',
-      marginLeft: 8,
+      marginTop: 2,
+      textAlign: 'center',
     },
     buttonContainer: {
       flexDirection: 'row',

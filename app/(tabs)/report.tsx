@@ -160,7 +160,7 @@ export default function ReportPage() {
         id: cattle.id_ganado?.toString() || cattle._id || '',
         name: cattle.nombre || cattle.name || 'Sin nombre',
         identifier: cattle.numero_identificacion || cattle.identificationNumber || 'Sin ID',
-        breed: cattle.raza || cattle.breed || 'No especificado',
+        breed: '',
         gender: cattle.genero?.descripcion || cattle.gender || 'No especificado',
         health: cattle.estado_salud?.descripcion || cattle.healthStatus || 'No especificado',
         farmName: cattle.finca?.nombre || cattle.farmName || 'Sin granja',
@@ -186,10 +186,7 @@ export default function ReportPage() {
         data.cattleByGender[gender] = (data.cattleByGender[gender] || 0) + 1;
       });
 
-      cattleData.forEach(cattle => {
-        const breed = cattle.raza || cattle.breed || 'No especificado';
-        data.cattleByBreed[breed] = (data.cattleByBreed[breed] || 0) + 1;
-      });
+
 
       let totalMedicalRecords = 0;
       for (const cattle of cattleData) {
@@ -284,10 +281,7 @@ DISTRIBUCIÓN POR GÉNERO
 ${Object.entries(data.cattleByGender).map(([gender, count]) => 
   `• ${gender}: ${count} animales`).join('\n')}
 
-DISTRIBUCIÓN POR RAZA
----------------------
-${Object.entries(data.cattleByBreed).map(([breed, count]) => 
-  `• ${breed}: ${count} animales`).join('\n')}
+
 
 ---
 Informe generado por CowTracker
@@ -312,10 +306,7 @@ DESGLOSE POR GRANJA
 ${Object.entries(data.cattleByFarm).map(([farm, count]) => 
   `• ${farm}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
 
-DESGLOSE POR RAZA
------------------
-${Object.entries(data.cattleByBreed).map(([breed, count]) => 
-  `• ${breed}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
+
 
 DESGLOSE POR GÉNERO
 -------------------
@@ -569,13 +560,6 @@ ${date}
                 }}
               />
               <StatCard
-                title="Granjas Activas"
-                value={reportData.totalFarms}
-                icon="business"
-                color="#27ae60"
-                subtitle="Operativas"
-              />
-              <StatCard
                 title="Registros Médicos"
                 value={reportData.medicalRecordsCount}
                 icon="medical"
@@ -624,19 +608,7 @@ ${date}
               colors={['#3498db', '#e91e63', '#9c27b0']}
             />
             
-            {/* Gráfico de barras para razas (top 5) */}
-            {Object.keys(reportData.cattleByBreed).length > 0 && (
-              <BarChart
-                data={Object.fromEntries(
-                  Object.entries(reportData.cattleByBreed)
-                    .sort(([,a], [,b]) => b - a)
-                    .slice(0, 5)
-                )}
-                title="Top 5 Razas Más Comunes"
-                color="#e67e22"
-                yAxisSuffix=" animales"
-              />
-            )}
+
           </View>
         )}
 
@@ -683,24 +655,7 @@ ${date}
               ))}
             </View>
 
-            {/* Razas */}
-            <View style={styles.distributionCard}>
-              <View style={styles.distributionHeader}>
-                <Ionicons name="paw" size={20} color="#e67e22" />
-                <Text style={styles.distributionTitle}>Razas</Text>
-              </View>
-              {Object.entries(reportData.cattleByBreed).slice(0, 5).map(([breed, count]) => (
-                <View key={breed} style={styles.distributionItem}>
-                  <Text style={styles.distributionLabel}>{breed}</Text>
-                  <View style={styles.distributionValueContainer}>
-                    <Text style={styles.distributionValue}>{count}</Text>
-                    <Text style={styles.distributionPercentage}>
-                      ({((count/reportData.totalCattle)*100).toFixed(1)}%)
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
+
           </View>
         )}
 

@@ -106,6 +106,17 @@ export default function ProfilePage() {
     workerText: createStyles('text-white text-xs font-bold'),
     veterinaryBadge: createStyles('bg-green-600 px-2 py-1 rounded-full'),
     veterinaryText: createStyles('text-white text-xs font-bold'),
+    adminBadge: {
+      backgroundColor: '#dc2626',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 20,
+    },
+    adminText: {
+      color: '#ffffff',
+      fontSize: 12,
+      fontWeight: 'bold' as const,
+    },
     upgradeButton: createStyles('bg-yellow-500 py-2 px-4 rounded-lg mt-2'),
     upgradeButtonText: createStyles('text-white text-sm font-semibold'),
     helperText: createStyles('text-sm text-gray-600 text-center mt-2'),
@@ -148,7 +159,7 @@ export default function ProfilePage() {
           const processedData: UserData = {
             email: userData.email || '',
             role: userData.id_rol?.toString() || '',
-            roleDisplay: userData.id_rol === 1 ? 'Ganadero' : 
+            roleDisplay: userData.id_rol === 1 ? 'Admin' : 
                        userData.id_rol === 2 ? 'Trabajador' : 
                        userData.id_rol === 3 ? 'Veterinario' : 'Usuario',
             primer_nombre: userData.primer_nombre || '',
@@ -169,7 +180,7 @@ export default function ProfilePage() {
           const fallbackData: UserData = {
             email: userInfo.email || currentUser?.email || '',
             role: userInfo.id_rol?.toString() || '',
-            roleDisplay: userInfo.id_rol === 1 ? 'Ganadero' : 
+            roleDisplay: userInfo.id_rol === 1 ? 'Admin' : 
                   userInfo.id_rol === 2 ? 'Trabajador' :
                   userInfo.id_rol === 3 ? 'Veterinario' : 'Usuario',
             primer_nombre: userInfo.primer_nombre || '',
@@ -286,7 +297,7 @@ export default function ProfilePage() {
         const processedData: UserData = {
           email: freshUserData.email || '',
           role: freshUserData.id_rol?.toString() || '',
-          roleDisplay: freshUserData.id_rol === 1 ? 'Ganadero' : 
+          roleDisplay: freshUserData.id_rol === 1 ? 'Admin' : 
                      freshUserData.id_rol === 2 ? 'Trabajador' : 
                      freshUserData.id_rol === 3 ? 'Veterinario' : 'Usuario',
           primer_nombre: freshUserData.primer_nombre || '',
@@ -396,7 +407,12 @@ export default function ProfilePage() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{getInitials()}</Text>
             </View>
-            <View style={createStyles('flex-row items-center justify-center')}>
+            <View style={createStyles('flex-row items-center justify-center gap-2')}>
+              {userData.role === '1' && (
+                <View style={styles.adminBadge}>
+                  <Text style={styles.adminText}>ADMINISTRADOR</Text>
+                </View>
+              )}
               {userData.id_premium === 2 && (
                 <View style={styles.premiumBadge}>
                   <Text style={styles.premiumText}>PREMIUM</Text>

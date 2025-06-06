@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,14 @@ import {
   TextInput,
   Modal,
   ActivityIndicator,
-  ScrollView
+  ScrollView,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import api from '../../lib/services/api';
+import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
 
 interface Farm {
   _id: string;
@@ -28,6 +31,9 @@ export default function FarmsPage() {
   const [farms, setFarms] = useState<Farm[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { invalidateCache } = useCacheManager();
+  const lastRefreshRef = useRef<number>(0);
+  const REFRESH_COOLDOWN = 2000; // 2 segundos de cooldown entre refreshes
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({
@@ -62,6 +68,44 @@ export default function FarmsPage() {
     loadFarms();
   }, []);
 
+  // Función para refrescar con invalidación de caché
+  const onRefresh = async () => {
+    console.log('Refrescando granjas manualmente...');
+    try {
+      setRefreshing(true);
+      // Invalidar caché antes de refrescar para obtener datos frescos del servidor
+      await invalidateCache('farms');
+      await invalidateCache('cattle');
+      
+      await loadFarms();
+      
+      console.log('Datos de granjas refrescados desde el servidor');
+    } catch (error) {
+      console.error('Error al refrescar granjas:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Refrescar datos cuando la pantalla obtiene foco
+  useFocusEffect(
+    React.useCallback(() => {
+      const now = Date.now();
+      
+      // Solo refrescar si ha pasado suficiente tiempo desde el último refresh
+      if (now - lastRefreshRef.current < REFRESH_COOLDOWN) {
+        console.log('Pantalla de granjas obtuvo foco, pero saltando refresh (cooldown activo)');
+        return;
+      }
+      
+      console.log('Pantalla de granjas obtuvo foco, refrescando datos...');
+      lastRefreshRef.current = now;
+      
+      // Refrescar inmediatamente sin esperar
+      loadFarms();
+    }, []) // Sin dependencias para evitar bucle
+  );
+
   const loadFarms = async () => {
     try {
       setLoading(true);
@@ -82,8 +126,8 @@ export default function FarmsPage() {
       
       console.log(`Se han cargado ${response.length} granjas`);
       
-      // Procesar y validar cada granja
-      const processedFarms = response.map((farm: any) => {
+      // Procesar y validar cada granja, obteniendo la cantidad real de ganado
+      const processedFarms = await Promise.all(response.map(async (farm: any) => {
         const farmId = farm._id || farm.id_finca || farm.id;
         const farmName = farm.name || farm.nombre;
         
@@ -94,6 +138,17 @@ export default function FarmsPage() {
           console.warn('Granja sin nombre encontrada:', farm);
         }
         
+        // Obtener la cantidad real de ganado para esta granja
+        let cattleCount = 0;
+        try {
+          const cattle = await api.farms.getCattle(farmId);
+          cattleCount = Array.isArray(cattle) ? cattle.length : 0;
+          console.log(`Granja ${farmName}: ${cattleCount} animales`);
+        } catch (cattleError) {
+          console.warn(`Error al obtener ganado para granja ${farmName}:`, cattleError);
+          cattleCount = 0;
+        }
+        
         return {
           ...farm,
           _id: farmId || `temp-${Math.random().toString(36).substring(2, 9)}`,
@@ -101,9 +156,9 @@ export default function FarmsPage() {
           // Asegurar que tenemos todas las propiedades necesarias
           size: farm.size || farm.tamano || 0,
           location: farm.location || farm.ubicacion || 'Ubicación no especificada',
-          cattleCount: farm.cattleCount || 0
+          cattleCount: cattleCount // Usar la cantidad real obtenida
         };
-      });
+      }));
       
       setFarms(processedFarms);
     } catch (error: any) {
@@ -150,6 +205,11 @@ export default function FarmsPage() {
 
       setModalVisible(false);
       resetForm();
+      
+      // Invalidar caché y recargar las granjas para obtener datos frescos
+      await invalidateCache('farms');
+      await invalidateCache('cattle');
+      
       // Recargar las granjas después de un breve retraso para dar tiempo a que se actualice el backend
       setTimeout(() => {
         loadFarms();
@@ -166,6 +226,11 @@ export default function FarmsPage() {
     try {
       await api.farms.delete(farmId);
       closeDeleteModal();
+      
+      // Invalidar caché después de eliminar
+      await invalidateCache('farms');
+      await invalidateCache('cattle');
+      
       loadFarms();
       showModal('Granja eliminada correctamente');
     } catch (error: any) {
@@ -518,6 +583,16 @@ export default function FarmsPage() {
             renderItem={renderItem}
             keyExtractor={item => item._id}
             contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#27ae60']}
+                tintColor="#27ae60"
+                title="Actualizando granjas..."
+                titleColor="#27ae60"
+              />
+            }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Ionicons name="leaf-outline" size={60} color="#ddd" />

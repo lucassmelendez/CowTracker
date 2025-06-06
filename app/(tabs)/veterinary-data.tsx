@@ -305,16 +305,31 @@ export default function VeterinaryDataPage() {
 
             {/* Fecha del tratamiento */}
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Fecha:</Text>
+              <Text style={styles.infoLabel}>Fecha inicio:</Text>
               <Text style={styles.infoValue}>
-                {formatDate(vetInfo?.fecha_tratamiento)}
-                {getDaysInfo(vetInfo?.fecha_tratamiento) && (
+                {formatDate(vetInfo?.fecha_ini_tratamiento || vetInfo?.fecha_tratamiento)}
+                {getDaysInfo(vetInfo?.fecha_ini_tratamiento || vetInfo?.fecha_tratamiento) && (
                   <Text style={styles.daysInfo}>
-                    {' '}{getDaysInfo(vetInfo?.fecha_tratamiento)}
+                    {' '}{getDaysInfo(vetInfo?.fecha_ini_tratamiento || vetInfo?.fecha_tratamiento)}
                   </Text>
                 )}
               </Text>
             </View>
+
+            {/* Fecha fin del tratamiento */}
+            {vetInfo?.fecha_fin_tratamiento && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Fecha fin:</Text>
+                <Text style={styles.infoValue}>
+                  {formatDate(vetInfo.fecha_fin_tratamiento)}
+                  {getDaysInfo(vetInfo.fecha_fin_tratamiento) && (
+                    <Text style={styles.daysInfo}>
+                      {' '}{getDaysInfo(vetInfo.fecha_fin_tratamiento)}
+                    </Text>
+                  )}
+                </Text>
+              </View>
+            )}
             
             {/* Diagnóstico */}
             {vetInfo?.diagnostico && (
@@ -329,6 +344,30 @@ export default function VeterinaryDataPage() {
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Tratamiento:</Text>
                 <Text style={styles.infoValue}>{vetInfo.tratamiento}</Text>
+              </View>
+            )}
+
+            {/* Medicamento */}
+            {vetInfo?.medicamento && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Medicamento:</Text>
+                <Text style={styles.infoValue}>{vetInfo.medicamento}</Text>
+              </View>
+            )}
+
+            {/* Dosis */}
+            {vetInfo?.dosis && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Dosis:</Text>
+                <Text style={styles.infoValue}>{vetInfo.dosis}</Text>
+              </View>
+            )}
+
+            {/* Cantidad de Horas */}
+            {vetInfo?.cantidad_horas && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Duración:</Text>
+                <Text style={styles.infoValue}>{vetInfo.cantidad_horas} horas</Text>
               </View>
             )}
             

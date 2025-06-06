@@ -33,12 +33,17 @@ export default function AddVeterinaryRecordPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Datos del formulario - ajustados a la estructura de Supabase
+  // Datos del formulario - ajustados a la estructura de Supabase con nuevos campos
   const [diagnostico, setDiagnostico] = useState('');
   const [tratamiento, setTratamiento] = useState('');
   const [nota, setNota] = useState('');
   const [fechaTratamiento, setFechaTratamiento] = useState(new Date());
+  const [fechaFinTratamiento, setFechaFinTratamiento] = useState<Date | null>(null);
+  const [medicamento, setMedicamento] = useState('');
+  const [dosis, setDosis] = useState('');
+  const [cantidadHoras, setCantidadHoras] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   
   // Cargar datos del ganado
   useEffect(() => {
@@ -75,16 +80,20 @@ export default function AddVeterinaryRecordPage() {
         console.error('Error al obtener sesión:', sessionError);
       }
       
-      // Datos ajustados según lo que espera el backend (ver supabaseGanadoModel.js líneas 620-625)
+      // Datos ajustados según lo que espera el backend con los nuevos campos
       const recordData = {
-        fecha: fechaTratamiento.toISOString(), // El backend busca 'fecha', no 'fecha_tratamiento'
-        diagnostico: diagnostico.trim() || '', // Permitir diagnóstico vacío
+        fecha: fechaTratamiento.toISOString(),
+        diagnostico: diagnostico.trim() || '',
         tratamiento: tratamiento.trim() || '',
         nota: nota.trim() || '',
-        // También incluir campos alternativos que el backend puede usar
         fecha_tratamiento: fechaTratamiento.toISOString(),
-        descripcion: diagnostico.trim() || '', // Campo alternativo para diagnóstico (puede estar vacío)
-        notas: nota.trim() || '' // Campo alternativo para notas
+        fecha_fin_tratamiento: fechaFinTratamiento ? fechaFinTratamiento.toISOString() : null,
+        medicamento: medicamento.trim() || '',
+        dosis: dosis.trim() ? parseFloat(dosis) : null,
+        cantidad_horas: cantidadHoras.trim() ? parseInt(cantidadHoras) : null,
+        // Campos alternativos que el backend puede usar
+        descripcion: diagnostico.trim() || '',
+        notas: nota.trim() || ''
       };
       
       const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
@@ -148,6 +157,13 @@ export default function AddVeterinaryRecordPage() {
       setFechaTratamiento(selectedDate);
     }
   };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    setShowEndDatePicker(false);
+    if (selectedDate) {
+      setFechaFinTratamiento(selectedDate);
+    }
+  };
   
   if (loading) {
     return (
@@ -189,7 +205,7 @@ export default function AddVeterinaryRecordPage() {
         <View style={styles.formContainer}>
           {/* Fecha de Tratamiento */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Fecha de Tratamiento</Text>
+            <Text style={styles.label}>Fecha de inicio Tratamiento</Text>
             <TouchableOpacity
               style={styles.dateButton}
               onPress={() => setShowDatePicker(true)}
@@ -204,6 +220,38 @@ export default function AddVeterinaryRecordPage() {
                 mode="date"
                 display="default"
                 onChange={handleDateChange}
+              />
+            )}
+          </View>
+
+          {/* Fecha de Fin de Tratamiento */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Fecha de Fin Tratamiento (Opcional)</Text>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowEndDatePicker(true)}
+            >
+              <Text style={styles.dateButtonText}>
+                {fechaFinTratamiento ? formatDate(fechaFinTratamiento) : 'Seleccionar fecha'}
+              </Text>
+              <Ionicons name="calendar" size={22} color="#27ae60" />
+            </TouchableOpacity>
+            
+            {fechaFinTratamiento && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={() => setFechaFinTratamiento(null)}
+              >
+                <Text style={styles.clearButtonText}>Limpiar fecha</Text>
+              </TouchableOpacity>
+            )}
+            
+            {showEndDatePicker && (
+              <DateTimePicker
+                value={fechaFinTratamiento || new Date()}
+                mode="date"
+                display="default"
+                onChange={handleEndDateChange}
               />
             )}
           </View>
@@ -231,6 +279,41 @@ export default function AddVeterinaryRecordPage() {
               onChangeText={setTratamiento}
               multiline
               numberOfLines={3}
+            />
+          </View>
+
+          {/* Medicamento */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Medicamento</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ingrese el nombre del medicamento"
+              value={medicamento}
+              onChangeText={setMedicamento}
+            />
+          </View>
+
+          {/* Dosis */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Dosis</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ingrese la dosis (ej: 5.5)"
+              value={dosis}
+              onChangeText={setDosis}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* Cantidad de Horas */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Cantidad de Horas</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ingrese la cantidad de horas (ej: 24)"
+              value={cantidadHoras}
+              onChangeText={setCantidadHoras}
+              keyboardType="numeric"
             />
           </View>
           
@@ -380,6 +463,15 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: 16,
     color: '#2c3e50',
+  },
+  clearButton: {
+    marginTop: 5,
+    alignSelf: 'flex-start',
+  },
+  clearButtonText: {
+    color: '#e74c3c',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
   buttonContainer: {
     flexDirection: 'row',

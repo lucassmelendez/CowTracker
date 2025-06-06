@@ -55,13 +55,7 @@ export default function CattleDetailPage() {
           finca:id_finca (nombre),
           estado_salud:id_estado_salud (descripcion),
           genero:id_genero (descripcion),
-          produccion:id_produccion (descripcion),
-          informacion_veterinaria:id_informacion_veterinaria (
-            fecha_tratamiento,
-            diagnostico,
-            tratamiento,
-            nota
-          )
+          produccion:id_produccion (descripcion)
         `)
         .eq('id_ganado', cattleId)
         .single();
@@ -75,7 +69,27 @@ export default function CattleDetailPage() {
         return;
       }
 
-      setCattle(ganadoData);
+      // Si el ganado tiene información veterinaria, obtenerla por separado
+      let informacionVeterinaria = null;
+      if (ganadoData.id_informacion_veterinaria) {
+        const { data: vetData, error: vetError } = await supabase
+          .from('informacion_veterinaria')
+          .select('*')
+          .eq('id_informacion_veterinaria', ganadoData.id_informacion_veterinaria)
+          .single();
+        
+        if (!vetError && vetData) {
+          informacionVeterinaria = vetData;
+        }
+      }
+
+      // Combinar los datos
+      const cattleWithVetInfo = {
+        ...ganadoData,
+        informacion_veterinaria: informacionVeterinaria
+      };
+
+      setCattle(cattleWithVetInfo);
     } catch (err) {
       console.error('Error al cargar detalles del ganado:', err);
       setError('Error al cargar los detalles del ganado');
@@ -90,19 +104,21 @@ export default function CattleDetailPage() {
       const id = Array.isArray(cattleId) ? cattleId[0] : cattleId;
       
       if (!id) {
-        showError('ID de ganado no válido');
+        showError('Error', 'ID de ganado no válido');
         return;
       }
 
       // Usar el sistema de caché para eliminar la vaca
       await cachedApi.deleteCattle(id);
 
-      showSuccess('Ganado eliminado correctamente', () => {
-        router.back();
-      });
+      showSuccess(
+        'Éxito',
+        'Ganado eliminado correctamente',
+        () => router.back()
+      );
     } catch (err) {
       console.error('Error al eliminar ganado:', err);
-      showError('No se pudo eliminar el ganado');
+      showError('Error', 'No se pudo eliminar el ganado');
     }
   };
 
@@ -136,7 +152,7 @@ export default function CattleDetailPage() {
         title: 'Código QR del Ganado'
       });
     } catch (error) {
-      showError('No se pudo compartir el código QR');
+      showError('Error', 'No se pudo compartir el código QR');
     }
   };
 
@@ -234,11 +250,20 @@ export default function CattleDetailPage() {
             <Text style={styles.sectionTitle}>Información Veterinaria</Text>
             
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Fecha de Tratamiento</Text>
+              <Text style={styles.infoLabel}>Fecha de Inicio</Text>
               <Text style={styles.infoValue}>
-                {new Date(cattle.informacion_veterinaria.fecha_tratamiento).toLocaleDateString()}
+                {new Date(cattle.informacion_veterinaria.fecha_ini_tratamiento || cattle.informacion_veterinaria.fecha_tratamiento).toLocaleDateString()}
               </Text>
             </View>
+
+            {cattle.informacion_veterinaria.fecha_fin_tratamiento && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Fecha de Fin</Text>
+                <Text style={styles.infoValue}>
+                  {new Date(cattle.informacion_veterinaria.fecha_fin_tratamiento).toLocaleDateString()}
+                </Text>
+              </View>
+            )}
 
             {cattle.informacion_veterinaria.diagnostico && (
               <View style={styles.infoRow}>
@@ -254,6 +279,33 @@ export default function CattleDetailPage() {
                 <Text style={styles.infoLabel}>Tratamiento</Text>
                 <Text style={styles.infoValue}>
                   {cattle.informacion_veterinaria.tratamiento}
+                </Text>
+              </View>
+            )}
+
+            {cattle.informacion_veterinaria.medicamento && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Medicamento</Text>
+                <Text style={styles.infoValue}>
+                  {cattle.informacion_veterinaria.medicamento}
+                </Text>
+              </View>
+            )}
+
+            {cattle.informacion_veterinaria.dosis && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Dosis</Text>
+                <Text style={styles.infoValue}>
+                  {cattle.informacion_veterinaria.dosis}
+                </Text>
+              </View>
+            )}
+
+            {cattle.informacion_veterinaria.cantidad_horas && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Duración del Tratamiento</Text>
+                <Text style={styles.infoValue}>
+                  {cattle.informacion_veterinaria.cantidad_horas} horas
                 </Text>
               </View>
             )}

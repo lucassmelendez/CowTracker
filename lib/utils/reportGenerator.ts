@@ -5,12 +5,10 @@ import * as Sharing from 'expo-sharing';
 export interface ReportData {
   totalCattle: number;
   totalFarms: number;
-  cattleByFarm: { [key: string]: number };
   cattleByHealth: { [key: string]: number };
   cattleByGender: { [key: string]: number };
   cattleByBreed: { [key: string]: number };
   medicalRecordsCount: number;
-  averageCattlePerFarm: number;
 }
 
 export interface CattleDetail {
@@ -191,23 +189,10 @@ export class ReportGenerator {
             <div class="stat-label">Total de Ganado</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">${reportData.averageCattlePerFarm}</div>
-            <div class="stat-label">Promedio por Granja</div>
-          </div>
-          <div class="stat-card">
             <div class="stat-value">${reportData.medicalRecordsCount}</div>
             <div class="stat-label">Registros Médicos</div>
           </div>
         </div>
-      </div>
-
-      <div class="section">
-        <h2>Distribución por Granja</h2>
-        <ul class="data-list">
-          ${Object.entries(reportData.cattleByFarm).map(([farm, count]) => 
-            `<li><strong>${farm}:</strong> ${count} animales <span class="percentage">(${((count/reportData.totalCattle)*100).toFixed(1)}%)</span></li>`
-          ).join('')}
-        </ul>
       </div>
 
       <div class="section">
@@ -285,7 +270,7 @@ export class ReportGenerator {
             <div class="stat-label">Total de Animales</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">${Object.keys(reportData.cattleByFarm).length}</div>
+            <div class="stat-value">${Object.keys(reportData.cattleByHealth).length}</div>
             <div class="stat-label">Granjas con Ganado</div>
           </div>
         </div>
@@ -294,8 +279,8 @@ export class ReportGenerator {
       <div class="section">
         <h2>Desglose por Granja</h2>
         <ul class="data-list">
-          ${Object.entries(reportData.cattleByFarm).map(([farm, count]) => 
-            `<li><strong>${farm}:</strong> ${count} animales <span class="percentage">(${((count/reportData.totalCattle)*100).toFixed(1)}%)</span></li>`
+          ${Object.entries(reportData.cattleByHealth).map(([health, count]) => 
+            `<li><strong>${health}:</strong> ${count} animales <span class="percentage">(${((count/reportData.totalCattle)*100).toFixed(1)}%)</span></li>`
           ).join('')}
         </ul>
       </div>
@@ -380,10 +365,6 @@ export class ReportGenerator {
   }
 
   private static generateFarmsHTMLContent(reportData: ReportData, farmName: string): string {
-    const farmEntries = Object.entries(reportData.cattleByFarm);
-    const farmWithMostCattle = farmEntries.length > 0 ? farmEntries.sort((a, b) => b[1] - a[1])[0][0] : 'N/A';
-    const farmWithLeastCattle = farmEntries.length > 0 ? farmEntries.sort((a, b) => a[1] - b[1])[0][0] : 'N/A';
-
     return `
       <div class="header">
         <h1>Informe de Granjas</h1>
@@ -402,39 +383,33 @@ export class ReportGenerator {
             <div class="stat-value">${reportData.totalCattle}</div>
             <div class="stat-label">Total de Ganado</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value">${reportData.averageCattlePerFarm}</div>
-            <div class="stat-label">Promedio por Granja</div>
-          </div>
         </div>
       </div>
 
       <div class="section">
-        <h2>Detalle por Granja</h2>
+        <h2>Distribución por Estado de Salud</h2>
         <ul class="data-list">
-          ${Object.entries(reportData.cattleByFarm).map(([farm, count]) => 
-            `<li><strong>${farm}:</strong><br>
-             - Ganado: ${count} animales<br>
-             - Porcentaje del total: <span class="percentage">${((count/reportData.totalCattle)*100).toFixed(1)}%</span></li>`
+          ${Object.entries(reportData.cattleByHealth).map(([health, count]) => 
+            `<li><strong>${health}:</strong> ${count} animales <span class="percentage">(${((count/reportData.totalCattle)*100).toFixed(1)}%)</span></li>`
           ).join('')}
         </ul>
       </div>
 
       <div class="section">
-        <h2>Análisis de Distribución</h2>
+        <h2>Distribución por Género</h2>
         <ul class="data-list">
-          <li><strong>Granja con más ganado:</strong> ${farmWithMostCattle}</li>
-          <li><strong>Granja con menos ganado:</strong> ${farmWithLeastCattle}</li>
-          <li><strong>Distribución equilibrada:</strong> ${reportData.averageCattlePerFarm > 0 ? 'Sí' : 'No'}</li>
+          ${Object.entries(reportData.cattleByGender).map(([gender, count]) => 
+            `<li><strong>${gender}:</strong> ${count} animales <span class="percentage">(${((count/reportData.totalCattle)*100).toFixed(1)}%)</span></li>`
+          ).join('')}
         </ul>
       </div>
 
       <div class="section">
         <h2>Recomendaciones</h2>
         <ul class="data-list">
-          <li>Balancear la distribución de ganado entre granjas</li>
           <li>Optimizar el uso de recursos por granja</li>
-          <li>Considerar la capacidad de cada granja</li>
+          <li>Mantener registros actualizados del ganado</li>
+          <li>Monitorear la salud del ganado regularmente</li>
           <li>Evaluar la eficiencia operativa</li>
         </ul>
       </div>
@@ -485,13 +460,12 @@ export class ReportGenerator {
         csvContent += `Categoría,Cantidad\n`;
         csvContent += `Total Granjas,${reportData.totalFarms}\n`;
         csvContent += `Total Ganado,${reportData.totalCattle}\n`;
-        csvContent += `Promedio por Granja,${reportData.averageCattlePerFarm}\n`;
         csvContent += `Registros Médicos,${reportData.medicalRecordsCount}\n\n`;
         
         csvContent += `Distribución por Granja\n`;
         csvContent += `Granja,Cantidad,Porcentaje\n`;
-        Object.entries(reportData.cattleByFarm).forEach(([farm, count]) => {
-          csvContent += `${farm},${count},${((count/reportData.totalCattle)*100).toFixed(1)}%\n`;
+        Object.entries(reportData.cattleByHealth).forEach(([health, count]) => {
+          csvContent += `${health},${count},${((count/reportData.totalCattle)*100).toFixed(1)}%\n`;
         });
         break;
 

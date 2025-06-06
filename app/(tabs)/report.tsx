@@ -148,12 +148,10 @@ export default function ReportPage() {
       const data: ReportData = {
         totalCattle: cattleData.length,
         totalFarms: selectedFarm ? 1 : farms.length,
-        cattleByFarm: {},
         cattleByHealth: {},
         cattleByGender: {},
         cattleByBreed: {},
-        medicalRecordsCount: 0,
-        averageCattlePerFarm: selectedFarm ? cattleData.length : (farms.length > 0 ? Math.round(allCattle.length / farms.length) : 0)
+        medicalRecordsCount: 0
       };
 
       const details: CattleDetail[] = cattleData.map(cattle => ({
@@ -167,15 +165,6 @@ export default function ReportPage() {
         notes: cattle.nota || cattle.notes || ''
       }));
 
-      if (selectedFarm) {
-        data.cattleByFarm[selectedFarm.name] = cattleData.length;
-      } else {
-        cattleData.forEach(cattle => {
-          const farmName = cattle.finca?.nombre || cattle.farmName || 'Sin granja';
-          data.cattleByFarm[farmName] = (data.cattleByFarm[farmName] || 0) + 1;
-        });
-      }
-
       cattleData.forEach(cattle => {
         const health = cattle.estado_salud?.descripcion || cattle.healthStatus || 'No especificado';
         data.cattleByHealth[health] = (data.cattleByHealth[health] || 0) + 1;
@@ -185,8 +174,6 @@ export default function ReportPage() {
         const gender = cattle.genero?.descripcion || cattle.gender || 'No especificado';
         data.cattleByGender[gender] = (data.cattleByGender[gender] || 0) + 1;
       });
-
-
 
       let totalMedicalRecords = 0;
       for (const cattle of cattleData) {
@@ -263,13 +250,7 @@ RESUMEN EJECUTIVO
 -----------------
 • Total de granjas: ${data.totalFarms}
 • Total de ganado: ${data.totalCattle}
-• Promedio de ganado por granja: ${data.averageCattlePerFarm}
 • Registros médicos totales: ${data.medicalRecordsCount}
-
-DISTRIBUCIÓN POR GRANJA
------------------------
-${Object.entries(data.cattleByFarm).map(([farm, count]) => 
-  `• ${farm}: ${count} animales`).join('\n')}
 
 DISTRIBUCIÓN POR ESTADO DE SALUD
 --------------------------------
@@ -299,14 +280,6 @@ Alcance: ${farmName}
 ESTADÍSTICAS GENERALES
 ----------------------
 • Total de animales: ${data.totalCattle}
-• Distribución por granja: ${Object.keys(data.cattleByFarm).length} granjas
-
-DESGLOSE POR GRANJA
--------------------
-${Object.entries(data.cattleByFarm).map(([farm, count]) => 
-  `• ${farm}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
-
-
 
 DESGLOSE POR GÉNERO
 -------------------
@@ -369,26 +342,22 @@ RESUMEN DE GRANJAS
 ------------------
 • Total de granjas: ${data.totalFarms}
 • Total de ganado: ${data.totalCattle}
-• Promedio de ganado por granja: ${data.averageCattlePerFarm}
 
-DETALLE POR GRANJA
-------------------
-${Object.entries(data.cattleByFarm).map(([farm, count]) => 
-  `• ${farm}:
-  - Ganado: ${count} animales
-  - Porcentaje del total: ${((count/data.totalCattle)*100).toFixed(1)}%`).join('\n')}
+DISTRIBUCIÓN POR ESTADO DE SALUD
+--------------------------------
+${Object.entries(data.cattleByHealth).map(([health, count]) => 
+  `• ${health}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
 
-ANÁLISIS DE DISTRIBUCIÓN
-------------------------
-• Granja con más ganado: ${Object.entries(data.cattleByFarm).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'}
-• Granja con menos ganado: ${Object.entries(data.cattleByFarm).sort((a, b) => a[1] - b[1])[0]?.[0] || 'N/A'}
-• Distribución equilibrada: ${data.averageCattlePerFarm > 0 ? 'Sí' : 'No'}
+DISTRIBUCIÓN POR GÉNERO
+-----------------------
+${Object.entries(data.cattleByGender).map(([gender, count]) => 
+  `• ${gender}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
 
 RECOMENDACIONES
 ---------------
-• Balancear la distribución de ganado entre granjas
 • Optimizar el uso de recursos por granja
-• Considerar la capacidad de cada granja
+• Mantener registros actualizados del ganado
+• Monitorear la salud del ganado regularmente
 
 ---
 Informe generado por CowTracker
@@ -570,13 +539,6 @@ ${date}
                   isPositive: true
                 }}
               />
-              <StatCard
-                title="Promedio por Granja"
-                value={reportData.averageCattlePerFarm}
-                icon="analytics"
-                color="#f39c12"
-                subtitle="Animales/granja"
-              />
             </View>
           </View>
         )}
@@ -591,14 +553,6 @@ ${date}
               data={reportData.cattleByHealth}
               title="Distribución por Estado de Salud"
               colors={['#27ae60', '#f39c12', '#e74c3c', '#95a5a6']}
-            />
-            
-            {/* Gráfico de barras para ganado por granja */}
-            <BarChart
-              data={reportData.cattleByFarm}
-              title="Ganado por Granja"
-              color="#3498db"
-              yAxisSuffix=" animales"
             />
             
             {/* Gráfico de pastel para género */}

@@ -205,12 +205,10 @@ export interface FarmContextType {
 export interface ReportData {
   totalCattle: number;
   totalFarms: number;
-  cattleByFarm: Record<string, number>;
   cattleByHealth: Record<string, number>;
   cattleByGender: Record<string, number>;
   cattleByBreed: Record<string, number>;
   medicalRecordsCount: number;
-  averageCattlePerFarm: number;
 }
 
 export interface CattleDetail {

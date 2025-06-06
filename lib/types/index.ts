@@ -97,9 +97,14 @@ export interface MedicalRecord {
   cattleId?: string;
   id_ganado?: string | number;
   fecha_tratamiento: string;
-  diagnostico?: string; // Ahora es opcional
+  fecha_ini_tratamiento?: string;
+  fecha_fin_tratamiento?: string;
+  diagnostico?: string;
   tratamiento?: string;
   nota?: string;
+  medicamento?: string;
+  dosis?: string;
+  cantidad_horas?: number;
   // Campos de compatibilidad con versiones anteriores
   date?: string;
   treatment?: string;

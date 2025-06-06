@@ -89,7 +89,7 @@ export default function AddVeterinaryRecordPage() {
         fecha_tratamiento: fechaTratamiento.toISOString(),
         fecha_fin_tratamiento: fechaFinTratamiento ? fechaFinTratamiento.toISOString() : null,
         medicamento: medicamento.trim() || '',
-        dosis: dosis.trim() ? parseFloat(dosis) : null,
+        dosis: dosis.trim() || '',
         cantidad_horas: cantidadHoras.trim() ? parseInt(cantidadHoras) : null,
         // Campos alternativos que el backend puede usar
         descripcion: diagnostico.trim() || '',
@@ -282,6 +282,19 @@ export default function AddVeterinaryRecordPage() {
             />
           </View>
 
+          {/* Nota */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Nota</Text>
+            <TextInput
+              style={styles.inputLarge}
+              placeholder="Ingrese observaciones adicionales"
+              value={nota}
+              onChangeText={setNota}
+              multiline
+              numberOfLines={3}
+            />
+          </View>
+
           {/* Medicamento */}
           <View style={styles.formGroup}>
             <Text style={styles.label}>Medicamento</Text>
@@ -298,35 +311,21 @@ export default function AddVeterinaryRecordPage() {
             <Text style={styles.label}>Dosis</Text>
             <TextInput
               style={styles.input}
-              placeholder="Ingrese la dosis (ej: 5.5)"
+              placeholder="Ingrese la dosis (ej: 5ml, 2 tabletas, 1 ampolla)"
               value={dosis}
               onChangeText={setDosis}
-              keyboardType="numeric"
             />
           </View>
 
           {/* Cantidad de Horas */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Cantidad de Horas</Text>
+            <Text style={styles.label}>Cada cuantas Horas</Text>
             <TextInput
               style={styles.input}
               placeholder="Ingrese la cantidad de horas (ej: 24)"
               value={cantidadHoras}
               onChangeText={setCantidadHoras}
               keyboardType="numeric"
-            />
-          </View>
-          
-          {/* Nota */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Nota</Text>
-            <TextInput
-              style={styles.inputLarge}
-              placeholder="Ingrese observaciones adicionales"
-              value={nota}
-              onChangeText={setNota}
-              multiline
-              numberOfLines={3}
             />
           </View>
           

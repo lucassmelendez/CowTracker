@@ -126,13 +126,6 @@ export default function TabOneScreen() {
         description: 'Generar informes de ganado'
       },
       {
-        id: 'vet',
-        title: 'Datos Veterinarios',
-        icon: '💊',
-        route: '/(tabs)/veterinary-data',
-        description: 'Datos veterinarios y medicamentos'
-      },
-      {
         id: 'production',
         title: 'Producción',
         icon: '🥩',

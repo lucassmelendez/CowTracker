@@ -206,12 +206,7 @@ export default function FarmsPage() {
     setModalVisible(true);
   };
   
-  const handleViewCattle = (farm: Farm) => {
-    router.push({
-      pathname: '/(tabs)/explore',
-      params: { farmId: farm._id }
-    });
-  };
+
 
   const openDeleteModal = (farmId: string) => {
     setFarmToDelete(farmId);
@@ -222,20 +217,6 @@ export default function FarmsPage() {
     <View style={styles.farmItem}>
       <View style={styles.cardHeader}>
         <Text style={styles.farmName}>{item.name}</Text>
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => openEditModal(item)}
-          >
-            <Ionicons name="create-outline" size={20} color="#27ae60" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={() => openDeleteModal(item._id)}
-          >
-            <Ionicons name="trash-outline" size={20} color="#e74c3c" />
-          </TouchableOpacity>
-        </View>
       </View>
 
       <View style={styles.infoContainer}>
@@ -255,11 +236,18 @@ export default function FarmsPage() {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={styles.viewButton}
-          onPress={() => handleViewCattle(item)}
+          style={styles.editButton} 
+          onPress={() => openEditModal(item)}
         >
-          <Ionicons name="eye-outline" size={16} color="#fff" />
-          <Text style={styles.buttonText}>Ver Ganado</Text>
+          <Ionicons name="create-outline" size={16} color="#fff" />
+          <Text style={styles.buttonText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.deleteButton} 
+          onPress={() => openDeleteModal(item._id)}
+        >
+          <Ionicons name="trash-outline" size={16} color="#fff" />
+          <Text style={styles.buttonText}>Eliminar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -335,14 +323,7 @@ export default function FarmsPage() {
       fontWeight: 'bold',
       color: '#333333',
     },
-    actionsContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    actionButton: {
-      marginLeft: 10,
-      padding: 5,
-    },
+
     infoContainer: {
       marginTop: 5,
     },
@@ -358,15 +339,25 @@ export default function FarmsPage() {
     },
     buttonContainer: {
       flexDirection: 'row',
-      justifyContent: 'center',
+      justifyContent: 'space-between',
       marginTop: 10,
+      gap: 10,
     },
-    viewButton: {
+    editButton: {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#3498db',
+      backgroundColor: '#27ae60',
+      padding: 10,
+      borderRadius: 8,
+    },
+    deleteButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#e74c3c',
       padding: 10,
       borderRadius: 8,
     },

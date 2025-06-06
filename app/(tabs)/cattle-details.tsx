@@ -303,7 +303,7 @@ export default function CattleDetailPage() {
 
             {cattle.informacion_veterinaria.cantidad_horas && (
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Duración del Tratamiento</Text>
+                <Text style={styles.infoLabel}>Cada</Text>
                 <Text style={styles.infoValue}>
                   {cattle.informacion_veterinaria.cantidad_horas} horas
                 </Text>

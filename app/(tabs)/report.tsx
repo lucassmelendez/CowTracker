@@ -413,12 +413,24 @@ ${date}
     setExportModalVisible(false);
     const selectedFarmName = selectedFarm ? selectedFarm.name : 'Todas las granjas';
     
+    // Crear funciones wrapper que coincidan con la signatura esperada
+    const successCallback = (message: string) => {
+      showSuccess('Éxito', message);
+    };
+    
+    const errorCallback = (message: string) => {
+      showError('Error', message);
+    };
+    
     await ReportGenerator.exportToHTML(
       reportData, 
       selectedReportType, 
       selectedFarmName,
       selectedReportType === 'cattle' ? cattleDetails : undefined,
-      { showSuccess, showError }
+      { 
+        showSuccess: successCallback,
+        showError: errorCallback
+      }
     );
   };
 
@@ -426,10 +438,23 @@ ${date}
     if (!reportData) return;
     
     setExportModalVisible(false);
+    
+    // Crear funciones wrapper que coincidan con la signatura esperada
+    const successCallback = (message: string) => {
+      showSuccess('Éxito', message);
+    };
+    
+    const errorCallback = (message: string) => {
+      showError('Error', message);
+    };
+    
     await ReportGenerator.exportToCSV(
       reportData, 
       selectedReportType,
-      { showSuccess, showError }
+      { 
+        showSuccess: successCallback,
+        showError: errorCallback
+      }
     );
   };
 

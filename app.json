@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "CowTracker",
-    "slug": "cowtracker",
+    "slug": "ganadoapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -21,7 +21,10 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.cowtracker.app",
-      "permissions": ["CAMERA"]
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -52,6 +55,7 @@
       "eas": {
         "projectId": "c4bf0424-daa8-421e-8b65-4f0d106bb272"
       }
-    }
+    },
+    "owner": "lucasmelendez"
   }
 }

@@ -56,6 +56,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<UserInfo>;
   logout: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<UserInfo>;
+  refreshUserInfo: () => Promise<UserInfo | null>;
   hasRole: (role: string) => boolean;
   isAdmin: () => boolean;
   isTrabajador: () => boolean;
@@ -334,6 +335,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const refreshUserInfo = async (): Promise<UserInfo | null> => {
+    try {
+      console.log('🔄 Refrescando información del usuario desde el servidor...');
+      
+      // Verificar que hay una sesión activa
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error || !data?.session) {
+        console.log('❌ No hay sesión activa para refrescar');
+        return null;
+      }
+      
+      // Obtener datos frescos del servidor
+      const token = data.session.access_token;
+      api.setAuthToken(token);
+      
+      const freshUserData = await api.users.getProfile();
+      
+      // Asegurarse de que el token esté incluido
+      const userInfoWithToken: UserInfo = {
+        ...freshUserData,
+        token: token
+      };
+      
+      // Actualizar el estado local
+      setUserInfo(userInfoWithToken);
+      setCurrentUser(userInfoWithToken);
+      
+      console.log('✅ Información del usuario refrescada:', {
+        id_rol: userInfoWithToken?.id_rol,
+        email: userInfoWithToken?.email,
+        id_premium: userInfoWithToken?.id_premium,
+        premium_type: userInfoWithToken?.premium_type
+      });
+      
+      return userInfoWithToken;
+    } catch (error: any) {
+      console.error('❌ Error al refrescar información del usuario:', error);
+      setError(error.message || 'Error al refrescar información del usuario');
+      return null;
+    }
+  };
+
   const updateUserProfile = async (data: UpdateProfileData): Promise<UserInfo> => {
     try {
       setLoading(true);
@@ -405,6 +449,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     updateProfile: updateUserProfile,
+    refreshUserInfo,
     hasRole,
     isAdmin: () => userInfo?.id_rol === 1,
     isTrabajador: () => userInfo?.id_rol === 2,

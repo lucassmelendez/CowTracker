@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useFarm } from '../../components/FarmContext';
 import { useAuth } from '../../components/AuthContext';
 import { useUserFarms, useAllFarms, useFarmCattle, useAllCattleWithFarmInfo, useCacheManager } from '../../hooks/useCachedData';
+import { useUserRefresh } from '../../hooks/useUserRefresh';
 import { createStyles, tw } from '../../styles/tailwind';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 
@@ -62,6 +63,12 @@ export default function CattleTab() {
   const { invalidateCache } = useCacheManager();
   const lastRefreshRef = useRef<number>(0);
   const REFRESH_COOLDOWN = 2000; // 2 segundos de cooldown entre refreshes
+  
+  // Hook para refrescar automáticamente la información del usuario
+  useUserRefresh({
+    intervalMs: 30000, // Refrescar cada 30 segundos
+    enableAutoRefresh: true
+  });
 
   // Determinar si estamos mostrando todas las granjas o una específica
   const isShowingAllFarms = !selectedFarm || selectedFarm._id === 'all-farms';

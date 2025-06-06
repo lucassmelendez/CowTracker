@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUserFarms, useCacheManager } from '../../hooks/useCachedData';
+import { useUserRefresh } from '../../hooks/useUserRefresh';
 import { useAuth } from '../../components/AuthContext';
 import PremiumUpgradeModal from '../../components/PremiumUpgradeModal';
 import api from '../../lib/services/api';
@@ -31,6 +32,12 @@ export default function FarmsPage() {
   
   // Hook para modales personalizados
   const { showSuccess, showError, showConfirm, ModalComponent } = useCustomModal();
+  
+  // Hook para refrescar automáticamente la información del usuario
+  useUserRefresh({
+    intervalMs: 30000, // Refrescar cada 30 segundos
+    enableAutoRefresh: true
+  });
 
   const [modalVisible, setModalVisible] = useState(false);
   const [formData, setFormData] = useState({

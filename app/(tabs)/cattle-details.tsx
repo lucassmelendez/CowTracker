@@ -283,6 +283,22 @@ export default function CattleDetailPage() {
               </View>
             )}
 
+            {cattle.informacion_veterinaria.nota && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Notas Veterinarias</Text>
+                <Text style={styles.infoValue}>
+                  {cattle.informacion_veterinaria.nota}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Información de Medicamento */}
+        {cattle.informacion_veterinaria && (cattle.informacion_veterinaria.medicamento || cattle.informacion_veterinaria.dosis || cattle.informacion_veterinaria.cantidad_horas) && (
+          <View style={styles.infoCard}>
+            <Text style={styles.sectionTitle}>Información de Medicamento</Text>
+            
             {cattle.informacion_veterinaria.medicamento && (
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Medicamento</Text>
@@ -306,15 +322,6 @@ export default function CattleDetailPage() {
                 <Text style={styles.infoLabel}>Cada</Text>
                 <Text style={styles.infoValue}>
                   {cattle.informacion_veterinaria.cantidad_horas} horas
-                </Text>
-              </View>
-            )}
-
-            {cattle.informacion_veterinaria.nota && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Notas Veterinarias</Text>
-                <Text style={styles.infoValue}>
-                  {cattle.informacion_veterinaria.nota}
                 </Text>
               </View>
             )}

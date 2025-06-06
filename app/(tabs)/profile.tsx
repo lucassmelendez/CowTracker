@@ -104,6 +104,8 @@ export default function ProfilePage() {
     premiumText: createStyles('text-white text-xs font-bold'),
     workerBadge: createStyles('bg-blue-500 px-2 py-1 rounded-full'),
     workerText: createStyles('text-white text-xs font-bold'),
+    veterinaryBadge: createStyles('bg-green-600 px-2 py-1 rounded-full'),
+    veterinaryText: createStyles('text-white text-xs font-bold'),
     upgradeButton: createStyles('bg-yellow-500 py-2 px-4 rounded-lg mt-2'),
     upgradeButtonText: createStyles('text-white text-sm font-semibold'),
     helperText: createStyles('text-sm text-gray-600 text-center mt-2'),
@@ -400,9 +402,14 @@ export default function ProfilePage() {
                   <Text style={styles.premiumText}>PREMIUM</Text>
                 </View>
               )}
-              {userData.id_premium === 3 && (
+              {userData.role === '2' && (
                 <View style={styles.workerBadge}>
                   <Text style={styles.workerText}>TRABAJADOR</Text>
+                </View>
+              )}
+              {userData.role === '3' && (
+                <View style={styles.veterinaryBadge}>
+                  <Text style={styles.veterinaryText}>VETERINARIO</Text>
                 </View>
               )}
             </View>
@@ -414,7 +421,7 @@ export default function ProfilePage() {
                 <Text style={styles.upgradeButtonText}>Actualizar a Premium</Text>
               </TouchableOpacity>
             )}
-            {userData.id_premium === 3 && (
+            {(userData.role === '2' || userData.role === '3') && (
               <Text style={styles.helperText}>
                 Solo el administrador puede gestionar la suscripción Premium
               </Text>

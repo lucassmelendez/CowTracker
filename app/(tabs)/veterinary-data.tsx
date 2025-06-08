@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +15,13 @@ import api from '../../lib/services/api';
 import { useFarm } from '../../components/FarmContext';
 import { useAuth } from '../../components/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useCustomModal } from '../../components/CustomModal';
+import { 
+  showVeterinaryNotification, 
+  setupNotificationResponseListener, 
+  setupNotificationListener 
+} from '../../lib/services/notificationService';
+import * as Notifications from 'expo-notifications';
 
 export default function VeterinaryDataPage() {
   const [cattle, setCattle] = useState<any[]>([]);
@@ -24,12 +32,58 @@ export default function VeterinaryDataPage() {
   const router = useRouter();
   const { selectedFarm } = useFarm();
   const { isVeterinario } = useAuth();
+  const { showSuccess, ModalComponent } = useCustomModal();
+    // Referencias para los listeners de notificaciones
+  const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
+  const notificationListener = useRef<Notifications.Subscription | undefined>(undefined);
 
+  // Configurar listeners de notificaciones
+  useEffect(() => {
+    // Listener para cuando el usuario interactúa con una notificación
+    responseListener.current = setupNotificationResponseListener((response) => {
+      const { data } = response.notification.request.content;
+      console.log('Notificación presionada:', data);
+      
+      // Aquí podemos manejar la navegación basada en los datos de la notificación
+      if (data.type === 'veterinary' && data.cattleId) {
+        router.push(`/add-veterinary-record?id=${data.cattleId}`);
+      }
+    });
+    
+    // Listener para cuando una notificación es recibida mientras la app está abierta
+    notificationListener.current = setupNotificationListener((notification) => {
+      console.log('Notificación recibida en primer plano:', notification);
+      // Podemos mostrar un mensaje adicional o actualizar la UI
+    });
+    
+    // Limpiar listeners cuando el componente se desmonta
+    return () => {
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+    };
+  }, [router]);
   useFocusEffect(
     React.useCallback(() => {
       loadCattle();
+      
+      // Mostrar una notificación informativa cuando el usuario accede a la pantalla
+      // (solo si es un veterinario)
+      if (isVeterinario()) {
+        setTimeout(() => {
+          showVeterinaryNotification(
+            'Sistema de Notificaciones Activo',
+            'Las notificaciones de registros veterinarios están activadas',
+            { type: 'system', action: 'notification-system-active' }
+          );
+        }, 1000); // Esperar un segundo para no sobrecargar la UI
+      }
+      
       return () => {}; // Cleanup function
-    }, [selectedFarm])
+    }, [selectedFarm, isVeterinario])
   );
 
   const loadCattle = async () => {
@@ -101,15 +155,27 @@ export default function VeterinaryDataPage() {
     if (cattle.numero_identificacion) return cattle.numero_identificacion.toString();
     if (cattle.identificationNumber) return cattle.identificationNumber.toString();
     return `unknown-${Math.random().toString(36).substring(2, 15)}`;
-  };
-
-  const navigateToAddVeterinaryRecord = (cattle: any) => {
+  };  const navigateToAddVeterinaryRecord = async (cattle: any) => {
     const cattleId = getReliableCattleId(cattle);
+    const cattleName = getCattleName(cattle);
+    
+    // Mostrar notificación nativa en la barra de estado con datos adicionales
+    await showVeterinaryNotification(
+      'Agregar Registro Veterinario',
+      `Iniciando registro médico para ${cattleName}`,
+      {
+        cattleId,
+        cattleName,
+        action: 'add-veterinary-record',
+        timestamp: new Date().toISOString()
+      }
+    );
+    
+    // Navegar a la pantalla de agregar registro veterinario
     router.push(`/add-veterinary-record?id=${cattleId}`);
-  };
-
-  const navigateToEditVeterinaryRecord = (cattle: any) => {
+  };  const navigateToEditVeterinaryRecord = async (cattle: any) => {
     const cattleId = getReliableCattleId(cattle);
+    const cattleName = getCattleName(cattle);
     // Pasar los datos existentes como parámetros de consulta
     const vetInfo = getVeterinaryInfo(cattle).vetInfo;
     
@@ -126,6 +192,19 @@ export default function VeterinaryDataPage() {
       ...(vetInfo.dosis && { dosis: vetInfo.dosis }),
       ...(vetInfo.cantidad_horas && { cantidad_horas: vetInfo.cantidad_horas.toString() }),
     });
+    
+    // Mostrar notificación nativa en la barra de estado con datos adicionales
+    await showVeterinaryNotification(
+      'Editar Registro Veterinario',
+      `Editando registro médico para ${cattleName}`,
+      {
+        cattleId,
+        cattleName,
+        action: 'edit-veterinary-record',
+        timestamp: new Date().toISOString(),
+        hasVeterinaryInfo: true
+      }
+    );
     
     router.push(`/add-veterinary-record?${params.toString()}`);
   };
@@ -399,17 +478,13 @@ export default function VeterinaryDataPage() {
         
         {/* Botones de acción - Solo para veterinarios */}
         {isVeterinario() && (
-          <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity
+          <View style={styles.actionButtonsContainer}>            <TouchableOpacity
               style={styles.addRecordButton}
               onPress={() => navigateToAddVeterinaryRecord(item)}
             >
               <Ionicons name="medical" size={14} color="#fff" />
               <Text style={styles.addRecordButtonText}>
-                {hasVeterinaryInfo 
-                  ? 'Agregar'
-                  : 'Agregar'
-                }
+                Agregar
               </Text>
             </TouchableOpacity>
 
@@ -480,9 +555,7 @@ export default function VeterinaryDataPage() {
         </TouchableOpacity>
       </View>
     );
-  }
-
-  return (
+  }  return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Registros Veterinarios</Text>
@@ -490,7 +563,7 @@ export default function VeterinaryDataPage() {
           {getSubtitle()}
         </Text>
       </View>
-      
+            
       <FlatList
         data={cattle}
         renderItem={renderCattleItem}

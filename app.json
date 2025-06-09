@@ -7,17 +7,15 @@
     "icon": "./assets/images/icon.png",
     "scheme": "cowtracker",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,    "ios": {
+    "newArchEnabled": true,
+    "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.cowtracker.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Esta aplicación necesita acceso a la cámara para escanear códigos QR",
-        "UIBackgroundModes": [
-          "remote-notification"
-        ],
-        "PermissionDescription": "Esta app necesita mostrar notificaciones para alertarte sobre actualizaciones de registros veterinarios"
+        "NSCameraUsageDescription": "Esta aplicación necesita acceso a la cámara para escanear códigos QR"
       }
-    },"android": {
+    },
+    "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -25,18 +23,15 @@
       "package": "com.cowtracker.app",
       "permissions": [
         "CAMERA",
-        "android.permission.CAMERA",
-        "NOTIFICATIONS",
-        "android.permission.NOTIFICATIONS",
-        "VIBRATE",
-        "android.permission.VIBRATE"
+        "android.permission.CAMERA"
       ]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
-    },    "plugins": [
+    },
+    "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
@@ -50,14 +45,6 @@
         "expo-barcode-scanner",
         {
           "cameraPermission": "Permitir que CowTracker acceda a tu cámara para escanear códigos QR."
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/notification-icon.png",
-          "color": "#27ae60",
-          "sounds": ["./assets/sounds/notification.wav"]
         }
       ]
     ],

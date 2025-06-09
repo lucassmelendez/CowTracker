@@ -7,7 +7,6 @@ import { Text, View, ActivityIndicator, TouchableOpacity, StyleSheet } from 'rea
 import CustomHeader from '../components/CustomHeader';
 import { createStyles, tw } from '../styles/tailwind';
 import { Ionicons } from '@expo/vector-icons';
-import { registerForPushNotificationsAsync } from '../lib/services/notificationService';
 
 // Header simple solo con título y botón de volver atrás
 function SimpleHeader({ title }: { title: string }) {
@@ -44,11 +43,6 @@ function RootLayoutNav() {
   const { currentUser, loading } = useAuth();
   const router = useRouter();
   
-  // Solicitar permisos para notificaciones al iniciar la app
-  useEffect(() => {
-    registerForPushNotificationsAsync();
-  }, []);
-
   // Eliminamos la redirección automática aquí para evitar conflictos
   // El index.tsx se encargará de las redirecciones
 

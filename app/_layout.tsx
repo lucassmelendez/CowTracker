@@ -133,7 +133,8 @@ function RootLayoutNav() {
                 headerBackVisible: false,
                 gestureEnabled: false,
               }} 
-            />            <Stack.Screen 
+            />
+            <Stack.Screen 
               name="vinculacion" 
               options={{ 
                 headerShown: true,

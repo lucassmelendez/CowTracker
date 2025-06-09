@@ -101,6 +101,85 @@ export async function showVeterinaryNotification(title: string, body: string, da
   });
 }
 
+// Función para programar una notificación para una fecha y hora específicas
+export async function scheduleNotificationForDateTime(title: string, body: string, scheduledDateTime: Date, data = {}) {
+  // Solicitar permisos antes de programar una notificación
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') {
+    const { status: newStatus } = await Notifications.requestPermissionsAsync();
+    if (newStatus !== 'granted') {
+      return false;
+    }
+  }
+
+  try {
+    // Verificar si la fecha es futura
+    const now = new Date();
+    if (scheduledDateTime <= now) {
+      console.log('La fecha de programación debe ser futura:', scheduledDateTime);
+      return false;
+    }
+
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: {
+          type: 'veterinary',
+          timestamp: new Date().toISOString(),
+          scheduledFor: scheduledDateTime.toISOString(),
+          ...data
+        },
+        sound: true,
+        color: '#27ae60',
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        badge: 1,        ...(Platform.OS === 'android' && { channelId: VETERINARY_CHANNEL_ID }),
+      },
+      trigger: {
+        seconds: Math.max(1, (scheduledDateTime.getTime() - Date.now()) / 1000)
+      },
+    });
+    
+    console.log(`Notificación programada (ID: ${notificationId}) para: ${scheduledDateTime.toLocaleString()}`);
+    return notificationId;
+  } catch (error) {
+    console.error('Error al programar la notificación con fecha:', error);
+    return false;
+  }
+}
+
+// Función específica para programar notificaciones de finalización de tratamientos veterinarios
+export async function scheduleTreatmentEndNotification(
+  cattleId: string,
+  cattleName: string,
+  treatmentEndTime: Date,
+  diagnostico?: string,
+  medicamento?: string
+) {
+  const title = '🐮 Fin de Tratamiento Veterinario';
+  
+  // Construir mensaje descriptivo
+  let body = `El tratamiento para ${cattleName} ha finalizado.`;
+  if (diagnostico) {
+    body += ` Diagnóstico: ${diagnostico}.`;
+  }
+  if (medicamento) {
+    body += ` Medicamento: ${medicamento}.`;
+  }
+  
+  return scheduleNotificationForDateTime(
+    title,
+    body,
+    treatmentEndTime,
+    {
+      type: 'veterinary',
+      action: 'treatment-ended',
+      cattleId,
+      cattleName,
+    }
+  );
+}
+
 // Función para cancelar todas las notificaciones pendientes
 export async function cancelAllNotifications() {
   try {

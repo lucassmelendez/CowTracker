@@ -11,14 +11,14 @@ import {
   Linking,
   StyleSheet
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '../../components/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../lib/config/supabase';
-import { useCacheManager } from '../../hooks/useCachedData';
-import cachedApi from '../../lib/services/cachedApi';
-import QRCode from 'react-native-qrcode-svg';
+import { useAuth } from '../../components/AuthContext';
 import { useCustomModal } from '../../components/CustomModal';
+import QRCode from 'react-native-qrcode-svg';
+import cachedApi from '../../lib/services/cachedApi';
+import { scheduleTreatmentNotificationFromVetInfo } from '../../lib/services/vetNotifications';
 
 export default function CattleDetailPage() {
   const router = useRouter();
@@ -142,11 +142,28 @@ export default function CattleDetailPage() {
       }
     });
   };
-
-  const navigateToEditVeterinaryRecord = () => {
+  const navigateToEditVeterinaryRecord = async () => {
     if (!cattle.informacion_veterinaria) return;
     
     const vetInfo = cattle.informacion_veterinaria;
+    
+    // Programar notificación de finalización de tratamiento si es necesario
+    if (vetInfo.cantidad_horas && vetInfo.fecha_ini_tratamiento && !vetInfo.fecha_fin_tratamiento) {
+      try {
+        // Obtener nombre del ganado para la notificación
+        const cattleName = cattle.nombre || `Ganado #${cattle.numero_identificacion || cattle.id_ganado || ''}`;
+        
+        // Intentar programar la notificación
+        await scheduleTreatmentNotificationFromVetInfo(
+          cattleId.toString(),
+          cattleName,
+          vetInfo
+        );
+      } catch (error) {
+        console.error('Error al programar notificación para fin de tratamiento:', error);
+      }
+    }
+    
     const params = new URLSearchParams({
       id: cattleId.toString(),
       mode: 'edit',
@@ -752,4 +769,4 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
   },
-}); 
+});

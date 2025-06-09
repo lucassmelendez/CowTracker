@@ -314,6 +314,97 @@ export default function VeterinaryDataPage() {
     }
   };
 
+  // Función para calcular y mostrar información sobre el tiempo restante de tratamiento
+  const getTreatmentRemainingInfo = (vetInfo: any): { text: string, isUrgent: boolean, hasEnded: boolean } => {
+    if (!vetInfo) return { text: '', isUrgent: false, hasEnded: false };
+    
+    try {
+      // Si tiene fecha de fin explícita
+      if (vetInfo.fecha_fin_tratamiento) {
+        const endDate = new Date(vetInfo.fecha_fin_tratamiento);
+        const now = new Date();
+        
+        // Si la fecha de fin ya pasó
+        if (endDate < now) {
+          const diffTime = now.getTime() - endDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return { 
+            text: `Tratamiento finalizado hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`, 
+            isUrgent: false,
+            hasEnded: true
+          };
+        } else {
+          const diffTime = endDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return { 
+            text: `Finaliza en ${diffDays} día${diffDays !== 1 ? 's' : ''}`, 
+            isUrgent: diffDays <= 1,
+            hasEnded: false
+          };
+        }
+      }
+      // Si tiene fecha de inicio y cantidad de horas, calculamos
+      else if (vetInfo.fecha_ini_tratamiento && vetInfo.cantidad_horas) {
+        const startDate = new Date(vetInfo.fecha_ini_tratamiento);
+        const hours = typeof vetInfo.cantidad_horas === 'string' ? 
+          parseInt(vetInfo.cantidad_horas) : vetInfo.cantidad_horas;
+        
+        if (!isNaN(hours) && hours > 0) {
+          // Calcular fecha de finalización
+          const endDate = new Date(startDate);
+          endDate.setHours(endDate.getHours() + hours);
+          
+          const now = new Date();
+          
+          // Si la fecha calculada ya pasó
+          if (endDate < now) {
+            const diffTime = now.getTime() - endDate.getTime();
+            const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+            
+            if (diffHours < 24) {
+              return { 
+                text: `Tratamiento finalizado hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`, 
+                isUrgent: false,
+                hasEnded: true
+              };
+            } else {
+              const diffDays = Math.ceil(diffHours / 24);
+              return { 
+                text: `Tratamiento finalizado hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`, 
+                isUrgent: false,
+                hasEnded: true
+              };
+            }
+          } else {
+            const diffTime = endDate.getTime() - now.getTime();
+            const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+            
+            if (diffHours < 24) {
+              return { 
+                text: `Finaliza en ${diffHours} hora${diffHours !== 1 ? 's' : ''}`, 
+                isUrgent: diffHours <= 3,
+                hasEnded: false
+              };
+            } else {
+              const diffDays = Math.ceil(diffHours / 24);
+              return { 
+                text: `Finaliza en ${diffDays} día${diffDays !== 1 ? 's' : ''}`, 
+                isUrgent: diffDays <= 1,
+                hasEnded: false
+              };
+            }
+          }
+        }
+      }
+      
+      // Si no tenemos suficiente información
+      return { text: 'Sin fecha de finalización', isUrgent: false, hasEnded: false };
+    } catch (error) {
+      console.error('Error calculando información del tiempo restante:', error);
+      return { text: '', isUrgent: false, hasEnded: false };
+    }
+  };
+
   // Función para normalizar datos veterinarios - simplificada para Supabase
   const getVeterinaryInfo = (item: any = {}): { 
     hasVeterinaryInfo: boolean, 
@@ -361,6 +452,9 @@ export default function VeterinaryDataPage() {
 
     // Verificar si tiene información veterinaria
     const { hasVeterinaryInfo, vetInfo } = getVeterinaryInfo(item);
+
+    // Obtener información del tiempo restante de tratamiento
+    const treatmentInfo = getTreatmentRemainingInfo(vetInfo);
 
     return (
       <TouchableOpacity
@@ -473,6 +567,15 @@ export default function VeterinaryDataPage() {
                 <Text style={styles.infoValue}>{vetInfo.nota}</Text>
               </View>
             )}
+          </View>
+        )}
+        
+        {/* Información del tiempo restante de tratamiento */}
+        {hasVeterinaryInfo && treatmentInfo.text && (
+          <View style={styles.treatmentInfoContainer}>
+            <Text style={styles.treatmentInfoText}>
+              {treatmentInfo.text}
+            </Text>
           </View>
         )}
         
@@ -787,6 +890,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 4,
     fontSize: 11,
+    textAlign: 'center',
+  },
+  treatmentInfoContainer: {
+    backgroundColor: '#fff3cd',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#ffc107',
+  },
+  treatmentInfoText: {
+    fontSize: 14,
+    color: '#856404',
     textAlign: 'center',
   },
 });

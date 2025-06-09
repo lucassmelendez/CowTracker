@@ -16,6 +16,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../../lib/services/api';
 import { supabase } from '../../lib/config/supabase'; // Importar supabase para verificar sesión
 import { useCustomModal } from '../../components/CustomModal';
+import { scheduleTreatmentNotification, calculateTreatmentEndDate } from '../../lib/services/vetNotifications';
+import { showVeterinaryNotification } from '../../lib/services/notificationService';
 
 export default function AddVeterinaryRecordPage() {
   const router = useRouter();
@@ -132,6 +134,26 @@ export default function AddVeterinaryRecordPage() {
       
       const resultado = await api.cattle.addMedicalRecord(cattleIdString, recordData);
       
+      // Programar notificación si es un nuevo registro (no en modo edición)
+      if (!isEditMode) {
+        // Calcular fecha y hora de la próxima notificación
+        const nextNotificationDate = calculateTreatmentEndDate(fechaTratamiento, cantidadHoras);
+        
+        // Programar notificación en el dispositivo
+        await scheduleTreatmentNotification(
+          nextNotificationDate,
+          `Tratamiento para ${cattle.nombre || cattle.name}`,
+          `Próximo tratamiento: ${tratamiento}`,
+          cattleIdString
+        );
+        
+        // Mostrar notificación inmediata (opcional)
+        showVeterinaryNotification(
+          `Tratamiento programado para ${cattle.nombre || cattle.name}`,
+          `Próximo tratamiento: ${tratamiento}`
+        );
+      }
+      
       showSuccess(
         'Éxito',
         isEditMode ? 'Registro veterinario actualizado correctamente' : 'Registro veterinario agregado correctamente',
@@ -207,6 +229,70 @@ export default function AddVeterinaryRecordPage() {
       'Tratamiento Eliminado',
       'Todos los datos del tratamiento han sido eliminados. Presiona "Actualizar" para guardar los cambios.',
     );
+  };
+
+  // Función para generar un nombre confiable para el ganado
+  const getCattleName = () => {
+    if (!cattle) return 'Ganado';
+    return cattle.nombre || cattle.name || 
+           `Ganado #${cattle.numero_identificacion || cattle.identificationNumber || ''}`;
+  };
+
+  // Función para programar notificación de fin de tratamiento
+  const scheduleEndTreatmentNotification = async () => {
+    try {
+      // Verificar que tengamos datos necesarios
+      if (!cantidadHoras.trim() || !fechaTratamiento) {
+        return false;
+      }
+
+      // Calcular la fecha de finalización según las horas especificadas
+      const endDate = calculateTreatmentEndDate(fechaTratamiento, cantidadHoras);
+      
+      // Si tenemos fecha de fin explícita, usarla en lugar de la calculada
+      const finalEndDate = fechaFinTratamiento || endDate;
+      
+      // Si la fecha ya pasó, no programamos notificación
+      const now = new Date();
+      if (finalEndDate <= now) {
+        console.log('La fecha de finalización ya pasó, no se programa notificación');
+        return false;
+      }
+
+      // Obtener ID del ganado
+      const id = Array.isArray(cattleId) ? cattleId[0] : (cattleId || '');
+      
+      // Programar la notificación
+      const notificationId = await scheduleTreatmentNotification(
+        id.toString(),
+        getCattleName(),
+        finalEndDate,
+        diagnostico,
+        medicamento
+      );
+
+      if (notificationId) {
+        console.log(`Notificación programada con ID: ${notificationId} para ${finalEndDate.toLocaleString()}`);
+        
+        // Mostrar notificación inmediata de confirmación
+        await showVeterinaryNotification(
+          '✅ Notificación Programada',
+          `Te avisaremos cuando finalice el tratamiento el ${finalEndDate.toLocaleDateString()}`,
+          {
+            type: 'veterinary',
+            action: 'treatment-scheduled',
+            scheduledFor: finalEndDate.toISOString()
+          }
+        );
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Error al programar notificación de fin de tratamiento:', error);
+      return false;
+    }
   };
   
   if (loading) {
@@ -586,4 +672,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
   },
-}); 
+});

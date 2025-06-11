@@ -65,7 +65,6 @@ export interface CattleItem {
   id_estado_salud?: number;
   id_produccion?: number;
   id_genero?: number;
-  precio_compra?: number;
   nota?: string;
   notes?: string;
   finca?: {

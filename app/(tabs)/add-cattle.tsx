@@ -31,7 +31,6 @@ interface CattleData {
   gender?: string;
   weight?: number;
   notes?: string;
-  purchasePrice?: number;
   status?: string;
   healthStatus?: string;
   tipoProduccion?: string;
@@ -64,7 +63,6 @@ export default function AddCattlePage() {
   const [weight, setWeight] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
-  const [purchasePrice, setPurchasePrice] = useState('');
   const [selectedFarmId, setSelectedFarmId] = useState('');
   const [healthStatus, setHealthStatus] = useState('Saludable');
   const [status, setStatus] = useState('activo');
@@ -179,7 +177,6 @@ export default function AddCattlePage() {
           setGender(cattleData.gender || '');
           setWeight(cattleData.weight ? cattleData.weight.toString() : '');
           setNotes(cattleData.notes || '');
-          setPurchasePrice(cattleData.purchasePrice ? cattleData.purchasePrice.toString() : '');
           setStatus(cattleData.status || 'activo');
           setHealthStatus(cattleData.healthStatus || 'Saludable');
           setTipoProduccion(cattleData.tipoProduccion || 'leche');
@@ -280,7 +277,6 @@ export default function AddCattlePage() {
           gender: gender,
           weight: weight ? parseFloat(weight) : undefined,
           notes: notes,
-          purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
           healthStatus: healthStatus,
           tipoProduccion: tipoProduccion,
           farmId: farmIdNumeric.toString()
@@ -312,7 +308,6 @@ export default function AddCattlePage() {
         const cattleData = {
           nombre: name,
           numero_identificacion: parseInt(identifier),
-          precio_compra: parseFloat(purchasePrice) || 0,
           nota: notes || '',
           id_finca: farmIdNumeric,
           id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
@@ -449,15 +444,6 @@ export default function AddCattlePage() {
             </TouchableOpacity>
           ))}
         </View>
-
-        <Text style={styles.label}>Precio de compra</Text>
-        <TextInput
-          style={styles.input}
-          value={purchasePrice}
-          onChangeText={setPurchasePrice}
-          placeholder="Precio de compra"
-          keyboardType="numeric"
-        />
 
         <Text style={styles.label}>Tipo de Producción</Text>
         <View style={styles.optionsContainer}>

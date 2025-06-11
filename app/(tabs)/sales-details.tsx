@@ -16,7 +16,6 @@ interface Ganado {
   id_ganado: number;
   nombre: string;
   numero_identificacion: string;
-  precio_compra: number;
   nota?: string;
 }
 
@@ -273,7 +272,7 @@ export default function SalesDetails({
                         <Text style={styles.ganadoNumero}>#{relacion.ganado.numero_identificacion}</Text>
                       )}
                     </View>
-                    <Text style={styles.ganadoPrecio}>{formatCurrency(relacion.ganado.precio_compra)}</Text>
+
                   </View>
                 ))}
               </View>

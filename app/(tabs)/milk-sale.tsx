@@ -22,7 +22,6 @@ interface Ganado {
   id_ganado: number;
   nombre: string;
   numero_identificacion: string;
-  precio_compra?: number;
   id_produccion: number;
 }
 
@@ -245,11 +244,6 @@ export default function MilkSaleTab() {
             <Text style={[styles.cattleId, isSelected && styles.cattleIdSelected]}>
               ID: {item.numero_identificacion}
             </Text>
-            {item.precio_compra && (
-              <Text style={[styles.cattlePrice, isSelected && styles.cattlePriceSelected]}>
-                Precio compra: ${item.precio_compra}
-              </Text>
-            )}
           </View>
           <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
             {isSelected && <Ionicons name="checkmark" size={16} color="#fff" />}

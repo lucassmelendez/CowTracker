@@ -242,13 +242,6 @@ export default function CattleDetailPage() {
           </View>
           
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Precio de Compra</Text>
-            <Text style={styles.infoValue}>
-              ${cattle.precio_compra || 'No especificado'}
-            </Text>
-          </View>
-          
-          <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Granja</Text>
             <Text style={styles.infoValue}>
               {cattle.finca?.nombre || 'No asignada'}

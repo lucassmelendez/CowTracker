@@ -24,7 +24,7 @@ import { useFarm } from '../../components/FarmContext';
 import { useUserRefresh } from '../../hooks/useUserRefresh';
 import api from '../../lib/services/api';
 import { ReportGenerator } from '../../lib/utils/reportGenerator';
-import { ReportData, CattleDetail } from '../../lib/types';
+import { ReportData, CattleDetail, SalesStats, Sale } from '../../lib/types';
 import { useCustomModal } from '../../components/CustomModal';
 import { PieChart, BarChart, StatCard } from '../../components/charts';
 
@@ -40,18 +40,18 @@ interface ReportType {
 
 const reportTypes: ReportType[] = [
   {
+    id: 'sales',
+    name: 'Ventas',
+    description: 'Análisis de ventas',
+    icon: 'cash-outline',
+    color: '#27ae60'
+  },
+  {
     id: 'general',
     name: 'General',
     description: 'Resumen completo',
     icon: 'analytics-outline',
     color: '#3498db'
-  },
-  {
-    id: 'cattle',
-    name: 'Ganado',
-    description: 'Detalles del ganado',
-    icon: 'list-outline',
-    color: '#e67e22'
   },
   {
     id: 'health',
@@ -61,20 +61,30 @@ const reportTypes: ReportType[] = [
     color: '#e74c3c'
   },
   {
+    id: 'cattle',
+    name: 'Ganado',
+    description: 'Detalles del ganado',
+    icon: 'list-outline',
+    color: '#e67e22'
+  },
+  {
     id: 'farms',
     name: 'Granjas',
     description: 'Info de granjas',
     icon: 'leaf-outline',
-    color: '#27ae60'
+    color: '#9b59b6'
   }
 ];
 
 export default function ReportPage() {
-  const [selectedReportType, setSelectedReportType] = useState<string>('general');
+  const [selectedReportType, setSelectedReportType] = useState<string>('sales');
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [generatedReport, setGeneratedReport] = useState<string>('');
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [showCharts, setShowCharts] = useState(true);
+  const [salesData, setSalesData] = useState<Sale[]>([]);
+  const [salesStats, setSalesStats] = useState<SalesStats | null>(null);
+  const [loadingSales, setLoadingSales] = useState(false);
   
   // Hook para modales personalizados
   const { showSuccess, showError, ModalComponent } = useCustomModal();
@@ -133,6 +143,68 @@ export default function ReportPage() {
     }
   }, [selectedFarm?._id]);
 
+  // Cargar datos de ventas
+  useEffect(() => {
+    loadSalesData();
+  }, []);
+
+  const loadSalesData = async () => {
+    setLoadingSales(true);
+    try {
+      const [sales, stats] = await Promise.all([
+        api.sales.getAll(),
+        api.sales.getStats()
+      ]);
+      
+      setSalesData(sales);
+      
+      // Calcular estadísticas adicionales
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      const salesThisMonth = sales.filter((sale: Sale) => {
+        const saleDate = new Date(sale.fecha_venta || sale.created_at);
+        return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
+      });
+      
+      const revenueThisMonth = salesThisMonth.reduce((sum: number, sale: Sale) => sum + sale.total, 0);
+      
+      // Clasificar ventas por tipo (leche vs ganado)
+      const salesByType: Record<string, number> = {};
+      const revenueByType: Record<string, number> = {};
+      
+      sales.forEach((sale: Sale) => {
+        // Determinar tipo basado en cantidad y precio unitario
+        const isLeche = sale.cantidad >= 10 || (sale.cantidad > 1 && sale.precio_unitario < 50000);
+        const type = isLeche ? 'Leche' : 'Ganado';
+        
+        salesByType[type] = (salesByType[type] || 0) + 1;
+        revenueByType[type] = (revenueByType[type] || 0) + sale.total;
+      });
+      
+      const enhancedStats: SalesStats = {
+        totalSales: stats.totalVentas || 0,
+        totalRevenue: stats.totalIngresos || 0,
+        totalAnimalsSold: stats.totalAnimalesVendidos || 0,
+        averageSaleValue: stats.promedioVenta || 0,
+        salesByType,
+        revenueByType,
+        salesThisMonth: salesThisMonth.length,
+        revenueThisMonth,
+        salesGrowth: 0, // Se podría calcular con datos históricos
+        revenueGrowth: 0 // Se podría calcular con datos históricos
+      };
+      
+      setSalesStats(enhancedStats);
+    } catch (error) {
+      console.error('Error cargando datos de ventas:', error);
+      showError('Error', 'No se pudieron cargar los datos de ventas');
+    } finally {
+      setLoadingSales(false);
+    }
+  };
+
   const generateReportData = async () => {
     if (!farms || !allCattle) return;
 
@@ -151,7 +223,8 @@ export default function ReportPage() {
         cattleByHealth: {},
         cattleByGender: {},
         cattleByBreed: {},
-        medicalRecordsCount: 0
+        medicalRecordsCount: 0,
+        salesStats: salesStats || undefined
       };
 
       const details: CattleDetail[] = cattleData.map(cattle => ({
@@ -205,7 +278,14 @@ export default function ReportPage() {
 
   const refreshReportData = async () => {
     await invalidateCache();
-    await generateReportData();
+    await Promise.all([generateReportData(), loadSalesData()]);
+  };
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP'
+    }).format(amount);
   };
 
   const generateReport = () => {
@@ -219,6 +299,9 @@ export default function ReportPage() {
     const selectedFarmName = selectedFarm ? selectedFarm.name : 'Todas las granjas';
 
     switch (selectedReportType) {
+      case 'sales':
+        report = generateSalesReport(reportData, currentDate, selectedFarmName);
+        break;
       case 'general':
         report = generateGeneralReport(reportData, currentDate, selectedFarmName);
         break;
@@ -232,16 +315,76 @@ export default function ReportPage() {
         report = generateFarmsReport(reportData, currentDate, selectedFarmName);
         break;
       default:
-        report = generateGeneralReport(reportData, currentDate, selectedFarmName);
+        report = generateSalesReport(reportData, currentDate, selectedFarmName);
     }
 
     setGeneratedReport(report);
     setReportModalVisible(true);
   };
 
-  const generateGeneralReport = (data: ReportData, date: string, farmName: string): string => {
+  const generateSalesReport = (data: ReportData, date: string, farmName: string): string => {
+    const stats = salesStats;
+    if (!stats) {
+      return `
+INFORME DE VENTAS
+=================
+Fecha: ${date}
+Alcance: ${farmName}
+
+No hay datos de ventas disponibles.
+
+---
+Informe generado por CowTracker
+${date}
+      `.trim();
+    }
+
     return `
-INFORME GENERAL DE GANADO
+INFORME DE VENTAS
+=================
+Fecha: ${date}
+Alcance: ${farmName}
+
+RESUMEN EJECUTIVO DE VENTAS
+---------------------------
+• Total de ventas realizadas: ${stats.totalSales}
+• Ingresos totales: ${formatCurrency(stats.totalRevenue)}
+• Animales vendidos: ${stats.totalAnimalsSold}
+• Valor promedio por venta: ${formatCurrency(stats.averageSaleValue)}
+
+VENTAS DEL MES ACTUAL
+---------------------
+• Ventas este mes: ${stats.salesThisMonth}
+• Ingresos este mes: ${formatCurrency(stats.revenueThisMonth)}
+
+DISTRIBUCIÓN POR TIPO DE VENTA
+-------------------------------
+${Object.entries(stats.salesByType).map(([type, count]) => 
+  `• ${type}: ${count} ventas (${formatCurrency(stats.revenueByType[type] || 0)})`).join('\n')}
+
+ANÁLISIS DE RENDIMIENTO
+-----------------------
+• Promedio de ingresos por venta: ${formatCurrency(stats.averageSaleValue)}
+• Participación de ventas de leche: ${((stats.salesByType['Leche'] || 0) / stats.totalSales * 100).toFixed(1)}%
+• Participación de ventas de ganado: ${((stats.salesByType['Ganado'] || 0) / stats.totalSales * 100).toFixed(1)}%
+
+RECOMENDACIONES
+---------------
+• Mantener registros detallados de todas las ventas
+• Analizar tendencias mensuales para optimizar precios
+• Diversificar tipos de venta según demanda del mercado
+• Establecer metas de ventas mensuales
+
+---
+Informe generado por CowTracker
+${date}
+    `.trim();
+  };
+
+  const generateGeneralReport = (data: ReportData, date: string, farmName: string): string => {
+    const stats = salesStats;
+    return `
+INFORME GENERAL INTEGRAL
 ========================
 Fecha: ${date}
 Alcance: ${farmName}
@@ -251,18 +394,32 @@ RESUMEN EJECUTIVO
 • Total de granjas: ${data.totalFarms}
 • Total de ganado: ${data.totalCattle}
 • Registros médicos totales: ${data.medicalRecordsCount}
+${stats ? `• Total de ventas: ${stats.totalSales}
+• Ingresos totales: ${formatCurrency(stats.totalRevenue)}` : ''}
+
+ESTADÍSTICAS DE VENTAS
+----------------------
+${stats ? `• Ventas realizadas: ${stats.totalSales}
+• Ingresos generados: ${formatCurrency(stats.totalRevenue)}
+• Animales vendidos: ${stats.totalAnimalsSold}
+• Promedio por venta: ${formatCurrency(stats.averageSaleValue)}
+• Ventas este mes: ${stats.salesThisMonth}` : 'No hay datos de ventas disponibles'}
 
 DISTRIBUCIÓN POR ESTADO DE SALUD
 --------------------------------
 ${Object.entries(data.cattleByHealth).map(([health, count]) => 
-  `• ${health}: ${count} animales`).join('\n')}
+  `• ${health}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
 
 DISTRIBUCIÓN POR GÉNERO
 -----------------------
 ${Object.entries(data.cattleByGender).map(([gender, count]) => 
-  `• ${gender}: ${count} animales`).join('\n')}
+  `• ${gender}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
 
-
+INDICADORES CLAVE
+-----------------
+• Promedio de registros médicos por animal: ${data.totalCattle > 0 ? (data.medicalRecordsCount/data.totalCattle).toFixed(1) : 0}
+${stats ? `• Ingresos promedio por animal: ${formatCurrency(stats.totalRevenue / data.totalCattle)}
+• Tasa de venta: ${((stats.totalAnimalsSold / data.totalCattle) * 100).toFixed(1)}%` : ''}
 
 ---
 Informe generado por CowTracker
@@ -280,11 +437,22 @@ Alcance: ${farmName}
 ESTADÍSTICAS GENERALES
 ----------------------
 • Total de animales: ${data.totalCattle}
+• Distribución en ${data.totalFarms} granja${data.totalFarms !== 1 ? 's' : ''}
 
 DESGLOSE POR GÉNERO
 -------------------
 ${Object.entries(data.cattleByGender).map(([gender, count]) => 
   `• ${gender}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
+
+ESTADO DE SALUD
+---------------
+${Object.entries(data.cattleByHealth).map(([health, count]) => 
+  `• ${health}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
+
+REGISTROS MÉDICOS
+-----------------
+• Total de registros: ${data.medicalRecordsCount}
+• Promedio por animal: ${data.totalCattle > 0 ? (data.medicalRecordsCount/data.totalCattle).toFixed(1) : 0}
 
 ---
 Informe generado por CowTracker
@@ -315,7 +483,8 @@ ANÁLISIS DE SALUD
 ${Object.entries(data.cattleByHealth).length > 0 ? 
   `• Estado más común: ${Object.entries(data.cattleByHealth).sort((a, b) => b[1] - a[1])[0][0]}
 • Animales que requieren atención: ${data.cattleByHealth['Enfermo'] || 0}
-• Animales en tratamiento: ${data.cattleByHealth['En tratamiento'] || 0}` : 
+• Animales en tratamiento: ${data.cattleByHealth['En tratamiento'] || 0}
+• Tasa de salud: ${(((data.cattleByHealth['Saludable'] || 0) / data.totalCattle) * 100).toFixed(1)}%` : 
   '• No hay datos de salud disponibles'}
 
 RECOMENDACIONES
@@ -324,6 +493,7 @@ RECOMENDACIONES
 • Realizar chequeos regulares del ganado
 • Seguir protocolos de vacunación
 • Monitorear animales con problemas de salud
+• Implementar medidas preventivas
 
 ---
 Informe generado por CowTracker
@@ -342,6 +512,7 @@ RESUMEN DE GRANJAS
 ------------------
 • Total de granjas: ${data.totalFarms}
 • Total de ganado: ${data.totalCattle}
+• Promedio de ganado por granja: ${data.totalFarms > 0 ? (data.totalCattle / data.totalFarms).toFixed(1) : 0}
 
 DISTRIBUCIÓN POR ESTADO DE SALUD
 --------------------------------
@@ -353,11 +524,17 @@ DISTRIBUCIÓN POR GÉNERO
 ${Object.entries(data.cattleByGender).map(([gender, count]) => 
   `• ${gender}: ${count} animales (${((count/data.totalCattle)*100).toFixed(1)}%)`).join('\n')}
 
+EFICIENCIA OPERATIVA
+--------------------
+• Registros médicos por granja: ${data.totalFarms > 0 ? (data.medicalRecordsCount / data.totalFarms).toFixed(1) : 0}
+• Densidad de ganado: ${data.totalFarms > 0 ? (data.totalCattle / data.totalFarms).toFixed(1) : 0} animales/granja
+
 RECOMENDACIONES
 ---------------
 • Optimizar el uso de recursos por granja
 • Mantener registros actualizados del ganado
 • Monitorear la salud del ganado regularmente
+• Balancear la distribución de ganado entre granjas
 
 ---
 Informe generado por CowTracker
@@ -382,7 +559,6 @@ ${date}
     setExportModalVisible(false);
     const selectedFarmName = selectedFarm ? selectedFarm.name : 'Todas las granjas';
     
-    // Crear funciones wrapper que coincidan con la signatura esperada
     const successCallback = (message: string) => {
       showSuccess('Éxito', message);
     };
@@ -408,7 +584,6 @@ ${date}
     
     setExportModalVisible(false);
     
-    // Crear funciones wrapper que coincidan con la signatura esperada
     const successCallback = (message: string) => {
       showSuccess('Éxito', message);
     };
@@ -457,10 +632,8 @@ ${date}
     </TouchableOpacity>
   );
 
-
-
   // Mostrar loading si están cargando datos críticos
-  if (farmsLoading || cattleLoading || (selectedFarm && farmCattleLoading)) {
+  if (farmsLoading || cattleLoading || (selectedFarm && farmCattleLoading) || loadingSales) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#27ae60" />
@@ -490,7 +663,7 @@ ${date}
         {/* Tipos de informe */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Tipo de Informe</Text>
-      <FlatList
+          <FlatList
             data={reportTypes}
             renderItem={renderReportTypeItem}
             keyExtractor={item => item.id}
@@ -500,11 +673,64 @@ ${date}
           />
         </View>
 
-        {/* Estadísticas rápidas mejoradas */}
+        {/* Estadísticas principales de ventas */}
+        {salesStats && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>📊 Estadísticas de Ventas (Principal)</Text>
+              <TouchableOpacity 
+                style={styles.refreshButton}
+                onPress={loadSalesData}
+              >
+                <Ionicons name="refresh" size={20} color="#27ae60" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.statsGrid}>
+              <StatCard
+                title="Ingresos Totales"
+                value={formatCurrency(salesStats.totalRevenue)}
+                icon="cash"
+                color="#27ae60"
+                subtitle={`${salesStats.totalSales} ventas realizadas`}
+                trend={{
+                  value: salesStats.revenueGrowth,
+                  isPositive: salesStats.revenueGrowth >= 0
+                }}
+              />
+              <StatCard
+                title="Ventas del Mes"
+                value={salesStats.salesThisMonth}
+                icon="trending-up"
+                color="#3498db"
+                subtitle={formatCurrency(salesStats.revenueThisMonth)}
+                trend={{
+                  value: salesStats.salesGrowth,
+                  isPositive: salesStats.salesGrowth >= 0
+                }}
+              />
+              <StatCard
+                title="Promedio por Venta"
+                value={formatCurrency(salesStats.averageSaleValue)}
+                icon="calculator"
+                color="#f39c12"
+                subtitle="Valor medio"
+              />
+              <StatCard
+                title="Animales Vendidos"
+                value={salesStats.totalAnimalsSold}
+                icon="list"
+                color="#e74c3c"
+                subtitle="Total histórico"
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Estadísticas secundarias de salud */}
         {reportData && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Resumen Ejecutivo</Text>
+              <Text style={styles.sectionTitle}>🏥 Estado de Salud (Secundario)</Text>
               <TouchableOpacity 
                 style={styles.toggleButton}
                 onPress={() => setShowCharts(!showCharts)}
@@ -518,62 +744,111 @@ ${date}
             </View>
             <View style={styles.statsGrid}>
               <StatCard
-                title="Ganado Total"
-                value={reportData.totalCattle}
-                icon="list"
-                color="#3498db"
-                subtitle={`En ${reportData.totalFarms} granja${reportData.totalFarms !== 1 ? 's' : ''}`}
-                trend={{
-                  value: 12.5,
-                  isPositive: true
-                }}
+                title="Animales Saludables"
+                value={reportData.cattleByHealth['Saludable'] || 0}
+                icon="checkmark-circle"
+                color="#27ae60"
+                subtitle={`${(((reportData.cattleByHealth['Saludable'] || 0) / reportData.totalCattle) * 100).toFixed(1)}% del total`}
+              />
+              <StatCard
+                title="En Tratamiento"
+                value={reportData.cattleByHealth['En tratamiento'] || 0}
+                icon="medical"
+                color="#f39c12"
+                subtitle="Requieren seguimiento"
               />
               <StatCard
                 title="Registros Médicos"
                 value={reportData.medicalRecordsCount}
-                icon="medical"
-                color="#e74c3c"
-                subtitle="Historial completo"
-                trend={{
-                  value: 8.3,
-                  isPositive: true
-                }}
+                icon="document-text"
+                color="#3498db"
+                subtitle={`${(reportData.medicalRecordsCount / reportData.totalCattle).toFixed(1)} por animal`}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Estadísticas menos importantes de ganado y granjas */}
+        {reportData && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📋 Información General (Terciario)</Text>
+            <View style={styles.statsGrid}>
+              <StatCard
+                title="Total Ganado"
+                value={reportData.totalCattle}
+                icon="list"
+                color="#95a5a6"
+                subtitle={`En ${reportData.totalFarms} granja${reportData.totalFarms !== 1 ? 's' : ''}`}
+              />
+              <StatCard
+                title="Granjas Activas"
+                value={reportData.totalFarms}
+                icon="leaf"
+                color="#95a5a6"
+                subtitle={`${(reportData.totalCattle / reportData.totalFarms).toFixed(1)} animales/granja`}
               />
             </View>
           </View>
         )}
 
         {/* Gráficos y visualizaciones */}
-        {reportData && showCharts && (
+        {reportData && salesStats && showCharts && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Análisis Visual</Text>
+            <Text style={styles.sectionTitle}>📈 Análisis Visual</Text>
             
-            {/* Gráfico de pastel para estado de salud */}
+            {/* Gráfico de ventas por tipo */}
+            <PieChart
+              data={salesStats.salesByType}
+              title="Distribución de Ventas por Tipo"
+              colors={['#27ae60', '#3498db', '#f39c12']}
+            />
+            
+            {/* Gráfico de ingresos por tipo */}
+            <PieChart
+              data={salesStats.revenueByType}
+              title="Distribución de Ingresos por Tipo"
+              colors={['#27ae60', '#3498db', '#f39c12']}
+            />
+            
+            {/* Gráfico de estado de salud */}
             <PieChart
               data={reportData.cattleByHealth}
               title="Distribución por Estado de Salud"
               colors={['#27ae60', '#f39c12', '#e74c3c', '#95a5a6']}
             />
             
-            {/* Gráfico de pastel para género */}
+            {/* Gráfico de género */}
             <PieChart
               data={reportData.cattleByGender}
               title="Distribución por Género"
               colors={['#3498db', '#e91e63', '#9c27b0']}
             />
-            
-
           </View>
         )}
 
         {/* Botones de acción */}
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.viewButton, reportLoading && styles.disabledButton]}
-            onPress={generateReport}
-            disabled={reportLoading || !reportData}
+            style={[styles.actionButton, styles.refreshButton, (reportLoading || loadingSales) && styles.disabledButton]}
+            onPress={refreshReportData}
+            disabled={reportLoading || loadingSales}
           >
-            {reportLoading ? (
+            {(reportLoading || loadingSales) ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <>
+                <Ionicons name="refresh" size={20} color="#ffffff" />
+                <Text style={styles.actionButtonText}>Actualizar</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.viewButton, (reportLoading || loadingSales) && styles.disabledButton]}
+            onPress={generateReport}
+            disabled={reportLoading || loadingSales || !reportData}
+          >
+            {(reportLoading || loadingSales) ? (
               <ActivityIndicator size="small" color="#ffffff" />
             ) : (
               <>
@@ -584,9 +859,9 @@ ${date}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, styles.exportButton, reportLoading && styles.disabledButton]}
+            style={[styles.actionButton, styles.exportButton, (reportLoading || loadingSales) && styles.disabledButton]}
             onPress={() => setExportModalVisible(true)}
-            disabled={reportLoading || !reportData}
+            disabled={reportLoading || loadingSales || !reportData}
           >
             <Ionicons name="download" size={20} color="#ffffff" />
             <Text style={styles.actionButtonText}>Exportar</Text>
@@ -656,13 +931,13 @@ ${date}
               </View>
             </TouchableOpacity>
 
-        <TouchableOpacity 
+            <TouchableOpacity 
               style={styles.cancelExportButton} 
               onPress={() => setExportModalVisible(false)}
-        >
+            >
               <Text style={styles.cancelExportText}>Cancelar</Text>
-        </TouchableOpacity>
-      </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
       
@@ -740,6 +1015,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
   },
+  refreshButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#27ae60',
+  },
   reportTypesGrid: {
     gap: 12,
   },
@@ -791,59 +1071,9 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'space-between',
   },
-  distributionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  distributionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  distributionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginLeft: 8,
-  },
-  distributionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  distributionLabel: {
-    fontSize: 14,
-    color: '#333333',
-    flex: 1,
-  },
-  distributionValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  distributionValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginRight: 8,
-  },
-  distributionPercentage: {
-    fontSize: 12,
-    color: '#777777',
-  },
   actionButtonsContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     marginBottom: 32,
   },
   actionButton: {

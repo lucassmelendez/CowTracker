@@ -218,12 +218,48 @@ const farms = {
     instance.delete(`farms/${id}/veterinarians/${vetId}`),
 };
 
+// API para ventas
+const sales = {
+  getAll: (): Promise<any[]> => {
+    return instance.get('ventas');
+  },
+
+  getStats: (): Promise<any> => {
+    return instance.get('ventas/stats');
+  },
+
+  getById: (id: string | number): Promise<any> => {
+    return instance.get(`ventas/${id}`);
+  },
+
+  create: (saleData: any): Promise<any> => {
+    return instance.post('ventas', saleData);
+  },
+
+  update: (id: string | number, saleData: any): Promise<any> => {
+    return instance.put(`ventas/${id}`, saleData);
+  },
+
+  delete: (id: string | number): Promise<void> => {
+    return instance.delete(`ventas/${id}`);
+  },
+
+  getByComprador: (comprador: string): Promise<any[]> => {
+    return instance.get(`ventas/comprador/${comprador}`);
+  },
+
+  getCattleFromSale: (id: string | number): Promise<any[]> => {
+    return instance.get(`ventas/${id}/ganado`);
+  },
+};
+
 const api = {
   setAuthToken,
   clearAuthToken,
   users,
   cattle,
   farms,
+  sales,
   get: (url: string, config?: any) => instance.get(url, config),
   post: (url: string, data?: any, config?: any) => instance.post(url, data, config),
   put: (url: string, data?: any, config?: any) => instance.put(url, data, config),

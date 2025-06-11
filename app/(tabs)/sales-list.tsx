@@ -136,11 +136,12 @@ export default function SalesListTab() {
   };
 
   const renderVentaItem = ({ item }: { item: Venta }) => {
-    // Determinar tipo de venta basándose en la cantidad
-    // Si cantidad > 1, probablemente es leche (litros)
-    // Si cantidad = 1, probablemente es ganado
-    const isLeche = item.cantidad > 1;
-    const isGanado = item.cantidad === 1;
+    // Determinar tipo de venta basándose en la cantidad de manera más precisa
+    // Las ventas de leche tienden a tener cantidades altas (10+ litros típicamente)
+    // Las ventas de ganado tienden a ser pocas unidades (1-10 animales típicamente)
+    // También consideramos el precio unitario: leche es más barata por unidad
+    const isLeche = item.cantidad >= 10 || (item.cantidad > 1 && item.precio_unitario < 50000);
+    const isGanado = !isLeche;
 
     return (
       <TouchableOpacity 

@@ -179,7 +179,11 @@ export default function SalesDetails({
     return null;
   }
 
-  const isLeche = venta && venta.cantidad > 1;
+  // Determinar tipo de venta de manera más precisa
+  // Las ventas de leche tienden a tener cantidades altas (10+ litros típicamente)
+  // Las ventas de ganado tienden a ser pocas unidades (1-10 animales típicamente)
+  // También consideramos el precio unitario: leche es más barata por unidad
+  const isLeche = venta && (venta.cantidad >= 10 || (venta.cantidad > 1 && venta.precio_unitario < 50000));
   const tipoVenta = isLeche ? 'Venta de Leche' : 'Venta de Ganado';
 
   return (
@@ -262,7 +266,9 @@ export default function SalesDetails({
             {/* Ganado asociado */}
             {venta.ganados && venta.ganados.length > 0 && (
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Ganado Vendido</Text>
+                <Text style={styles.cardTitle}>
+                  {isLeche ? 'Ganado Asociado a la Venta' : 'Ganado Vendido'}
+                </Text>
                 {venta.ganados.map((relacion, index) => (
                   <View key={relacion.id_venta_ganado} style={styles.ganadoItem}>
                     <View style={styles.ganadoInfo}>

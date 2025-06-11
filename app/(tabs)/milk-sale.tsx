@@ -13,12 +13,13 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useCustomModal } from '../../components/CustomModal';
-import { supabase } from '../../lib/supabase'; // ajusta la ruta según tu proyecto
+import { useAuth } from '../../components/AuthContext';
 
 
 export default function MilkSaleTab() {
   const router = useRouter();
   const { showSuccess, ModalComponent } = useCustomModal();
+  const { userInfo } = useAuth();
   const [formData, setFormData] = useState({
     date: new Date(),
     customer: '',
@@ -97,39 +98,51 @@ export default function MilkSaleTab() {
     }
 
     try {
-      const {error} = await supabase.from('venta').insert([
-        {
-          fecha: formData.date.toISOString(),
-          comprador: formData.customer,
-          litros: parseFloat(formData.liters) ,
-          precio_por_litro: parseFloat(formData.pricePerLiter),
-          monto_total: parseFloat(formData.totalAmount),
-          notas: formData.notes || null,
+      // Preparar datos para venta de leche usando la nueva API
+      const ventaData = {
+        cantidad: parseFloat(formData.liters), // Para leche, cantidad = litros
+        precio_unitario: parseFloat(formData.pricePerLiter),
+        total: parseFloat(formData.totalAmount),
+        comprador: formData.customer
+      };
+
+      // Llamar a la API del backend
+      const response = await fetch(`https://ct-backend-gray.vercel.app/api/ventas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userInfo?.token}`
         },
-      ]);
-      
-      if (error) {
-        console.error('Error al guardar:', error.message);
+        body: JSON.stringify(ventaData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error al guardar venta:', errorData);
         return;
       }
+
+      const result = await response.json();
+      console.log('Venta de leche creada:', result);
+
       showSuccess(
-      'La venta de leche se ha registrado correctamente', 
-      ( ) => {
-        // Reset form
-        setFormData({
-          date: new Date(),
-          customer: '',
-          liters: '',
-          pricePerLiter: '',
-          totalAmount: '0.00',
-          notes: ''
-        });
-        router.back();
-      }
-    );    
-  } catch (err) {
-    console.error('Excepción al guardar', err);
-  }
+        'La venta de leche se ha registrado correctamente', 
+        () => {
+          // Reset form
+          setFormData({
+            date: new Date(),
+            customer: '',
+            liters: '',
+            pricePerLiter: '',
+            totalAmount: '0.00',
+            notes: ''
+          });
+          router.back();
+        }
+      );    
+    } catch (err) {
+      console.error('Excepción al guardar venta de leche:', err);
+    }
   }
 
   const handleCancel = () => {

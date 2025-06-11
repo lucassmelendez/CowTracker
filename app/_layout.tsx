@@ -100,6 +100,24 @@ function RootLayoutNav() {
                 gestureEnabled: false,
               }} 
             />
+            <Stack.Screen 
+              name="cattle-sale" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Ventas de Ganado" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
+              }} 
+            />
+            <Stack.Screen 
+              name="milk-sale" 
+              options={{ 
+                headerShown: true,
+                headerTitle: () => <CustomHeader title="Ventas de Leche" />,
+                headerBackVisible: false,
+                gestureEnabled: false,
+              }} 
+            />
 
             <Stack.Screen 
               name="farms" 

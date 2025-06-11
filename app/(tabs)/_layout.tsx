@@ -223,24 +223,6 @@ export default function TabLayout() {
         }}
       />
       <Stack.Screen
-        name="cattle-sale"
-        options={{
-          headerTitle: () => <SimpleHeader title="Venta de Ganado" />,
-          headerBackVisible: false,
-          gestureEnabled: false,
-          headerLeft: () => null, // Oculta el botón de navegación en web
-        }}
-      />
-      <Stack.Screen
-        name="milk-sale"
-        options={{
-          headerTitle: () => <SimpleHeader title="Venta de Leche" />,
-          headerBackVisible: false,
-          gestureEnabled: false,
-          headerLeft: () => null, // Oculta el botón de navegación en web
-        }}
-      />
-      <Stack.Screen
         name="help"
         options={{
           headerTitle: () => <SimpleHeader title="Ayuda" />,

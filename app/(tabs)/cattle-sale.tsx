@@ -13,10 +13,12 @@ import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useCustomModal } from '../../components/CustomModal';
+import { useAuth } from '../../components/AuthContext';
 
 export default function CattleSaleTab() {
   const router = useRouter();
   const { showSuccess, ModalComponent } = useCustomModal();
+  const { userInfo } = useAuth();
   
   const [formData, setFormData] = useState({
     date: new Date(),
@@ -55,7 +57,7 @@ export default function CattleSaleTab() {
     setFormData({ ...formData, date: currentDate });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Verificar si hay errores de validación numérica O campos vacíos
     const hasValidationErrors = totalAmountError;
     const hasEmptyFields = !formData.customer || !formData.totalAmount;
@@ -65,10 +67,49 @@ export default function CattleSaleTab() {
       return;
     }
 
-    // Aquí irá la lógica para guardar la venta
-    showSuccess('Venta registrada correctamente', () => {
-      router.back();
-    });
+    try {
+      // Preparar datos para venta de ganado usando la nueva API
+      const ventaData = {
+        cantidad: 1, // Para ganado, cantidad siempre es 1 (se entiende como 1 venta de ganado)
+        precio_unitario: parseFloat(formData.totalAmount), // El precio unitario será el total
+        total: parseFloat(formData.totalAmount),
+        comprador: formData.customer,
+        ganados: formData.selectedCattle // IDs de ganado seleccionado (si se implementa)
+      };
+
+      // Llamar a la API del backend
+      const response = await fetch(`https://ct-backend-gray.vercel.app/api/ventas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userInfo?.token}`
+        },
+        body: JSON.stringify(ventaData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error al guardar venta de ganado:', errorData);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('Venta de ganado creada:', result);
+
+      showSuccess('Venta de ganado registrada correctamente', () => {
+        // Reset form
+        setFormData({
+          date: new Date(),
+          customer: '',
+          selectedCattle: [],
+          totalAmount: '',
+          notes: ''
+        });
+        router.back();
+      });
+    } catch (err) {
+      console.error('Excepción al guardar venta de ganado:', err);
+    }
   };
 
   return (

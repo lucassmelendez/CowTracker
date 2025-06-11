@@ -6,7 +6,8 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../components/AuthContext';
@@ -205,7 +206,8 @@ export default function SalesListTab() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Cargando ventas...</Text>
+        <ActivityIndicator size="large" color="#27ae60" />
+        <Text style={styles.loadingText}>Cargando ventas...</Text>
       </View>
     );
   }
@@ -272,6 +274,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#7f8c8d',
+    fontWeight: '500',
   },
   actionBar: {
     flexDirection: 'row',

@@ -110,15 +110,6 @@ function RootLayoutNav() {
               }} 
             />
             <Stack.Screen 
-              name="sales" 
-              options={{ 
-                headerShown: true,
-                headerTitle: () => <CustomHeader title="Ventas" />,
-                headerBackVisible: false,
-                gestureEnabled: false,
-              }} 
-            />
-            <Stack.Screen 
               name="report" 
               options={{ 
                 headerShown: true,

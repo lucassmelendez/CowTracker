@@ -160,15 +160,6 @@ export default function TabLayout() {
         }}
       />
       <Stack.Screen
-        name="sales"
-        options={{
-          headerTitle: () => <CustomHeader title="Ventas" showBackButton={true} />,
-          headerBackVisible: false,
-          gestureEnabled: false,
-          headerLeft: () => null, // Oculta el botón de navegación en web
-        }}
-      />
-      <Stack.Screen
         name="profile"
         options={{
           headerTitle: () => <SimpleHeader title="Perfil" />,

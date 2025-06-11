@@ -148,30 +148,19 @@ export default function SalesListTab() {
     <View style={styles.container}>
       <View style={styles.actionBar}>
         <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => {
-            Alert.alert(
-              "Tipo de Venta",
-              "¿Qué tipo de venta deseas registrar?",
-              [
-                {
-                  text: "Venta de Leche",
-                  onPress: () => router.push('/(tabs)/milk-sale')
-                },
-                {
-                  text: "Venta de Ganado", 
-                  onPress: () => router.push('/(tabs)/cattle-sale')
-                },
-                {
-                  text: "Cancelar",
-                  style: "cancel"
-                }
-              ]
-            );
-          }}
+          style={styles.milkButton}
+          onPress={() => router.push('/(tabs)/milk-sale')}
         >
-          <Ionicons name="add" size={24} color="#fff" />
-          <Text style={styles.addButtonText}>Nueva Venta</Text>
+          <Ionicons name="water" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Venta de Leche</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.cattleButton}
+          onPress={() => router.push('/(tabs)/cattle-sale')}
+        >
+          <Ionicons name="fish" size={20} color="#fff" />
+          <Text style={styles.buttonText}>Venta de Ganado</Text>
         </TouchableOpacity>
       </View>
 
@@ -189,7 +178,7 @@ export default function SalesListTab() {
             <Ionicons name="receipt-outline" size={64} color="#bdc3c7" />
             <Text style={styles.emptyText}>No hay ventas registradas</Text>
             <Text style={styles.emptySubtext}>
-              Presiona el botón + para agregar una nueva venta
+              Presiona los botones de arriba para agregar una nueva venta
             </Text>
           </View>
         }
@@ -210,27 +199,38 @@ const styles = StyleSheet.create({
   },
   actionBar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  addButton: {
-    backgroundColor: '#27ae60',
+  milkButton: {
+    backgroundColor: '#3498db',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 25,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
     justifyContent: 'center',
+    flex: 0.48,
   },
-  addButtonText: {
+  cattleButton: {
+    backgroundColor: '#e67e22',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    justifyContent: 'center',
+    flex: 0.48,
+  },
+  buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   list: {
     flex: 1,

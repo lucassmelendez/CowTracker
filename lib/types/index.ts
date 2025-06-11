@@ -65,7 +65,6 @@ export interface CattleItem {
   id_estado_salud?: number;
   id_produccion?: number;
   id_genero?: number;
-  precio_compra?: number;
   nota?: string;
   notes?: string;
   finca?: {
@@ -209,6 +208,33 @@ export interface ReportData {
   cattleByGender: Record<string, number>;
   cattleByBreed: Record<string, number>;
   medicalRecordsCount: number;
+  // Nuevas estadísticas de ventas
+  salesStats?: SalesStats;
+}
+
+// Nuevos tipos para ventas
+export interface SalesStats {
+  totalSales: number;
+  totalRevenue: number;
+  totalAnimalsSold: number;
+  averageSaleValue: number;
+  salesByType: Record<string, number>;
+  revenueByType: Record<string, number>;
+  salesThisMonth: number;
+  revenueThisMonth: number;
+  salesGrowth: number;
+  revenueGrowth: number;
+}
+
+export interface Sale {
+  id_venta: number;
+  cantidad: number;
+  precio_unitario: number;
+  total: number;
+  comprador: string;
+  fecha_venta: string;
+  created_at: string;
+  ganados?: any[];
 }
 
 export interface CattleDetail {

@@ -100,21 +100,11 @@ function RootLayoutNav() {
                 gestureEnabled: false,
               }} 
             />
-
             <Stack.Screen 
               name="farms" 
               options={{ 
                 headerShown: true,
                 headerTitle: () => <CustomHeader title="Granjas" />,
-                headerBackVisible: false,
-                gestureEnabled: false,
-              }} 
-            />
-            <Stack.Screen 
-              name="sales" 
-              options={{ 
-                headerShown: true,
-                headerTitle: () => <CustomHeader title="Ventas" />,
                 headerBackVisible: false,
                 gestureEnabled: false,
               }} 

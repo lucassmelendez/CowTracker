@@ -14,7 +14,7 @@ export const useUserRefresh = (options: UseUserRefreshOptions = {}) => {
   } = options;
   
   const { refreshUserInfo, userInfo } = useAuth();
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const lastRefreshRef = useRef<number>(0);
   const REFRESH_COOLDOWN = 5000; // 5 segundos de cooldown mínimo
 

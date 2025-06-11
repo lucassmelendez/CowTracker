@@ -26,7 +26,7 @@ interface CattleItem {
   id_estado_salud?: number;
   id_produccion?: number;
   id_genero?: number;
-  precio_compra?: number;
+
   nota?: string;
   notes?: string;
   id_finca?: string | number;
@@ -354,11 +354,6 @@ export default function CattleTab() {
           </Text>
           {isShowingAllFarms && (
             <Text style={styles.detailText}>Granja: {farmName}</Text>
-          )}
-          {item.precio_compra && (
-            <Text style={styles.detailText}>
-              Precio: ${item.precio_compra.toLocaleString()}
-            </Text>
           )}
         </View>
         

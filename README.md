@@ -154,7 +154,7 @@ GET /currency/convert?amount=10000&from_currency=CLP&to_currency=USD
 usuario (id_usuario, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, id_rol, id_autentificar, id_premium)
 
 -- Ganado
-ganado (id_ganado, nombre, numero_identificacion, precio_compra, nota, id_finca, id_estado_salud, id_genero, id_informacion_veterinaria, id_produccion)
+ganado (id_ganado, nombre, numero_identificacion, nota, id_finca, id_estado_salud, id_genero, id_informacion_veterinaria, id_produccion)
 
 -- Granjas
 finca (id_finca, nombre, tamano)

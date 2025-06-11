@@ -160,15 +160,6 @@ export default function TabLayout() {
         }}
       />
       <Stack.Screen
-        name="sales"
-        options={{
-          headerTitle: () => <CustomHeader title="Ventas" showBackButton={true} />,
-          headerBackVisible: false,
-          gestureEnabled: false,
-          headerLeft: () => null, // Oculta el botón de navegación en web
-        }}
-      />
-      <Stack.Screen
         name="profile"
         options={{
           headerTitle: () => <SimpleHeader title="Perfil" />,
@@ -223,24 +214,6 @@ export default function TabLayout() {
         }}
       />
       <Stack.Screen
-        name="cattle-sale"
-        options={{
-          headerTitle: () => <SimpleHeader title="Venta de Ganado" />,
-          headerBackVisible: false,
-          gestureEnabled: false,
-          headerLeft: () => null, // Oculta el botón de navegación en web
-        }}
-      />
-      <Stack.Screen
-        name="milk-sale"
-        options={{
-          headerTitle: () => <SimpleHeader title="Venta de Leche" />,
-          headerBackVisible: false,
-          gestureEnabled: false,
-          headerLeft: () => null, // Oculta el botón de navegación en web
-        }}
-      />
-      <Stack.Screen
         name="help"
         options={{
           headerTitle: () => <SimpleHeader title="Ayuda" />,
@@ -262,6 +235,33 @@ export default function TabLayout() {
         name="add-cattle"
         options={{
           headerTitle: () => <SimpleHeader title="Gestionar Ganado" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
+      <Stack.Screen
+        name="milk-sale"
+        options={{
+          headerTitle: () => <CustomHeader title="Venta de Leche" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
+      <Stack.Screen
+        name="cattle-sale"
+        options={{
+          headerTitle: () => <CustomHeader title="Venta de Ganado" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
+      <Stack.Screen
+        name="sales-list"
+        options={{
+          headerTitle: () => <CustomHeader title="Administrar Ventas" showBackButton={true} />,
           headerBackVisible: false,
           gestureEnabled: false,
           headerLeft: () => null, // Oculta el botón de navegación en web

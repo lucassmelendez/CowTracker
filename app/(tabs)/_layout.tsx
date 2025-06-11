@@ -261,7 +261,7 @@ export default function TabLayout() {
       <Stack.Screen
         name="sales-list"
         options={{
-          headerTitle: () => <CustomHeader title="Lista de Ventas" showBackButton={true} />,
+          headerTitle: () => <CustomHeader title="Administrar Ventas" showBackButton={true} />,
           headerBackVisible: false,
           gestureEnabled: false,
           headerLeft: () => null, // Oculta el botón de navegación en web

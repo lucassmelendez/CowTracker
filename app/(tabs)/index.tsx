@@ -126,10 +126,10 @@ export default function TabOneScreen() {
         description: 'Generar informes de ganado'
       },
       {
-        id: 'production',
+        id: 'sales-list',
         title: 'Producción',
         icon: '🥩',
-        route: '/(tabs)/production',
+        route: '/(tabs)/sales-list',
         description: 'Gestionar producción'
       },
       {

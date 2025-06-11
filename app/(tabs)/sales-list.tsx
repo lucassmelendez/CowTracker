@@ -73,10 +73,19 @@ export default function SalesListTab() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency: 'EUR' // Cambia según tu moneda
+      currency: 'CLP'
     }).format(amount);
+  };
+
+  const formatQuantity = (quantity: number) => {
+    // Si es un número entero, no mostrar decimales
+    if (quantity % 1 === 0) {
+      return quantity.toString();
+    }
+    // Si tiene decimales, mostrar solo los necesarios
+    return quantity.toFixed(2).replace(/\.?0+$/, '');
   };
 
   const renderVentaItem = ({ item }: { item: Venta }) => {
@@ -113,7 +122,7 @@ export default function SalesListTab() {
         {isLeche && (
           <View style={styles.ventaInfo}>
             <Text style={styles.cantidadLabel}>Litros:</Text>
-            <Text style={styles.cantidadText}>{item.cantidad.toFixed(2)} L</Text>
+            <Text style={styles.cantidadText}>{formatQuantity(item.cantidad)} L</Text>
           </View>
         )}
 

@@ -40,7 +40,7 @@ export default function MilkSaleTab() {
   };
 
   const handleLitersChange = (text: string) => {
-    const numericRegex = /^[0-9]*\.?[0-9]*$/;
+    const numericRegex = /^(\d+)?([.]?\d{0,2})?$/;
     if (text === '' || numericRegex.test(text)) {
       setFormData({ ...formData, liters: text });
       setLitersError(false);
@@ -113,7 +113,8 @@ export default function MilkSaleTab() {
         return;
       }
       showSuccess(
-      'La venta de leche se ha registrado correctamente', () => {
+      'La venta de leche se ha registrado correctamente', 
+      ( ) => {
         // Reset form
         setFormData({
           date: new Date(),
@@ -128,6 +129,7 @@ export default function MilkSaleTab() {
     );    
   } catch (err) {
     console.error('Excepción al guardar', err);
+  }
   }
 
   const handleCancel = () => {

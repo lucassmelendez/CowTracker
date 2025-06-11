@@ -126,6 +126,7 @@ export default function MilkSaleTab() {
       console.log('Venta de leche creada:', result);
 
       showSuccess(
+        'Éxito',
         'La venta de leche se ha registrado correctamente', 
         () => {
           // Reset form

@@ -212,7 +212,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
         errorMessage += 'Por favor, intenta nuevamente.';
       }
       
-      showError(errorMessage);
+      showError('Error', errorMessage);
       return;
     } finally {
       if (!isProcessingPayment) {
@@ -282,7 +282,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
     } catch (error) {
       console.error('❌ Error al activar Premium:', error);
       setIsActivatingPremium(false);
-      showError('Tu pago fue procesado exitosamente, pero hubo un problema al activar Premium automáticamente. Por favor, contacta a soporte.');
+      showError('Error', 'Tu pago fue procesado exitosamente, pero hubo un problema al activar Premium automáticamente. Por favor, contacta a soporte.');
     }
   };
 
@@ -404,7 +404,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
       setShowWebView(false);
       setIsWebViewLoading(true);
       
-      showError('El pago fue cancelado o no se pudo procesar. No se realizaron cargos.');
+      showError('Error', 'El pago fue cancelado o no se pudo procesar. No se realizaron cargos.');
     }
     
     // Log para debugging - mostrar URLs de Webpay sin tratarlas como errores
@@ -640,7 +640,7 @@ const PremiumUpgradeModal: React.FC<PremiumUpgradeModalProps> = ({
                 onError={(syntheticEvent) => {
                   const { nativeEvent } = syntheticEvent;
                   console.error('❌ Error en WebView:', nativeEvent);
-                  showError('No se pudo cargar el sistema de pago. Verifica tu conexión a internet.');
+                  showError('Error', 'No se pudo cargar el sistema de pago. Verifica tu conexión a internet.');
                 }}
               />
             )

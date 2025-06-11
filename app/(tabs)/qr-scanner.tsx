@@ -51,14 +51,14 @@ export default function App() {
             params: { id: cattleId }
           });
         } else {
-          showError('QR inválido: No se encontró el ID del ganado');
+          showError('Error', 'QR inválido: No se encontró el ID del ganado');
         }
       } else {
-        showError('Este código QR no corresponde a un ganado registrado');
+        showError('Error', 'Este código QR no corresponde a un ganado registrado');
       }
     } catch (error) {
       console.error('Error al procesar el QR:', error);
-      showError('El código QR no tiene el formato correcto');
+      showError('Error', 'El código QR no tiene el formato correcto');
     }
   }
 

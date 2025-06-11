@@ -40,9 +40,9 @@ const CacheSettings: React.FC = () => {
         try {
           await clearAllCache();
           updateStats();
-          showSuccess('Caché limpiado completamente');
+          showSuccess('Éxito', 'Caché limpiado completamente');
         } catch (error) {
-          showError('No se pudo limpiar el caché');
+          showError('Error', 'No se pudo limpiar el caché');
         } finally {
           setLoading(false);
         }
@@ -59,9 +59,9 @@ const CacheSettings: React.FC = () => {
         try {
           await invalidateCache(pattern);
           updateStats();
-          showSuccess(`Caché de ${description.toLowerCase()} limpiado`);
+          showSuccess('Éxito', `Caché de ${description.toLowerCase()} limpiado`);
         } catch (error) {
-          showError(`No se pudo limpiar el caché de ${description.toLowerCase()}`);
+          showError('Error', `No se pudo limpiar el caché de ${description.toLowerCase()}`);
         } finally {
           setLoading(false);
         }
@@ -74,9 +74,9 @@ const CacheSettings: React.FC = () => {
     try {
       await cleanupExpiredCache();
       updateStats();
-      showSuccess('Elementos expirados eliminados del caché');
+      showSuccess('Éxito', 'Elementos expirados eliminados del caché');
     } catch (error) {
-      showError('No se pudieron eliminar los elementos expirados');
+      showError('Error', 'No se pudieron eliminar los elementos expirados');
     } finally {
       setLoading(false);
     }

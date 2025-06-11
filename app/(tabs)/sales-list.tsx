@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../components/AuthContext';
 import { useRouter } from 'expo-router';
+import SalesDetails from './sales-details';
 
 interface Venta {
   id_venta: number;
@@ -26,6 +27,8 @@ export default function SalesListTab() {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedVentaId, setSelectedVentaId] = useState<number | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const fetchVentas = async () => {
     try {
@@ -63,6 +66,50 @@ export default function SalesListTab() {
     fetchVentas();
   };
 
+  const handleVentaPress = (ventaId: number) => {
+    setSelectedVentaId(ventaId);
+    setShowDetailsModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailsModal(false);
+    setSelectedVentaId(null);
+  };
+
+  const handleEditVenta = (ventaId: number) => {
+    // TODO: Implementar navegación a pantalla de edición
+    Alert.alert(
+      'Editar Venta',
+      `Funcionalidad de edición para venta #${ventaId} pendiente de implementar.`,
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleDeleteVenta = async (ventaId: number) => {
+    try {
+      const response = await fetch(
+        `https://ct-backend-gray.vercel.app/api/ventas/${ventaId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${userInfo?.token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.ok) {
+        Alert.alert('Éxito', 'Venta eliminada correctamente');
+        fetchVentas(); // Recargar la lista
+      } else {
+        throw new Error('Error al eliminar la venta');
+      }
+    } catch (error) {
+      console.error('Error al eliminar venta:', error);
+      Alert.alert('Error', 'No se pudo eliminar la venta');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
@@ -96,7 +143,11 @@ export default function SalesListTab() {
     const isGanado = item.cantidad === 1;
 
     return (
-      <TouchableOpacity style={styles.ventaCard}>
+      <TouchableOpacity 
+        style={styles.ventaCard}
+        onPress={() => handleVentaPress(item.id_venta)}
+        activeOpacity={0.7}
+      >
         <View style={styles.ventaHeader}>
           <View style={styles.ventaTypeContainer}>
             <Ionicons 
@@ -141,6 +192,11 @@ export default function SalesListTab() {
           <Text style={styles.totalLabel}>Total:</Text>
           <Text style={styles.totalText}>{formatCurrency(item.total)}</Text>
         </View>
+
+        {/* Indicador visual de que es clickeable */}
+        <View style={styles.clickIndicator}>
+          <Ionicons name="chevron-forward" size={16} color="#bdc3c7" />
+        </View>
       </TouchableOpacity>
     );
   };
@@ -154,7 +210,8 @@ export default function SalesListTab() {
   }
 
   return (
-    <View style={styles.container}>
+    <>
+      <View style={styles.container}>
       <View style={styles.actionBar}>
         <TouchableOpacity 
           style={styles.milkButton}
@@ -191,8 +248,17 @@ export default function SalesListTab() {
             </Text>
           </View>
         }
+              />
+      </View>
+
+      <SalesDetails
+        visible={showDetailsModal}
+        ventaId={selectedVentaId}
+        onClose={handleCloseModal}
+        onEdit={handleEditVenta}
+        onDelete={handleDeleteVenta}
       />
-    </View>
+    </>
   );
 }
 
@@ -346,5 +412,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 40,
+  },
+  clickIndicator: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
 }); 

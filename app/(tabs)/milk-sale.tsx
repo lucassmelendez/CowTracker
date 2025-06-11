@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { useCustomModal } from '../../components/CustomModal';
+import { supabase } from '../../lib/supabase'; // ajusta la ruta según tu proyecto
+
 
 export default function MilkSaleTab() {
   const router = useRouter();
@@ -88,15 +90,30 @@ export default function MilkSaleTab() {
     return errors.length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       setValidationModalVisible(true);
       return;
     }
 
-    showSuccess(
-      'La venta de leche se ha registrado correctamente',
-      () => {
+    try {
+      const {error} = await supabase.from('venta').insert([
+        {
+          fecha: formData.date.toISOString(),
+          comprador: formData.customer,
+          litros: parseFloat(formData.liters) ,
+          precio_por_litro: parseFloat(formData.pricePerLiter),
+          monto_total: parseFloat(formData.totalAmount),
+          notas: formData.notes || null,
+        },
+      ]);
+      
+      if (error) {
+        console.error('Error al guardar:', error.message);
+        return;
+      }
+      showSuccess(
+      'La venta de leche se ha registrado correctamente', () => {
         // Reset form
         setFormData({
           date: new Date(),
@@ -108,8 +125,10 @@ export default function MilkSaleTab() {
         });
         router.back();
       }
-    );
-  };
+    );    
+  } catch (err) {
+    console.error('Excepción al guardar', err);
+  }
 
   const handleCancel = () => {
     router.back();
@@ -117,7 +136,7 @@ export default function MilkSaleTab() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
           <Text style={styles.headerText}>Registrar Venta de Leche</Text>
         </View>

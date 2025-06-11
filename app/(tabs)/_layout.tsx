@@ -249,6 +249,33 @@ export default function TabLayout() {
           headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
+      <Stack.Screen
+        name="milk-sale"
+        options={{
+          headerTitle: () => <CustomHeader title="Venta de Leche" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
+      <Stack.Screen
+        name="cattle-sale"
+        options={{
+          headerTitle: () => <CustomHeader title="Venta de Ganado" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
+      <Stack.Screen
+        name="sales-list"
+        options={{
+          headerTitle: () => <CustomHeader title="Lista de Ventas" showBackButton={true} />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
     </Stack>
   );
 }

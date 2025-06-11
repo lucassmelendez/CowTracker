@@ -152,9 +152,7 @@ export default function MilkSaleTab() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Registrar Venta de Leche</Text>
-        </View>
+
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
@@ -346,16 +344,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
+
   form: {
     padding: 16,
   },

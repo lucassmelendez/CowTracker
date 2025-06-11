@@ -146,8 +146,7 @@ export default function SalesListTab() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Historial de Ventas</Text>
+      <View style={styles.actionBar}>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={() => {
@@ -172,6 +171,7 @@ export default function SalesListTab() {
           }}
         >
           <Ionicons name="add" size={24} color="#fff" />
+          <Text style={styles.addButtonText}>Nueva Venta</Text>
         </TouchableOpacity>
       </View>
 
@@ -208,27 +208,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
+  actionBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     padding: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-  },
   addButton: {
     backgroundColor: '#27ae60',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   list: {
     flex: 1,

@@ -676,15 +676,7 @@ ${date}
         {/* Estadísticas principales de ventas */}
         {salesStats && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>📊 Estadísticas de Ventas (Principal)</Text>
-              <TouchableOpacity 
-                style={styles.refreshButton}
-                onPress={loadSalesData}
-              >
-                <Ionicons name="refresh" size={20} color="#27ae60" />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.sectionTitle}>📊 Estadísticas de Ventas (Principal)</Text>
             <View style={styles.statsGrid}>
               <StatCard
                 title="Ingresos Totales"
@@ -726,11 +718,11 @@ ${date}
           </View>
         )}
 
-        {/* Estadísticas secundarias de salud */}
+        {/* Estadísticas secundarias combinadas */}
         {reportData && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>🏥 Estado de Salud (Secundario)</Text>
+              <Text style={styles.sectionTitle}>📊 Información General (Secundario)</Text>
               <TouchableOpacity 
                 style={styles.toggleButton}
                 onPress={() => setShowCharts(!showCharts)}
@@ -758,34 +750,11 @@ ${date}
                 subtitle="Requieren seguimiento"
               />
               <StatCard
-                title="Registros Médicos"
-                value={reportData.medicalRecordsCount}
-                icon="document-text"
-                color="#3498db"
-                subtitle={`${(reportData.medicalRecordsCount / reportData.totalCattle).toFixed(1)} por animal`}
-              />
-            </View>
-          </View>
-        )}
-
-        {/* Estadísticas menos importantes de ganado y granjas */}
-        {reportData && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📋 Información General (Terciario)</Text>
-            <View style={styles.statsGrid}>
-              <StatCard
                 title="Total Ganado"
                 value={reportData.totalCattle}
                 icon="list"
                 color="#95a5a6"
                 subtitle={`En ${reportData.totalFarms} granja${reportData.totalFarms !== 1 ? 's' : ''}`}
-              />
-              <StatCard
-                title="Granjas Activas"
-                value={reportData.totalFarms}
-                icon="leaf"
-                color="#95a5a6"
-                subtitle={`${(reportData.totalCattle / reportData.totalFarms).toFixed(1)} animales/granja`}
               />
             </View>
           </View>
@@ -828,21 +797,6 @@ ${date}
 
         {/* Botones de acción */}
         <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.refreshButton, (reportLoading || loadingSales) && styles.disabledButton]}
-            onPress={refreshReportData}
-            disabled={reportLoading || loadingSales}
-          >
-            {(reportLoading || loadingSales) ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <>
-                <Ionicons name="refresh" size={20} color="#ffffff" />
-                <Text style={styles.actionButtonText}>Actualizar</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.actionButton, styles.viewButton, (reportLoading || loadingSales) && styles.disabledButton]}
             onPress={generateReport}

@@ -10,7 +10,8 @@ import {
   ScrollView,
   Platform,
   Share,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { 
@@ -26,7 +27,7 @@ import api from '../../lib/services/api';
 import { ReportGenerator } from '../../lib/utils/reportGenerator';
 import { ReportData, CattleDetail, SalesStats, Sale } from '../../lib/types';
 import { useCustomModal } from '../../components/CustomModal';
-import { PieChart, BarChart, StatCard } from '../../components/charts';
+import { PieChart, BarChart, LineChart, DonutChart, AreaChart, StatCard } from '../../components/charts';
 
 const { width } = Dimensions.get('window');
 
@@ -765,28 +766,28 @@ ${date}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>📈 Análisis Visual</Text>
             
-            {/* Gráfico de ventas por tipo */}
-            <PieChart
+            {/* Gráfico de líneas - ventas por tipo */}
+            <LineChart
               data={salesStats.salesByType}
-              title="Distribución de Ventas por Tipo"
-              colors={['#27ae60', '#3498db', '#f39c12']}
+              title="Tendencia de Ventas por Tipo"
+              color="#27ae60"
             />
             
-            {/* Gráfico de ingresos por tipo */}
-            <PieChart
+            {/* Gráfico de dona - ingresos por tipo */}
+            <DonutChart
               data={salesStats.revenueByType}
               title="Distribución de Ingresos por Tipo"
-              colors={['#27ae60', '#3498db', '#f39c12']}
+              colors={['#27ae60', '#3498db', '#f39c12', '#e74c3c']}
             />
             
-            {/* Gráfico de estado de salud */}
-            <PieChart
+            {/* Gráfico de área - estado de salud */}
+            <AreaChart
               data={reportData.cattleByHealth}
-              title="Distribución por Estado de Salud"
-              colors={['#27ae60', '#f39c12', '#e74c3c', '#95a5a6']}
+              title="Estado de Salud del Ganado"
+              color="#e74c3c"
             />
             
-            {/* Gráfico de género */}
+            {/* Gráfico de barras - género */}
             <PieChart
               data={reportData.cattleByGender}
               title="Distribución por Género"

@@ -23,6 +23,7 @@ interface Ganado {
   nombre: string;
   numero_identificacion: string;
   precio_compra?: number;
+  id_produccion: number;
 }
 
 export default function MilkSaleTab() {
@@ -70,7 +71,10 @@ export default function MilkSaleTab() {
       if (response.ok) {
         const result = await response.json();
         // El backend devuelve una estructura con { data: [...], success: true, ... }
-        setGanados(result.data || []);
+        const allGanados = result.data || [];
+        // Para venta de leche, solo mostrar ganado con id_produccion = 1 (vacas productoras)
+        const ganadosLeche = allGanados.filter((ganado: Ganado) => ganado.id_produccion === 1);
+        setGanados(ganadosLeche);
       } else {
         console.error('Error al cargar ganados:', response.status);
         setGanados([]);
@@ -369,7 +373,7 @@ export default function MilkSaleTab() {
               style={styles.input}
               value={formData.totalAmount}
               editable={false}
-              placeholder="0.00"
+              placeholder="0"
             />
           </View>
 
@@ -418,7 +422,7 @@ export default function MilkSaleTab() {
                 <View style={styles.emptyContainer}>
                   <Ionicons name="warning" size={48} color="#666" />
                   <Text style={styles.emptyText}>
-                    No hay vacas disponibles en esta granja
+                    No hay vacas productoras disponibles en esta granja
                   </Text>
                 </View>
               ) : (

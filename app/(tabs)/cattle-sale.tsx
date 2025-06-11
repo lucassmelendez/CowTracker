@@ -23,6 +23,7 @@ interface Ganado {
   nombre: string;
   numero_identificacion: string;
   precio_compra?: number;
+  id_produccion: number;
 }
 
 export default function CattleSaleTab() {
@@ -69,7 +70,10 @@ export default function CattleSaleTab() {
       if (response.ok) {
         const result = await response.json();
         // El backend devuelve una estructura con { data: [...], success: true, ... }
-        setGanados(result.data || []);
+        const allGanados = result.data || [];
+        // Para venta de ganado, solo mostrar ganado con id_produccion = 2 (ganado para venta)
+        const ganadosVenta = allGanados.filter((ganado: Ganado) => ganado.id_produccion === 2);
+        setGanados(ganadosVenta);
       } else {
         console.error('Error al cargar ganados:', response.status);
         setGanados([]);
@@ -263,7 +267,7 @@ export default function CattleSaleTab() {
                 >
                   <Text style={styles.cattleSelectorText}>
                     {formData.selectedCattle.length === 0 
-                      ? 'Seleccionar ganado...' 
+                      ? 'Seleccionar ganado para venta...' 
                       : `${formData.selectedCattle.length} ganado(s) seleccionado(s)`
                     }
                   </Text>
@@ -329,7 +333,7 @@ export default function CattleSaleTab() {
           <View style={styles.modalOverlay}>
             <View style={styles.cattleSelectorModal}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Seleccionar Ganado</Text>
+                <Text style={styles.modalTitle}>Seleccionar Ganado para Venta</Text>
                 <TouchableOpacity 
                   onPress={() => setShowCattleSelector(false)}
                   style={styles.closeButton}
@@ -347,7 +351,7 @@ export default function CattleSaleTab() {
                 <View style={styles.emptyContainer}>
                   <Ionicons name="warning" size={48} color="#666" />
                   <Text style={styles.emptyText}>
-                    No hay ganado disponible en esta granja
+                    No hay ganado para venta disponible en esta granja
                   </Text>
                 </View>
               ) : (

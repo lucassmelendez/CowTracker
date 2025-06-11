@@ -55,6 +55,7 @@ export default function SalesDetails({
   const { userInfo } = useAuth();
   const [venta, setVenta] = useState<VentaDetalle | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchVentaDetails = async () => {
     if (!ventaId || !userInfo?.token) return;
@@ -146,26 +147,19 @@ export default function SalesDetails({
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Confirmar eliminación',
-      '¿Estás seguro de que deseas eliminar esta venta? Esta acción no se puede deshacer.',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel'
-        },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: () => {
-            if (ventaId) {
-              onDelete(ventaId);
-              onClose();
-            }
-          }
-        }
-      ]
-    );
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (ventaId) {
+      setShowDeleteModal(false);
+      onDelete(ventaId);
+      onClose();
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const handleEdit = () => {
@@ -301,6 +295,47 @@ export default function SalesDetails({
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Modal de confirmación de eliminación */}
+        <Modal
+          visible={showDeleteModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={cancelDelete}
+        >
+          <View style={styles.deleteModalOverlay}>
+            <View style={styles.deleteModalContainer}>
+              <View style={styles.deleteModalHeader}>
+                <Ionicons name="warning" size={48} color="#e74c3c" />
+                <Text style={styles.deleteModalTitle}>Confirmar Eliminación</Text>
+              </View>
+              
+              <Text style={styles.deleteModalMessage}>
+                ¿Estás seguro de que deseas eliminar esta venta?
+              </Text>
+              <Text style={styles.deleteModalSubMessage}>
+                Esta acción no se puede deshacer.
+              </Text>
+
+              <View style={styles.deleteModalButtons}>
+                <TouchableOpacity 
+                  style={styles.cancelDeleteButton} 
+                  onPress={cancelDelete}
+                >
+                  <Text style={styles.cancelDeleteText}>Cancelar</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.confirmDeleteButton} 
+                  onPress={confirmDelete}
+                >
+                  <Ionicons name="trash" size={18} color="#fff" />
+                  <Text style={styles.confirmDeleteText}>Eliminar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -505,5 +540,80 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  // Estilos del modal de confirmación de eliminación
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    marginHorizontal: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  deleteModalHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteModalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginTop: 12,
+  },
+  deleteModalMessage: {
+    fontSize: 16,
+    color: '#2c3e50',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  deleteModalSubMessage: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginBottom: 24,
+    fontStyle: 'italic',
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelDeleteButton: {
+    backgroundColor: '#ecf0f1',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    flex: 0.45,
+    alignItems: 'center',
+  },
+  cancelDeleteText: {
+    color: '#2c3e50',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmDeleteButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    flex: 0.45,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmDeleteText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 6,
   },
 }); 

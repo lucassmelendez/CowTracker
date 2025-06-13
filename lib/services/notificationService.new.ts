@@ -7,8 +7,6 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true
   }),
 });
 
@@ -92,7 +90,6 @@ export async function showVeterinaryNotification(title: string, body: string, da
 
 // Función para programar una notificación para una fecha específica
 export async function scheduleNotificationForDateTime(title: string, body: string, scheduledDateTime: Date, data = {}) {
-  // Verificar permisos
   const { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted') {
     const { status: newStatus } = await Notifications.requestPermissionsAsync();
@@ -125,12 +122,10 @@ export async function scheduleNotificationForDateTime(title: string, body: strin
         badge: 1,
         ...(Platform.OS === 'android' && { channelId: VETERINARY_CHANNEL_ID }),
       },
-      trigger: { 
+      trigger: {
         channelId: Platform.OS === 'android' ? VETERINARY_CHANNEL_ID : undefined,
-        hour: scheduledDateTime.getHours(),
-        minute: scheduledDateTime.getMinutes(),
-        type: 'daily'
-      } as const
+        date: scheduledDateTime,
+      },
     });
     
     console.log(`Notificación programada (ID: ${notificationId}) para: ${scheduledDateTime.toLocaleString()}`);

@@ -146,7 +146,20 @@ export default function SalesDetails({
   };
 
   const handleDelete = () => {
-    setShowDeleteModal(true);
+    Alert.alert(
+      "¿Eliminar venta?",
+      "¿Esta seguro de continuar con la eliminación?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Continuar",
+          onPress: () => setShowDeleteModal(true)
+        }
+      ]
+    );
   };
 
   const confirmDelete = () => {

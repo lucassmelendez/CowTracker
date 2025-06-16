@@ -691,17 +691,6 @@ ${date}
                 }}
               />
               <StatCard
-                title="Ventas del Mes"
-                value={salesStats.salesThisMonth}
-                icon="trending-up"
-                color="#3498db"
-                subtitle={formatCurrency(salesStats.revenueThisMonth)}
-                trend={{
-                  value: salesStats.salesGrowth,
-                  isPositive: salesStats.salesGrowth >= 0
-                }}
-              />
-              <StatCard
                 title="Promedio por Venta"
                 value={formatCurrency(salesStats.averageSaleValue)}
                 icon="calculator"
@@ -715,33 +704,12 @@ ${date}
                 color="#e74c3c"
                 subtitle="Total histórico"
               />
-            </View>
-          </View>
-        )}
-
-        {/* Estadísticas secundarias combinadas */}
-        {reportData && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>📊 Información General</Text>
-              <TouchableOpacity 
-                style={styles.toggleButton}
-                onPress={() => setShowCharts(!showCharts)}
-              >
-                <Ionicons 
-                  name={showCharts ? 'eye-off' : 'eye'} 
-                  size={20} 
-                  color="#666" 
-                />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.statsGrid}>
               <StatCard
                 title="Total Ganado"
-                value={reportData.totalCattle}
+                value={reportData?.totalCattle ?? 0}
                 icon="list"
                 color="#95a5a6"
-                subtitle={`En ${reportData.totalFarms} granja${reportData.totalFarms !== 1 ? 's' : ''}`}
+                subtitle={`En ${reportData?.totalFarms ?? 0} granja${(reportData?.totalFarms ?? 0) !== 1 ? 's' : ''}`}
               />
             </View>
           </View>

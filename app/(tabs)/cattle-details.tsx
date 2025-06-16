@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   StyleSheet
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../components/AuthContext';
 import { supabase } from '../../lib/config/supabase';
 import { useCacheManager } from '../../hooks/useCachedData';
@@ -26,6 +26,7 @@ export default function CattleDetailPage() {
   const cattleId = params?.id;
   const { userInfo, isAdmin, isTrabajador, isVeterinario } = useAuth();
   const { showSuccess, showError, ModalComponent } = useCustomModal();
+  const { invalidateCache } = useCacheManager();
   
   const [cattle, setCattle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -33,9 +34,14 @@ export default function CattleDetailPage() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [qrModalVisible, setQrModalVisible] = useState(false);
 
-  useEffect(() => {
-    loadCattleDetails();
-  }, [cattleId]);
+  // Cargar datos cuando la pantalla recibe el foco (incluye la primera vez y cuando regresas de editar)
+  useFocusEffect(
+    useCallback(() => {
+      // Invalidar caché para asegurar datos frescos
+      invalidateCache('cattle');
+      loadCattleDetails();
+    }, [cattleId, invalidateCache])
+  );
 
   const loadCattleDetails = async () => {
     try {

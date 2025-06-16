@@ -168,37 +168,78 @@ export default function AddCattlePage() {
       try {
         setLoadingCattle(true);
         // Usar la API para obtener los detalles del ganado
-        const cattleData: CattleData = await api.cattle.getById(cattleId);
+        const cattleData: any = await api.cattle.getById(cattleId);
         
         if (cattleData) {
-          // Establecer todos los valores del formulario desde los datos del ganado
-          setIdentifier(cattleData.identificationNumber || '');
-          setName(cattleData.name || '');
-          setGender(cattleData.gender || '');
-          setWeight(cattleData.weight ? cattleData.weight.toString() : '');
-          setNotes(cattleData.notes || '');
-          setStatus(cattleData.status || 'activo');
-          setHealthStatus(cattleData.healthStatus || 'Saludable');
-          setTipoProduccion(cattleData.tipoProduccion || 'leche');
+          // Mapear los datos del backend al formulario
+          // El backend devuelve datos en formato de base de datos
+          setIdentifier((cattleData.numero_identificacion || cattleData.identificationNumber || '').toString());
+          setName(cattleData.nombre || cattleData.name || '');
           
-          // Establecer la ubicación
-          if (cattleData.location) {
-            if (cattleData.location.area) {
-              setLocation(cattleData.location.area);
-            }
-            
-            if (cattleData.location.farm) {
-              if (typeof cattleData.location.farm === 'object' && cattleData.location.farm._id) {
-                setSelectedFarmId(cattleData.location.farm._id);
-              } else if (cattleData.farmId) {
-                setSelectedFarmId(cattleData.farmId);
-              }
-            } else if (cattleData.farmId) {
-              setSelectedFarmId(cattleData.farmId);
-            }
-          } else if (cattleData.farmId) {
-            setSelectedFarmId(cattleData.farmId);
+          // Mapear género desde la relación o campo directo
+          let genderValue = '';
+          if (cattleData.genero && cattleData.genero.descripcion) {
+            genderValue = cattleData.genero.descripcion;
+          } else if (cattleData.gender) {
+            genderValue = cattleData.gender;
+          } else if (cattleData.id_genero) {
+            genderValue = cattleData.id_genero === 1 ? 'Macho' : 'Hembra';
           }
+          setGender(genderValue);
+          
+          // Peso - por ahora no está en la BD pero mantenemos compatibilidad
+          setWeight(cattleData.weight ? cattleData.weight.toString() : '');
+          
+          // Notas
+          setNotes(cattleData.nota || cattleData.notes || '');
+          
+          // Estado - por ahora establecemos valor por defecto
+          setStatus(cattleData.status || 'activo');
+          
+          // Estado de salud desde la relación o campo directo
+          let healthValue = 'Saludable';
+          if (cattleData.estado_salud && cattleData.estado_salud.descripcion) {
+            healthValue = cattleData.estado_salud.descripcion;
+          } else if (cattleData.healthStatus) {
+            healthValue = cattleData.healthStatus;
+          } else if (cattleData.id_estado_salud) {
+            // Mapear IDs conocidos: 1=Saludable, 2=Enfermo, 3=En tratamiento
+            switch(cattleData.id_estado_salud) {
+              case 1: healthValue = 'Saludable'; break;
+              case 2: healthValue = 'Enfermo'; break;
+              case 3: healthValue = 'En tratamiento'; break;
+              default: healthValue = 'Saludable';
+            }
+          }
+          setHealthStatus(healthValue);
+          
+          // Tipo de producción desde la relación o campo directo
+          let produccionValue = 'leche';
+          if (cattleData.produccion && cattleData.produccion.descripcion) {
+            produccionValue = cattleData.produccion.descripcion.toLowerCase();
+          } else if (cattleData.tipoProduccion) {
+            produccionValue = cattleData.tipoProduccion;
+          } else if (cattleData.id_produccion) {
+            // Mapear IDs conocidos: 1=leche, 2=carne
+            produccionValue = cattleData.id_produccion === 1 ? 'leche' : 'carne';
+          }
+          setTipoProduccion(produccionValue);
+          
+          // Granja - mapear desde diferentes formatos posibles
+          let farmIdValue = '';
+          if (cattleData.finca && cattleData.finca.id_finca) {
+            farmIdValue = cattleData.finca.id_finca.toString();
+          } else if (cattleData.id_finca) {
+            farmIdValue = cattleData.id_finca.toString();
+          } else if (cattleData.farmId) {
+            farmIdValue = cattleData.farmId.toString();
+          }
+          
+          if (farmIdValue) {
+            setSelectedFarmId(farmIdValue);
+          }
+          
+
         }
       } catch (error) {
         console.error('Error al cargar datos del ganado:', error);
@@ -271,15 +312,15 @@ export default function AddCattlePage() {
 
       if (isEditMode) {
         // Actualizar ganado existente usando la API directa
+        // Enviar datos en el formato que espera el backend
         const updateData = {
-          identificationNumber: identifier,
-          name: name,
-          gender: gender,
-          weight: weight ? parseFloat(weight) : undefined,
-          notes: notes,
-          healthStatus: healthStatus,
-          tipoProduccion: tipoProduccion,
-          farmId: farmIdNumeric.toString()
+          nombre: name,
+          numero_identificacion: parseInt(identifier) || 0,
+          nota: notes || '',
+          id_finca: farmIdNumeric,
+          id_estado_salud: healthStatus === 'Saludable' ? 1 : (healthStatus === 'Enfermo' ? 2 : 3),
+          id_genero: gender === 'Macho' ? 1 : 2,
+          id_produccion: tipoProduccion === 'leche' ? 1 : 2
         };
 
         await api.cattle.update(cattleId!, updateData);

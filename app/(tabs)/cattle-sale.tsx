@@ -4,15 +4,13 @@ import {
   Text, 
   TextInput, 
   TouchableOpacity, 
-  ScrollView, 
-  Platform,
+    ScrollView,
   Modal,
   StyleSheet,
   FlatList,
   ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useCustomModal } from '../../components/CustomModal';
 import { useAuth } from '../../components/AuthContext';
@@ -32,14 +30,13 @@ export default function CattleSaleTab() {
   const { selectedFarm } = useFarm();
   
   const [formData, setFormData] = useState({
-    date: new Date(),
     customer: '',
     selectedCattle: [] as number[],
     totalAmount: '',
     notes: ''
   });
   
-  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const [ganados, setGanados] = useState<Ganado[]>([]);
   const [loadingGanados, setLoadingGanados] = useState(false);
   const [showCattleSelector, setShowCattleSelector] = useState(false);
@@ -102,11 +99,7 @@ export default function CattleSaleTab() {
     setFormData({ ...formData, totalAmount: text });
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || formData.date;
-    setShowDatePicker(Platform.OS === 'ios');
-    setFormData({ ...formData, date: currentDate });
-  };
+
 
   const toggleCattleSelection = (ganadoId: number) => {
     const currentSelection = [...formData.selectedCattle];
@@ -170,7 +163,6 @@ export default function CattleSaleTab() {
       showSuccess('Éxito', 'Venta de ganado registrada correctamente', () => {
         // Reset form
         setFormData({
-          date: new Date(),
           customer: '',
           selectedCattle: [],
           totalAmount: '',
@@ -212,27 +204,7 @@ export default function CattleSaleTab() {
     <View style={styles.container}>
       <ScrollView style={styles.container}>
         <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Fecha de venta</Text>
-            <TouchableOpacity 
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.dateText}>
-                {formData.date.toLocaleDateString()}
-              </Text>
-              <Ionicons name="calendar" size={24} color="#27ae60" />
-            </TouchableOpacity>
-          </View>
 
-          {showDatePicker && (
-            <DateTimePicker
-              value={formData.date}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-            />
-          )}
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Comprador *</Text>

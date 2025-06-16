@@ -6,13 +6,17 @@ import { useAuth } from '../../components/AuthContext';
 export default function EditSaleScreen() {
   const { userInfo } = useAuth();
   const router = useRouter();
-  const { id } = useLocalSearchParams(); // id_venta
+  const { id } = useLocalSearchParams();
   const [venta, setVenta] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [cantidad, setCantidad] = useState('');
   const [precioUnitario, setPrecioUnitario] = useState('');
   const [comprador, setComprador] = useState('');
+
+  const [cantidadError, setCantidadError] = useState(false);
+  const [precioUnitarioError, setPrecioUnitarioError] = useState(false);
+  const [compradorError, setCompradorError] = useState(false);
 
   useEffect(() => {
     fetchVenta();
@@ -35,18 +39,63 @@ export default function EditSaleScreen() {
       setComprador(data.comprador);
     } catch (error) {
       const mensajeError = error instanceof Error ? error.message : JSON.stringify(error);
-      Alert.alert('Ocurrior un error inesperado', mensajeError);
+      Alert.alert('Ocurrió un error inesperado', mensajeError);
     } finally {
       setLoading(false);
     }
   };
 
+  const isValidNumber = (value: string) => {
+    return /^\d*$/.test(value);
+  };
+
+  const isValidText = (value: string) => {
+    return !/\d/.test(value);
+  };
+
+  const validateCantidad = (value: string) => {
+    setCantidadError(!isValidNumber(value));
+    setCantidad(value);
+  };
+
+  const validatePrecioUnitario = (value: string) => {
+    setPrecioUnitarioError(!isValidNumber(value));
+    setPrecioUnitario(value);
+  };
+
+  const validateComprador = (value: string) => {
+    setCompradorError(!isValidText(value));
+    setComprador(value);
+  };
+
+  const isFormValid = () => {
+    // Check if there are any validation errors
+    if (cantidadError || precioUnitarioError || compradorError) {
+      return false;
+    }
+    // Check if all fields have values
+    if (!cantidad || !precioUnitario || !comprador) {
+      return false;
+    }
+    return true;
+  };
+
   const handleGuardar = async () => {
     if (!cantidad || !precioUnitario || !comprador) {
-        Alert.alert('Validación', 'Completa todos los campos antes de guardar!');
-        return;
+      Alert.alert('Validación', 'Completa todos los campos antes de guardar!');
+      return;
     }
-    
+
+    if (!Number.isInteger(Number(cantidad)) || Number(cantidad) <= 0) {
+      Alert.alert('Error de validación', 'La cantidad debe ser un número entero positivo');
+      return;
+    }
+
+    if (!Number.isInteger(Number(precioUnitario)) || Number(precioUnitario) <= 0) {
+      Alert.alert('Error de validación', 'El precio unitario debe ser un número entero positivo');
+      return;
+    }
+
     try {
       const response = await fetch(`https://ct-backend-gray.vercel.app/api/ventas/${id}`, {
         method: 'PUT',
@@ -55,7 +104,7 @@ export default function EditSaleScreen() {
           'Authorization': `Bearer ${userInfo?.token}`,
         },
         body: JSON.stringify({
-          cantidad: parseFloat(cantidad),
+          cantidad: parseInt(cantidad),
           precio_unitario: parseInt(precioUnitario),
           comprador,
         }),
@@ -63,11 +112,11 @@ export default function EditSaleScreen() {
 
       if (!response.ok) throw new Error('Error al guardar los cambios');
 
-        Alert.alert('Éxito', 'Venta actualizada correctamente');
-        router.back();
+      Alert.alert('Éxito', 'Venta actualizada correctamente');
+      router.back();
     } catch (error) {
-        const mensajeError = error instanceof Error ? error.message : JSON.stringify(error);
-        Alert.alert('Error al actualizar', mensajeError);
+      const mensajeError = error instanceof Error ? error.message : JSON.stringify(error);
+      Alert.alert('Error al actualizar', mensajeError);
     }
   };
 
@@ -82,30 +131,63 @@ export default function EditSaleScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Editar Venta #{id}</Text>
-
-      <TextInput
-        style={styles.input}
-        value={cantidad}
-        onChangeText={setCantidad}
-        keyboardType="numeric"
-        placeholder="Cantidad"
-      />
-      <TextInput
-        style={styles.input}
-        value={precioUnitario}
-        onChangeText={setPrecioUnitario}
-        keyboardType="numeric"
-        placeholder="Precio unitario"
-      />
-      <TextInput
-        style={styles.input}
-        value={comprador}
-        onChangeText={setComprador}
-        placeholder="Comprador"
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleGuardar}>
-        <Text style={styles.buttonText}>Guardar Cambios</Text>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Cantidad (número entero)</Text>
+        <TextInput
+          style={[styles.input, cantidadError && { borderColor: '#ff0000', borderWidth: 2 }]}
+          value={cantidad}
+          onChangeText={validateCantidad}
+          keyboardType="numeric"
+          placeholder="Ej: 10"
+          maxLength={10}
+        />
+        {cantidadError ? (
+          <Text style={styles.errorText}>Solo se permiten números enteros</Text>
+        ) : (
+          <Text style={styles.inputHint}>Campo tipo: números positivos</Text>
+        )}
+      </View>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Precio Unitario (número entero)</Text>
+        <TextInput
+          style={[styles.input, precioUnitarioError && { borderColor: '#ff0000', borderWidth: 2 }]}
+          value={precioUnitario}
+          onChangeText={validatePrecioUnitario}
+          keyboardType="numeric"
+          placeholder="Ej: 20000"
+          maxLength={10}
+        />
+        {precioUnitarioError ? (
+          <Text style={styles.errorText}>Solo se permiten números enteros</Text>
+        ) : (
+          <Text style={styles.inputHint}>Campo tipo: números positivos</Text>
+        )}
+      </View>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Comprador</Text>
+        <TextInput
+          style={[styles.input, compradorError && { borderColor: '#ff0000', borderWidth: 2 }]}
+          value={comprador}
+          onChangeText={validateComprador}
+          placeholder="Ej: Super pollo"
+          maxLength={255}
+        />
+        {compradorError ? (
+          <Text style={styles.errorText}>El nombre no debe contener números</Text>
+        ) : (
+          <Text style={styles.inputHint}>Campo tipo: Texto</Text>
+        )}
+      </View>      <TouchableOpacity 
+        style={[
+          styles.button,
+          isFormValid() ? styles.buttonEnabled : styles.buttonDisabled
+        ]} 
+        onPress={handleGuardar}
+        disabled={!isFormValid()}
+      >
+        <Text style={styles.buttonText}>
+          {!isFormValid() ? 'Guardar Cambios' : 'Guardar Cambios'}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -122,20 +204,45 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 20,
   },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#666',
+  },
+  inputHint: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
   input: {
     backgroundColor: '#fff',
     padding: 12,
-    marginBottom: 12,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ccc',
+    fontSize: 16,
   },
-  button: {
-    backgroundColor: '#27ae60',
+  errorText: {
+    color: '#ff0000',
+    fontSize: 12,
+    marginTop: 2,
+    marginLeft: 4,
+  },  button: {
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20
+    marginTop: 20,
+  },
+  buttonEnabled: {
+    backgroundColor: '#27ae60',
+  },
+  buttonDisabled: {
+    backgroundColor: '#cccccc',
   },
   buttonText: {
     color: '#fff',
@@ -146,5 +253,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+  },
 });

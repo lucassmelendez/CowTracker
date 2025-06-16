@@ -179,7 +179,9 @@ export default function AddCattlePage() {
           // Mapear género desde la relación o campo directo
           let genderValue = '';
           if (cattleData.genero && cattleData.genero.descripcion) {
-            genderValue = cattleData.genero.descripcion;
+            // Capitalizar la primera letra
+            const desc = cattleData.genero.descripcion.toLowerCase();
+            genderValue = desc.charAt(0).toUpperCase() + desc.slice(1);
           } else if (cattleData.gender) {
             genderValue = cattleData.gender;
           } else if (cattleData.id_genero) {
@@ -199,7 +201,18 @@ export default function AddCattlePage() {
           // Estado de salud desde la relación o campo directo
           let healthValue = 'Saludable';
           if (cattleData.estado_salud && cattleData.estado_salud.descripcion) {
-            healthValue = cattleData.estado_salud.descripcion;
+            // Capitalizar la primera letra y manejar casos especiales
+            const desc = cattleData.estado_salud.descripcion.toLowerCase();
+            if (desc === 'saludable') {
+              healthValue = 'Saludable';
+            } else if (desc === 'enfermo') {
+              healthValue = 'Enfermo';
+            } else if (desc === 'en tratamiento') {
+              healthValue = 'En tratamiento';
+            } else {
+              // Para otros casos, capitalizar la primera letra
+              healthValue = desc.charAt(0).toUpperCase() + desc.slice(1);
+            }
           } else if (cattleData.healthStatus) {
             healthValue = cattleData.healthStatus;
           } else if (cattleData.id_estado_salud) {

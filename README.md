@@ -8,7 +8,7 @@
 
 ## 📋 Descripción
 
-CowTracker es una aplicación móvil multiplataforma desarrollada con React Native y Expo para la gestión integral de ganado bovino. Permite a ganaderos, veterinarios y administradores llevar un control completo de su ganado, granjas, registros veterinarios, ventas y realizar pagos seguros para funcionalidades premium.
+AgroControl es una aplicación móvil multiplataforma desarrollada con React Native y Expo para la gestión integral de ganado bovino. Permite a ganaderos, veterinarios y administradores llevar un control completo de su ganado, granjas, registros veterinarios, ventas y realizar pagos seguros para funcionalidades premium.
 
 ### ✨ Características Principales
 
@@ -453,62 +453,6 @@ CREATE POLICY "Users can view own cattle" ON ganado
 - Performance de APIs
 - Errores y crashes
 
-## 🧪 Testing
-
-### Configuración de Tests
-```bash
-# Instalar dependencias de testing
-npm install --save-dev jest @testing-library/react-native
-
-# Ejecutar tests
-npm test
-npm run test:watch    # Modo watch
-npm run test:coverage # Con coverage
-```
-
-### Estructura de Tests
-```
-__tests__/
-├── components/       # Tests de componentes
-├── screens/         # Tests de pantallas
-├── utils/           # Tests de utilidades
-└── api/             # Tests de APIs
-```
-
-## 🤝 Contribución
-
-### Flujo de Trabajo Git
-
-1. **Fork** del repositorio
-2. **Crear branch** de feature:
-   ```bash
-   git checkout -b feature/nueva-funcionalidad
-   ```
-3. **Desarrollar** con commits descriptivos:
-   ```bash
-   git commit -m "feat: agregar sistema de notificaciones push"
-   ```
-4. **Push** y crear **Pull Request**:
-   ```bash
-   git push origin feature/nueva-funcionalidad
-   ```
-
-### Estándares de Código
-
-#### Convenciones de Nomenclatura
-```typescript
-// Componentes: PascalCase
-export const CattleCard = () => { ... };
-
-// Hooks: camelCase con 'use'
-export const useCattleData = () => { ... };
-
-// Constantes: SCREAMING_SNAKE_CASE
-export const API_ENDPOINTS = { ... };
-
-// Variables/funciones: camelCase
-const handleCattleSubmit = () => { ... };
-```
 
 #### Estructura de Archivos
 ```
@@ -524,94 +468,7 @@ app/
 ├── lib/                # Utilidades y configuración
 ├── constants/          # Constantes de la app
 └── types/              # Definiciones TypeScript
-```
-
-### Conventional Commits
-```bash
-feat: nueva funcionalidad
-fix: corrección de bug
-docs: actualización de documentación
-style: cambios de formato
-refactor: refactorización de código
-test: agregar o modificar tests
-chore: tareas de mantenimiento
-```
-
-## 📞 Soporte y Contacto
-
-### Contacto Directo
-- **Email**: lucas.melendez@estudiante.cl
-- **GitHub**: [@lucassmelendez](https://github.com/lucassmelendez)
-- **LinkedIn**: [Lucas Meléndez](https://linkedin.com/in/lucasmelendez)
-
-### Reportar Issues
-- **GitHub Issues**: [Reportar Bug](https://github.com/lucassmelendez/CowTracker/issues/new)
-- **Feature Requests**: [Solicitar Funcionalidad](https://github.com/lucassmelendez/CowTracker/issues/new?template=feature_request.md)
-
-### Documentación Adicional
-- **Wiki del Proyecto**: [CowTracker Wiki](https://github.com/lucassmelendez/CowTracker/wiki)
-- **API Documentation**: Swagger UI en `/docs` del backend
-- **Changelog**: [CHANGELOG.md](./CHANGELOG.md)
-
-### FAQ Extendidas
-
-**P: ¿Cómo migro de la versión gratuita a Premium?**
-R: Desde tu perfil → "Actualizar a Premium" → Pago con Webpay Plus → Activación automática.
-
-**P: ¿Los datos están seguros y respaldados?**
-R: Sí, usamos Supabase con encriptación AES-256, backups automáticos diarios y cumplimos estándares SOC2.
-
-**P: ¿Puedo usar la app sin conexión a internet?**
-R: Las funciones básicas (ver ganado registrado, agregar notas) funcionan offline. La sincronización requiere conexión.
-
-**P: ¿Soporte multi-idioma?**
-R: Actualmente solo español. Inglés y otras lenguas están planificadas para v2.0.
-
-**P: ¿Integración con otros sistemas ganaderos?**
-R: Exportación CSV/Excel disponible. APIs para integración personalizada en desarrollo.
-
-**P: ¿Límites de almacenamiento?**
-R: Versión gratuita: 100MB. Premium: 10GB con posibilidad de ampliación.
-
-## 📄 Licencia y Derechos
-
-```
-MIT License
-
-Copyright (c) 2024 Lucas Meléndez - CowTracker
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## 🏆 Créditos y Reconocimientos
-
-### Equipo de Desarrollo
-- **Lucas Meléndez** - *Desarrollador Full Stack*
-  - Frontend: React Native, TypeScript, Expo
-  - Backend: Node.js, Express.js, FastAPI
-  - Base de Datos: PostgreSQL, Supabase
-  - DevOps: Git, CI/CD, Deployment
-
-### Institución Académica
-- **Universidad** - *Proyecto de Portafolio Final*
-- **Carrera**: Analista Programador
-- **Período**: 2024
+``` 
 
 ### Stack Tecnológico Completo
 
@@ -632,42 +489,3 @@ SOFTWARE.
 - **Webpay Plus** (Transbank) - Procesamiento de pagos
 - **Banco Central de Chile** - Conversión de moneda
 - **Expo Application Services** - Build y deployment
-
-#### Herramientas de Desarrollo
-- **Git** + **GitHub** - Control de versiones
-- **VSCode** - Editor principal
-- **Jest** - Framework de testing
-- **ESLint** + **Prettier** - Linting y formateo
-
-### Agradecimientos Especiales
-- **Transbank** por la documentación de Webpay Plus
-- **Supabase Team** por la excelente plataforma BaaS
-- **Expo Team** por simplificar el desarrollo React Native
-- **Comunidad Open Source** por las librerías utilizadas
-
-### Inspiración y Referencias
-- **Mejores prácticas** de aplicaciones ganaderas internacionales
-- **Diseño UX/UI** basado en Material Design y Human Interface Guidelines
-- **Arquitectura** inspirada en patrones de microservicios modernos
-
----
-
-<div align="center">
-  
-### 🐄 CowTracker - Gestión Inteligente de Ganado 🐄
-  
-*Desarrollado con ❤️ para la industria ganadera chilena*
-
-**Tecnología moderna • Seguridad garantizada • Soporte local**
-
----
-
-[![Descargar para Android](https://img.shields.io/badge/Descargar-Android-green?style=for-the-badge&logo=android)](https://play.google.com/store)
-[![Descargar para iOS](https://img.shields.io/badge/Descargar-iOS-blue?style=for-the-badge&logo=apple)](https://apps.apple.com)
-[![Acceder a Web App](https://img.shields.io/badge/Acceder-Web%20App-orange?style=for-the-badge&logo=web)](https://cowtracker.app)
-
----
-
-**Versión**: 1.0.0 | **Última actualización**: Diciembre 2024 | **Estado**: Producción
-
-</div>

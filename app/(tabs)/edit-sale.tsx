@@ -7,13 +7,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
-  Platform,
   FlatList,
   ActivityIndicator,
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useCustomModal } from '../../components/CustomModal';
 import { useAuth } from '../../components/AuthContext';
@@ -56,7 +54,6 @@ export default function EditSaleTab() {
   const [isLeche, setIsLeche] = useState(false);
   
   const [formData, setFormData] = useState({
-    date: new Date(),
     customer: '',
     liters: '',
     pricePerLiter: '',
@@ -65,7 +62,7 @@ export default function EditSaleTab() {
     notes: ''
   });
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const [ganados, setGanados] = useState<Ganado[]>([]);
   const [loadingGanados, setLoadingGanados] = useState(false);
   const [showCattleSelector, setShowCattleSelector] = useState(false);
@@ -117,7 +114,6 @@ export default function EditSaleTab() {
         // Inicializar formulario con datos existentes
         if (esLeche) {
           setFormData({
-            date: new Date(ventaData.fecha_venta),
             customer: ventaData.comprador,
             liters: ventaData.cantidad.toString(),
             pricePerLiter: ventaData.precio_unitario.toString(),
@@ -127,7 +123,6 @@ export default function EditSaleTab() {
           });
         } else {
           setFormData({
-            date: new Date(ventaData.fecha_venta),
             customer: ventaData.comprador,
             liters: '',
             pricePerLiter: '',
@@ -145,7 +140,6 @@ export default function EditSaleTab() {
         
         if (esLeche) {
           setFormData({
-            date: new Date(ventaData.fecha_venta),
             customer: ventaData.comprador,
             liters: ventaData.cantidad.toString(),
             pricePerLiter: ventaData.precio_unitario.toString(),
@@ -155,7 +149,6 @@ export default function EditSaleTab() {
           });
         } else {
           setFormData({
-            date: new Date(ventaData.fecha_venta),
             customer: ventaData.comprador,
             liters: '',
             pricePerLiter: '',
@@ -200,11 +193,7 @@ export default function EditSaleTab() {
     }
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || formData.date;
-    setShowDatePicker(Platform.OS === 'ios');
-    setFormData({ ...formData, date: currentDate });
-  };
+
 
   const handleLitersChange = (text: string) => {
     const numericRegex = /^(\d+)?([.]?\d{0,2})?$/;
@@ -425,28 +414,7 @@ export default function EditSaleTab() {
           <Text style={styles.infoSubtitle}>Venta #{venta.id_venta}</Text>
         </View>
 
-        {/* Fecha */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Fecha de venta</Text>
-          <TouchableOpacity 
-            style={styles.dateInput}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Ionicons name="calendar" size={20} color="#7f8c8d" />
-            <Text style={styles.dateText}>
-              {formData.date.toLocaleDateString('es-ES')}
-            </Text>
-          </TouchableOpacity>
-        </View>
 
-        {showDatePicker && (
-          <DateTimePicker
-            value={formData.date}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
 
         {/* Comprador */}
         <View style={styles.inputGroup}>
@@ -742,21 +710,6 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: '#e74c3c',
-  },
-  dateInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#2c3e50',
-    marginLeft: 12,
   },
   totalContainer: {
     backgroundColor: '#e8f5e8',

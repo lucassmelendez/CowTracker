@@ -267,6 +267,15 @@ export default function TabLayout() {
           headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
+      <Stack.Screen
+        name="edit-sale"
+        options={{
+          headerTitle: () => <SimpleHeader title="Editar Venta" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
     </Stack>
   );
 }

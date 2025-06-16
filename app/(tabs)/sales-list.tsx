@@ -78,12 +78,7 @@ export default function SalesListTab() {
   };
 
   const handleEditVenta = (ventaId: number) => {
-    // TODO: Implementar navegación a pantalla de edición
-    Alert.alert(
-      'Editar Venta',
-      `Funcionalidad de edición para venta #${ventaId} pendiente de implementar.`,
-      [{ text: 'OK' }]
-    );
+    router.push(`/(tabs)/edit-sale?ventaId=${ventaId}`);
   };
 
   const handleDeleteVenta = async (ventaId: number) => {

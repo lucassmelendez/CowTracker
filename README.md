@@ -1,39 +1,92 @@
 # 🐄 CowTracker - Sistema de Gestión de Ganado
 
-[![React Native](https://img.shields.io/badge/React%20Native-0.72-blue.svg)](https://reactnative.dev/)
-[![Expo](https://img.shields.io/badge/Expo-49.0-black.svg)](https://expo.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
+[![React Native](https://img.shields.io/badge/React%20Native-0.79.3-blue.svg)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-53.0.9-black.svg)](https://expo.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-blue.svg)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-orange.svg)](https://supabase.com/)
 [![Webpay Plus](https://img.shields.io/badge/Webpay%20Plus-Payments-red.svg)](https://www.transbank.cl/)
 
 ## 📋 Descripción
 
-CowTracker es una aplicación móvil y web completa para la gestión integral de ganado bovino. Permite a ganaderos y veterinarios llevar un control detallado de su ganado, granjas, registros veterinarios y realizar pagos seguros para funcionalidades premium.
+CowTracker es una aplicación móvil multiplataforma desarrollada con React Native y Expo para la gestión integral de ganado bovino. Permite a ganaderos, veterinarios y administradores llevar un control completo de su ganado, granjas, registros veterinarios, ventas y realizar pagos seguros para funcionalidades premium.
 
 ### ✨ Características Principales
 
-- 🐮 **Gestión de Ganado**: Registro completo de animales con información detallada
-- 🏡 **Administración de Granjas**: Control de múltiples ubicaciones
-- 🏥 **Registros Veterinarios**: Historial médico y tratamientos
-- 💳 **Pagos Webpay Plus**: Integración con sistema de pagos chileno
-- 💎 **Sistema Premium**: Funcionalidades avanzadas con suscripción
-- 💱 **Conversión de Moneda**: Precios en CLP y USD automáticamente
-- 📊 **Reportes y Estadísticas**: Análisis detallado del ganado
-- 🔐 **Autenticación Segura**: Sistema de usuarios con roles
+#### 🐮 **Gestión Integral de Ganado**
+- Registro completo de animales con información detallada
+- Identificación única con números y códigos QR
+- Control de estado de salud y género
+- Historial completo de cada animal
+- Escáner QR integrado para identificación rápida
+
+#### 🏡 **Administración de Granjas**
+- Control de múltiples ubicaciones
+- Gestión de tamaño y capacidad
+- Asignación de ganado por granja
+- Reportes por ubicación
+
+#### 🏥 **Registros Veterinarios Avanzados**
+- Historial médico completo
+- Registro de tratamientos y diagnósticos
+- Seguimiento de fechas de tratamiento
+- Notas detalladas por veterinario
+- Exportación de reportes médicos
+
+#### 💰 **Sistema de Ventas**
+- Venta de ganado con precios automáticos
+- Venta de leche con control de litros
+- Historial completo de transacciones
+- Reportes de ingresos y estadísticas
+- Edición y seguimiento de ventas
+
+#### 💳 **Pagos Webpay Plus**
+- Integración con sistema de pagos chileno
+- Procesamiento seguro de transacciones
+- Conversión automática CLP/USD
+- Activación de funcionalidades premium
+
+#### 💎 **Sistema Premium**
+- Funcionalidades avanzadas con suscripción
+- Ganado y granjas ilimitadas
+- Reportes detallados con gráficos
+- Exportación a PDF/Excel
+- Soporte prioritario
+
+#### 📊 **Reportes y Estadísticas**
+- Dashboard con métricas clave
+- Gráficos de producción de leche
+- Estadísticas de ventas
+- Reportes de salud del ganado
+- Análisis de rentabilidad
+
+#### 👥 **Sistema Multi-Usuario**
+- Roles diferenciados (Admin, Veterinario, Trabajador, Usuario)
+- Autenticación segura con Supabase
+- Control de permisos por funcionalidad
+- Gestión de usuarios desde panel admin
+
+#### 📱 **Experiencia de Usuario**
+- Interfaz moderna y intuitiva
+- Soporte para web, iOS y Android
+- Modo offline para funciones básicas
+- Sincronización automática
+- Notificaciones push
 
 ## 🏗️ Arquitectura del Sistema
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Backend       │    │   Servicios     │
+│   Frontend      │    │   Backend APIs  │    │   Servicios     │
 │   React Native  │◄──►│   Express.js    │◄──►│   Supabase      │
-│   Expo Router   │    │   Node.js       │    │   PostgreSQL    │
+│   Expo Router   │    │   REST API      │    │   PostgreSQL    │
+│   TypeScript    │    │                 │    │   Auth & RT     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          │              ┌─────────────────┐              │
          └─────────────►│   FastAPI       │◄─────────────┘
                         │   Webpay Plus   │
                         │   Banco Central │
+                        │   Conversión $  │
                         └─────────────────┘
 ```
 
@@ -41,10 +94,10 @@ CowTracker es una aplicación móvil y web completa para la gestión integral de
 
 ### Prerrequisitos
 
-- Node.js 18+ 
-- npm o yarn
-- Expo CLI
-- Git
+- **Node.js** 18 o superior
+- **npm** o **yarn**
+- **Expo CLI** (`npm install -g @expo/cli`)
+- **Git**
 
 ### 1. Clonar el Repositorio
 
@@ -64,210 +117,557 @@ npm install
 Crear archivo `.env` en la raíz del proyecto:
 
 ```env
-# Supabase
+# Supabase Configuration
 EXPO_PUBLIC_SUPABASE_URL=tu_supabase_url
 EXPO_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
 
-# APIs
+# Backend APIs
 EXPO_PUBLIC_API_URL=http://localhost:5000
 EXPO_PUBLIC_FASTAPI_URL=https://ct-fastapi.vercel.app
+
+# App Configuration
+EXPO_PUBLIC_APP_NAME=CowTracker
+EXPO_PUBLIC_APP_VERSION=1.0.0
 ```
 
 ### 4. Iniciar el Proyecto
 
 ```bash
+# Iniciar en modo desarrollo
 npx expo start
+
+# Iniciar solo para web
+npx expo start --web
+
+# Iniciar para dispositivos específicos
+npx expo start --ios
+npx expo start --android
 ```
 
-### 5. Abrir en Navegador
+### 5. Acceso a la Aplicación
 
-Una vez iniciado, presiona `w` en la consola para abrir en el navegador web.
+- **Web**: Presiona `w` en la consola o abre `http://localhost:8081`
+- **iOS**: Escanea el QR con la app Expo Go
+- **Android**: Escanea el QR con la app Expo Go
 
 ## 🌐 Servicios y APIs
 
 ### Backend Express.js
 - **URL Local**: `http://localhost:5000`
-- **Funciones**: Autenticación, CRUD de datos, gestión de usuarios
+- **Funciones**: Autenticación, CRUD completo, gestión de usuarios
+- **Endpoints**: Ganado, granjas, veterinaria, ventas, usuarios
 
 ### FastAPI (Webpay + Conversión)
 - **URL Producción**: `https://ct-fastapi.vercel.app`
-- **Funciones**: Pagos Webpay Plus, conversión de moneda
+- **Funciones**: 
+  - Procesamiento de pagos con Webpay Plus
+  - Conversión de moneda en tiempo real
+  - Integración con Banco Central de Chile
 
 ### Base de Datos Supabase
-- **Tipo**: PostgreSQL
-- **Funciones**: Almacenamiento de datos, autenticación, tiempo real
+- **Tipo**: PostgreSQL en la nube
+- **Funciones**: 
+  - Almacenamiento de datos persistente
+  - Autenticación de usuarios
+  - Tiempo real y sincronización
+  - Políticas de seguridad RLS
 
 ## 💳 Sistema de Pagos
 
 ### Webpay Plus Integration
 
-El sistema integra Webpay Plus de Transbank para procesar pagos seguros:
-
 ```javascript
-// Ejemplo de uso
-const paymentData = {
-  amount: 10000, // $10.000 CLP
-  buy_order: 'premium_upgrade_123',
-  session_id: 'session_456',
-  return_url: 'http://localhost:8081/premium/activate'
+// Proceso de pago premium
+const initiatePayment = async () => {
+  const paymentData = {
+    amount: 10000, // $10.000 CLP
+    buy_order: `premium_upgrade_${Date.now()}`,
+    session_id: `session_${userId}`,
+    return_url: 'http://localhost:8081/premium/activate'
+  };
+  
+  const response = await fetch(`${FASTAPI_URL}/webpay/create`, {
+    method: 'POST',
+    body: JSON.stringify(paymentData)
+  });
 };
 ```
 
-### Conversión de Moneda
-
-Integración con Banco Central de Chile para conversión automática:
+### Conversión de Moneda Automática
 
 ```javascript
-// Endpoint de conversión
+// Endpoint de conversión en tiempo real
 GET /currency/convert?amount=10000&from_currency=CLP&to_currency=USD
 
-// Respuesta
+// Respuesta con formato amigable
 {
+  "original_amount": 10000,
+  "converted_amount": 11.23,
+  "from_currency": "CLP",
+  "to_currency": "USD",
+  "exchange_rate": 0.001123,
   "formatted": {
-    "combined": "$10,000/11USD"
+    "combined": "$10,000 CLP / $11.23 USD",
+    "separate": {
+      "clp": "$10,000",
+      "usd": "$11.23"
+    }
   }
 }
 ```
 
-## 📱 Funcionalidades por Versión
+## 📱 Funcionalidades Detalladas
 
 ### 🆓 Versión Gratuita
-- ✅ Registro hasta 2 cabezas de ganado
-- ✅ 1 granja
-- ✅ Registros básicos
-- ✅ Autenticación
+- ✅ Registro hasta **2 cabezas de ganado**
+- ✅ **1 granja** con información básica
+- ✅ Registros veterinarios básicos
+- ✅ Autenticación y perfil de usuario
+- ✅ Escáner QR básico
+- ✅ Reportes simplificados
 
-### 💎 Versión Premium ($10.000 CLP)
-- ✅ Ganado ilimitado
-- ✅ Granjas ilimitadas
-- ✅ Reportes avanzados
-- ✅ Exportación Excel/PDF
-- ✅ Soporte prioritario
-- ✅ Sincronización en la nube
+### 💎 Versión Premium ($10.000 CLP / ~$11 USD)
+- ✅ **Ganado ilimitado** con información completa
+- ✅ **Granjas ilimitadas** con gestión avanzada
+- ✅ Registros veterinarios detallados
+- ✅ **Sistema completo de ventas** (ganado + leche)
+- ✅ **Reportes avanzados** con gráficos interactivos
+- ✅ **Exportación** a Excel/PDF
+- ✅ **Dashboard administrativo** completo
+- ✅ Soporte prioritario y actualizaciones premium
+- ✅ Sincronización en la nube sin límites
+- ✅ **Análisis de rentabilidad** y estadísticas
+
+### 🔧 Funcionalidades Técnicas
+
+#### Escáner QR Integrado
+- Identificación rápida de ganado
+- Generación automática de códigos QR
+- Soporte para múltiples formatos
+
+#### Sistema de Roles
+```typescript
+enum UserRole {
+  ADMIN = 'admin',          // Acceso completo al sistema
+  VETERINARIO = 'vet',      // Acceso a registros médicos
+  TRABAJADOR = 'worker',    // Operaciones diarias
+  USUARIO = 'user'          // Funcionalidades básicas
+}
+```
+
+#### Offline Support
+- Almacenamiento local con AsyncStorage
+- Sincronización automática al conectarse
+- Funciones críticas disponibles sin internet
 
 ## 🗄️ Estructura de Base de Datos
 
-### Tablas Principales
+### Esquema Principal de Tablas
 
 ```sql
--- Usuarios
-usuario (id_usuario, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, id_rol, id_autentificar, id_premium)
+-- Gestión de Usuarios
+CREATE TABLE usuario (
+  id_usuario SERIAL PRIMARY KEY,
+  primer_nombre VARCHAR(50) NOT NULL,
+  segundo_nombre VARCHAR(50),
+  primer_apellido VARCHAR(50) NOT NULL,
+  segundo_apellido VARCHAR(50),
+  email VARCHAR(100) UNIQUE NOT NULL,
+  id_rol INTEGER REFERENCES rol(id_rol),
+  id_premium INTEGER REFERENCES premium(id_premium) DEFAULT 1,
+  fecha_creacion TIMESTAMP DEFAULT NOW(),
+  activo BOOLEAN DEFAULT TRUE
+);
 
--- Ganado
-ganado (id_ganado, nombre, numero_identificacion, nota, id_finca, id_estado_salud, id_genero, id_informacion_veterinaria, id_produccion)
+-- Gestión de Ganado
+CREATE TABLE ganado (
+  id_ganado SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  numero_identificacion VARCHAR(50) UNIQUE NOT NULL,
+  fecha_nacimiento DATE,
+  peso_actual DECIMAL(6,2),
+  nota TEXT,
+  id_finca INTEGER REFERENCES finca(id_finca),
+  id_estado_salud INTEGER REFERENCES estado_salud(id_estado_salud),
+  id_genero INTEGER REFERENCES genero(id_genero),
+  id_usuario INTEGER REFERENCES usuario(id_usuario),
+  fecha_registro TIMESTAMP DEFAULT NOW(),
+  activo BOOLEAN DEFAULT TRUE
+);
 
--- Granjas
-finca (id_finca, nombre, tamano)
+-- Gestión de Granjas
+CREATE TABLE finca (
+  id_finca SERIAL PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  ubicacion VARCHAR(200),
+  tamano DECIMAL(10,2), -- en hectáreas
+  capacidad_ganado INTEGER,
+  id_usuario INTEGER REFERENCES usuario(id_usuario),
+  fecha_creacion TIMESTAMP DEFAULT NOW(),
+  activa BOOLEAN DEFAULT TRUE
+);
 
--- Información Veterinaria
-informacion_veterinaria (id_informacion_veterinaria, fecha_tratamiento, diagnostico, tratamiento, nota)
+-- Registros Veterinarios
+CREATE TABLE informacion_veterinaria (
+  id_informacion_veterinaria SERIAL PRIMARY KEY,
+  id_ganado INTEGER REFERENCES ganado(id_ganado),
+  fecha_tratamiento DATE NOT NULL,
+  diagnostico TEXT NOT NULL,
+  tratamiento TEXT NOT NULL,
+  medicamento VARCHAR(200),
+  dosis VARCHAR(100),
+  veterinario_nombre VARCHAR(100),
+  proximo_control DATE,
+  nota TEXT,
+  id_usuario INTEGER REFERENCES usuario(id_usuario),
+  fecha_registro TIMESTAMP DEFAULT NOW()
+);
 
--- Premium
-premium (id_premium, descripcion) -- 1=Free, 2=Premium
+-- Sistema de Ventas
+CREATE TABLE venta (
+  id_venta SERIAL PRIMARY KEY,
+  tipo_venta VARCHAR(20) CHECK (tipo_venta IN ('ganado', 'leche')),
+  id_ganado INTEGER REFERENCES ganado(id_ganado), -- NULL para venta de leche
+  cantidad DECIMAL(10,2), -- unidades o litros
+  precio_unitario DECIMAL(10,2),
+  precio_total DECIMAL(10,2),
+  comprador VARCHAR(200),
+  fecha_venta DATE NOT NULL,
+  notas TEXT,
+  id_usuario INTEGER REFERENCES usuario(id_usuario),
+  fecha_registro TIMESTAMP DEFAULT NOW()
+);
+
+-- Control Premium
+CREATE TABLE premium (
+  id_premium SERIAL PRIMARY KEY,
+  descripcion VARCHAR(50) NOT NULL, -- 'Free', 'Premium'
+  limite_ganado INTEGER, -- NULL = ilimitado
+  limite_granjas INTEGER, -- NULL = ilimitado
+  acceso_reportes BOOLEAN DEFAULT FALSE,
+  acceso_exportacion BOOLEAN DEFAULT FALSE,
+  precio_clp DECIMAL(10,2),
+  activo BOOLEAN DEFAULT TRUE
+);
 ```
 
-## 🔧 Scripts Disponibles
+### Relaciones Clave
+- **Usuario ↔ Ganado**: Un usuario puede tener múltiple ganado
+- **Usuario ↔ Finca**: Un usuario puede administrar múltiples granjas
+- **Ganado ↔ Finca**: Cada animal pertenece a una granja específica
+- **Ganado ↔ Veterinaria**: Historial médico completo por animal
+- **Usuario ↔ Ventas**: Tracking completo de transacciones
 
+## 🔧 Scripts y Comandos
+
+### Scripts de Desarrollo
 ```bash
 # Desarrollo
-npm start              # Inicia Expo
-npx expo start --web   # Solo web
-npx expo start --ios   # Solo iOS
-npx expo start --android # Solo Android
+npm start                    # Inicia Expo development server
+npx expo start --web         # Solo navegador web
+npx expo start --ios         # Solo simulador iOS
+npx expo start --android     # Solo emulador Android
+npx expo start --clear       # Limpiar cache y iniciar
 
-# Construcción
-npx expo build:web     # Build para web
-npx expo build:ios     # Build para iOS
-npx expo build:android # Build para Android
+# Construcción y Deploy
+npx expo build:web           # Build para producción web
+npx expo export              # Exportar para hosting estático
 
 # Utilidades
-npm run lint           # Linter
-npm run test           # Tests
+npm run type-check           # Verificar tipos TypeScript
+npm run clean                # Limpiar node_modules y cache
+```
+
+### Scripts de Base de Datos
+```bash
+# Migrations (si usas Supabase CLI)
+supabase db push             # Aplicar cambios a la DB
+supabase db reset            # Resetear DB a estado inicial
+supabase gen types typescript # Generar tipos TypeScript
 ```
 
 ## 🌍 Despliegue
 
-### Frontend (Expo)
-- **Desarrollo**: `npx expo start`
-- **Producción**: Expo Application Services (EAS)
+### Frontend (React Native/Expo)
+```bash
+# Desarrollo
+npx expo start
 
-### Backend Express
-- **Desarrollo**: `npm run dev`
-- **Producción**: Railway, Heroku, o VPS
+# Web (Netlify/Vercel)
+npx expo export:web
+# Subir carpeta dist/ a hosting
 
-### FastAPI
-- **Producción**: Vercel (actual)
-- **URL**: `https://ct-fastapi.vercel.app`
+# App Stores (EAS Build)
+npm install -g eas-cli
+eas build --platform all
+eas submit --platform all
+```
 
-## 🔐 Autenticación y Seguridad
+### Backend APIs
+- **Express.js**: Railway, Render, o VPS
+- **FastAPI**: Vercel (configuración actual)
+- **Base de Datos**: Supabase (managed PostgreSQL)
 
-- **Sistema**: Supabase Auth
-- **Métodos**: Email/Password
-- **Roles**: Admin, Veterinario, Trabajador, Usuario
-- **JWT**: Tokens seguros para API calls
+### URLs de Producción
+- **Frontend Web**: A definir según hosting
+- **FastAPI**: `https://ct-fastapi.vercel.app`
+- **Supabase**: Panel de administración automático
 
-## 📊 Monitoreo y Logs
+## 🔐 Seguridad y Autenticación
 
-- **FastAPI**: Logs automáticos en Vercel
-- **Express**: Winston logger
-- **Frontend**: Expo logs y crash reporting
+### Supabase Auth
+```typescript
+// Configuración de autenticación
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// Row Level Security (RLS)
+// Los usuarios solo pueden ver sus propios datos
+CREATE POLICY "Users can view own cattle" ON ganado
+  FOR SELECT USING (auth.uid() = id_usuario);
+```
+
+### Roles y Permisos
+| Rol | Ganado | Granjas | Veterinaria | Ventas | Admin |
+|-----|--------|---------|-------------|---------|-------|
+| Usuario | ✅ Propio | ✅ Propio | ✅ Propio | ✅ Propio | ❌ |
+| Trabajador | ✅ Asignado | ✅ Asignado | ✅ Lectura | ✅ Registro | ❌ |
+| Veterinario | ✅ Lectura | ✅ Lectura | ✅ Completo | ❌ | ❌ |
+| Admin | ✅ Completo | ✅ Completo | ✅ Completo | ✅ Completo | ✅ |
+
+## 📊 Monitoreo y Analytics
+
+### Logging
+- **Frontend**: Expo crash reporting automático
+- **FastAPI**: Logs estructurados en Vercel
+- **Supabase**: Dashboard de métricas integrado
+
+### Métricas Clave
+- Usuarios activos diarios/mensuales
+- Conversiones a Premium
+- Uso de funcionalidades por rol
+- Performance de APIs
+- Errores y crashes
+
+## 🧪 Testing
+
+### Configuración de Tests
+```bash
+# Instalar dependencias de testing
+npm install --save-dev jest @testing-library/react-native
+
+# Ejecutar tests
+npm test
+npm run test:watch    # Modo watch
+npm run test:coverage # Con coverage
+```
+
+### Estructura de Tests
+```
+__tests__/
+├── components/       # Tests de componentes
+├── screens/         # Tests de pantallas
+├── utils/           # Tests de utilidades
+└── api/             # Tests de APIs
+```
 
 ## 🤝 Contribución
 
-### Flujo de Trabajo
+### Flujo de Trabajo Git
 
-1. **Fork** el repositorio
-2. **Crear branch** de feature: `git checkout -b feature/nueva-funcionalidad`
-3. **Commit** cambios: `git commit -m 'Add nueva funcionalidad'`
-4. **Push** al branch: `git push origin feature/nueva-funcionalidad`
-5. **Crear Pull Request**
+1. **Fork** del repositorio
+2. **Crear branch** de feature:
+   ```bash
+   git checkout -b feature/nueva-funcionalidad
+   ```
+3. **Desarrollar** con commits descriptivos:
+   ```bash
+   git commit -m "feat: agregar sistema de notificaciones push"
+   ```
+4. **Push** y crear **Pull Request**:
+   ```bash
+   git push origin feature/nueva-funcionalidad
+   ```
 
 ### Estándares de Código
 
-- ESLint para JavaScript/TypeScript
-- Prettier para formateo
-- Conventional Commits para mensajes
+#### Convenciones de Nomenclatura
+```typescript
+// Componentes: PascalCase
+export const CattleCard = () => { ... };
 
-## 📞 Soporte
+// Hooks: camelCase con 'use'
+export const useCattleData = () => { ... };
 
-### Contacto
-- **Email**: soporte@cowtracker.cl
-- **GitHub Issues**: [Reportar Bug](https://github.com/lucassmelendez/CowTracker/issues)
-- **Documentación**: [Wiki del Proyecto](https://github.com/lucassmelendez/CowTracker/wiki)
+// Constantes: SCREAMING_SNAKE_CASE
+export const API_ENDPOINTS = { ... };
 
-### FAQ
+// Variables/funciones: camelCase
+const handleCattleSubmit = () => { ... };
+```
 
-**P: ¿Cómo actualizo a Premium?**
-R: Desde el perfil de usuario, presiona "Actualizar a Premium" y sigue el proceso de pago.
+#### Estructura de Archivos
+```
+app/
+├── (tabs)/              # Pantallas principales
+│   ├── index.tsx        # Dashboard principal
+│   ├── cattle/          # Gestión de ganado
+│   ├── farms/           # Gestión de granjas
+│   ├── reports/         # Reportes y análisis
+│   └── profile/         # Perfil de usuario
+├── components/          # Componentes reutilizables
+├── hooks/              # Custom hooks
+├── lib/                # Utilidades y configuración
+├── constants/          # Constantes de la app
+└── types/              # Definiciones TypeScript
+```
 
-**P: ¿Los datos están seguros?**
-R: Sí, usamos Supabase con encriptación y cumplimos estándares de seguridad.
+### Conventional Commits
+```bash
+feat: nueva funcionalidad
+fix: corrección de bug
+docs: actualización de documentación
+style: cambios de formato
+refactor: refactorización de código
+test: agregar o modificar tests
+chore: tareas de mantenimiento
+```
 
-**P: ¿Funciona offline?**
-R: Funcionalidades básicas sí, pero se requiere conexión para sincronización.
+## 📞 Soporte y Contacto
 
-## 📄 Licencia
+### Contacto Directo
+- **Email**: lucas.melendez@estudiante.cl
+- **GitHub**: [@lucassmelendez](https://github.com/lucassmelendez)
+- **LinkedIn**: [Lucas Meléndez](https://linkedin.com/in/lucasmelendez)
 
-Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+### Reportar Issues
+- **GitHub Issues**: [Reportar Bug](https://github.com/lucassmelendez/CowTracker/issues/new)
+- **Feature Requests**: [Solicitar Funcionalidad](https://github.com/lucassmelendez/CowTracker/issues/new?template=feature_request.md)
 
-## 🏆 Créditos
+### Documentación Adicional
+- **Wiki del Proyecto**: [CowTracker Wiki](https://github.com/lucassmelendez/CowTracker/wiki)
+- **API Documentation**: Swagger UI en `/docs` del backend
+- **Changelog**: [CHANGELOG.md](./CHANGELOG.md)
 
-### Desarrollado por
-- **Lucas Meléndez** - Desarrollo Full Stack
-- **Universidad** - Proyecto de Portafolio Final
+### FAQ Extendidas
 
-### Tecnologías Utilizadas
-- React Native & Expo
-- Node.js & Express.js
-- FastAPI & Python
-- Supabase & PostgreSQL
-- Webpay Plus (Transbank)
-- Banco Central de Chile API
+**P: ¿Cómo migro de la versión gratuita a Premium?**
+R: Desde tu perfil → "Actualizar a Premium" → Pago con Webpay Plus → Activación automática.
+
+**P: ¿Los datos están seguros y respaldados?**
+R: Sí, usamos Supabase con encriptación AES-256, backups automáticos diarios y cumplimos estándares SOC2.
+
+**P: ¿Puedo usar la app sin conexión a internet?**
+R: Las funciones básicas (ver ganado registrado, agregar notas) funcionan offline. La sincronización requiere conexión.
+
+**P: ¿Soporte multi-idioma?**
+R: Actualmente solo español. Inglés y otras lenguas están planificadas para v2.0.
+
+**P: ¿Integración con otros sistemas ganaderos?**
+R: Exportación CSV/Excel disponible. APIs para integración personalizada en desarrollo.
+
+**P: ¿Límites de almacenamiento?**
+R: Versión gratuita: 100MB. Premium: 10GB con posibilidad de ampliación.
+
+## 📄 Licencia y Derechos
+
+```
+MIT License
+
+Copyright (c) 2024 Lucas Meléndez - CowTracker
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## 🏆 Créditos y Reconocimientos
+
+### Equipo de Desarrollo
+- **Lucas Meléndez** - *Desarrollador Full Stack*
+  - Frontend: React Native, TypeScript, Expo
+  - Backend: Node.js, Express.js, FastAPI
+  - Base de Datos: PostgreSQL, Supabase
+  - DevOps: Git, CI/CD, Deployment
+
+### Institución Académica
+- **Universidad** - *Proyecto de Portafolio Final*
+- **Carrera**: Analista Programador
+- **Período**: 2024
+
+### Stack Tecnológico Completo
+
+#### Frontend
+- **React Native** 0.79.3 - Framework principal
+- **Expo** 53.0.9 - Plataforma de desarrollo
+- **TypeScript** 5.3.3 - Tipado estático
+- **Expo Router** - Navegación basada en archivos
+- **React Navigation** - Navegación avanzada
+
+#### Backend & APIs
+- **Node.js** + **Express.js** - API REST principal
+- **FastAPI** + **Python** - Microservicios de pago
+- **Supabase** - BaaS (Backend as a Service)
+- **PostgreSQL** - Base de datos relacional
+
+#### Servicios Externos
+- **Webpay Plus** (Transbank) - Procesamiento de pagos
+- **Banco Central de Chile** - Conversión de moneda
+- **Expo Application Services** - Build y deployment
+
+#### Herramientas de Desarrollo
+- **Git** + **GitHub** - Control de versiones
+- **VSCode** - Editor principal
+- **Jest** - Framework de testing
+- **ESLint** + **Prettier** - Linting y formateo
+
+### Agradecimientos Especiales
+- **Transbank** por la documentación de Webpay Plus
+- **Supabase Team** por la excelente plataforma BaaS
+- **Expo Team** por simplificar el desarrollo React Native
+- **Comunidad Open Source** por las librerías utilizadas
+
+### Inspiración y Referencias
+- **Mejores prácticas** de aplicaciones ganaderas internacionales
+- **Diseño UX/UI** basado en Material Design y Human Interface Guidelines
+- **Arquitectura** inspirada en patrones de microservicios modernos
 
 ---
 
 <div align="center">
-  <strong>🐄 CowTracker - Gestión Inteligente de Ganado 🐄</strong>
-  <br>
-  <em>Desarrollado con ❤️ para la industria ganadera chilena</em>
-</div> 
+  
+### 🐄 CowTracker - Gestión Inteligente de Ganado 🐄
+  
+*Desarrollado con ❤️ para la industria ganadera chilena*
+
+**Tecnología moderna • Seguridad garantizada • Soporte local**
+
+---
+
+[![Descargar para Android](https://img.shields.io/badge/Descargar-Android-green?style=for-the-badge&logo=android)](https://play.google.com/store)
+[![Descargar para iOS](https://img.shields.io/badge/Descargar-iOS-blue?style=for-the-badge&logo=apple)](https://apps.apple.com)
+[![Acceder a Web App](https://img.shields.io/badge/Acceder-Web%20App-orange?style=for-the-badge&logo=web)](https://cowtracker.app)
+
+---
+
+**Versión**: 1.0.0 | **Última actualización**: Diciembre 2024 | **Estado**: Producción
+
+</div>

@@ -78,12 +78,7 @@ export default function SalesListTab() {
   };
 
   const handleEditVenta = (ventaId: number) => {
-    // TODO: Implementar navegación a pantalla de edición
-    Alert.alert(
-      'Editar Venta',
-      `Funcionalidad de edición para venta #${ventaId} pendiente de implementar.`,
-      [{ text: 'OK' }]
-    );
+    router.push(`/edit-sale?id=${ventaId}`);
   };
 
   const handleDeleteVenta = async (ventaId: number) => {
@@ -141,8 +136,9 @@ export default function SalesListTab() {
     // Las ventas de leche tienden a tener cantidades altas (10+ litros típicamente)
     // Las ventas de ganado tienden a ser pocas unidades (1-10 animales típicamente)
     // También consideramos el precio unitario: leche es más barata por unidad
-    const isLeche = item.cantidad >= 10 || (item.cantidad > 1 && item.precio_unitario < 50000);
+    const isLeche = item.precio_unitario < 50000 && item.cantidad >= 2;
     const isGanado = !isLeche;
+
 
     return (
       <TouchableOpacity 

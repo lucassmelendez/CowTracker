@@ -677,7 +677,7 @@ ${date}
         {/* Estadísticas principales de ventas */}
         {salesStats && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📊 Estadísticas de Ventas (Principal)</Text>
+            <Text style={styles.sectionTitle}>💲Estadísticas de Ventas</Text>
             <View style={styles.statsGrid}>
               <StatCard
                 title="Ingresos Totales"
@@ -723,7 +723,7 @@ ${date}
         {reportData && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>📊 Información General (Secundario)</Text>
+              <Text style={styles.sectionTitle}>📊 Información General</Text>
               <TouchableOpacity 
                 style={styles.toggleButton}
                 onPress={() => setShowCharts(!showCharts)}
@@ -736,20 +736,6 @@ ${date}
               </TouchableOpacity>
             </View>
             <View style={styles.statsGrid}>
-              <StatCard
-                title="Animales Saludables"
-                value={reportData.cattleByHealth['Saludable'] || 0}
-                icon="checkmark-circle"
-                color="#27ae60"
-                subtitle={`${(((reportData.cattleByHealth['Saludable'] || 0) / reportData.totalCattle) * 100).toFixed(1)}% del total`}
-              />
-              <StatCard
-                title="En Tratamiento"
-                value={reportData.cattleByHealth['En tratamiento'] || 0}
-                icon="medical"
-                color="#f39c12"
-                subtitle="Requieren seguimiento"
-              />
               <StatCard
                 title="Total Ganado"
                 value={reportData.totalCattle}

@@ -12,11 +12,12 @@ import {
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useCustomModal } from '../../components/CustomModal';
 import { useAuth } from '../../components/AuthContext';
 import { useFarm } from '../../components/FarmContext';
 import api from '../../lib/services/api';
+import { useCallback } from 'react';
 
 interface Ganado {
   id_ganado: number;
@@ -44,7 +45,7 @@ interface VentaDetalle {
 
 export default function EditSaleTab() {
   const router = useRouter();
-  const { ventaId } = useLocalSearchParams();
+  const { ventaId, onUpdate } = useLocalSearchParams();
   const { showSuccess, ModalComponent } = useCustomModal();
   const { userInfo } = useAuth();
   const { selectedFarm } = useFarm();
@@ -323,7 +324,8 @@ export default function EditSaleTab() {
       console.log('Venta actualizada:', result);
 
       showSuccess('Éxito', 'Venta actualizada correctamente', () => {
-        router.back();
+        // Navegar de vuelta a sales-list con parámetro de recarga
+        router.replace('/(tabs)/sales-list?shouldRefresh=true');
       });
     } catch (err) {
       console.error('Excepción al actualizar venta:', err);
@@ -332,7 +334,7 @@ export default function EditSaleTab() {
   };
 
   const handleCancel = () => {
-    router.back();
+    router.replace('/(tabs)/sales-list');
   };
 
   const renderCattleItem = ({ item }: { item: Ganado }) => {

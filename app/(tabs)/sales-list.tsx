@@ -11,8 +11,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../components/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import SalesDetails from './sales-details';
+import { useCallback } from 'react';
 
 interface Venta {
   id_venta: number;
@@ -24,6 +25,7 @@ interface Venta {
 
 export default function SalesListTab() {
   const router = useRouter();
+  const { shouldRefresh } = useLocalSearchParams();
   const { userInfo } = useAuth();
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +64,20 @@ export default function SalesListTab() {
     }
   }, [userInfo]);
 
+  // Detectar cuando se debe refrescar después de editar
+  useFocusEffect(
+    useCallback(() => {
+      if (shouldRefresh === 'true') {
+        // Limpiar el parámetro de la URL
+        router.replace('/(tabs)/sales-list');
+        // Recargar los datos
+        if (userInfo?.token) {
+          fetchVentas();
+        }
+      }
+    }, [shouldRefresh, userInfo?.token])
+  );
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchVentas();
@@ -78,7 +94,7 @@ export default function SalesListTab() {
   };
 
   const handleEditVenta = (ventaId: number) => {
-    router.push(`/(tabs)/edit-sale?ventaId=${ventaId}`);
+    router.push(`/(tabs)/edit-sale?ventaId=${ventaId}&onUpdate=true`);
   };
 
   const handleDeleteVenta = async (ventaId: number) => {

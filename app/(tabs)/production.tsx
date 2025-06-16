@@ -6,18 +6,18 @@ export default function ProductionScreen() {
   const router = useRouter();
 
   const navigateToMilkSale = () => {
-    router.push('/(tabs)/milk-sale');
+    router.push('/milk-sale');
   };
 
   const navigateToCattleSale = () => {
-    router.push('/(tabs)/cattle-sale');
+    router.push('/cattle-sale');
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Producción</Text>
-        <Text style={styles.subtitle}>Gestiona las ventas y producción</Text>
+        <Text style={styles.subtitle}>Selecciona una opción</Text>
       </View>
 
       <View style={styles.content}>
@@ -27,7 +27,7 @@ export default function ProductionScreen() {
           </View>
           <Text style={styles.optionTitle}>Venta de Leche</Text>
           <Text style={styles.optionDescription}>
-            Registra y gestiona las ventas de leche de tu ganado
+            Registra y gestiona las ventas de leche
           </Text>
         </TouchableOpacity>
 

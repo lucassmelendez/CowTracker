@@ -37,24 +37,17 @@ export const StatCard: React.FC<StatCardProps> = ({
                 size={16} 
                 color={trend.isPositive ? '#27ae60' : '#e74c3c'} 
               />
-              <Text style={[
-                styles.trendText, 
-                { color: trend.isPositive ? '#27ae60' : '#e74c3c' }
-              ]}>
-                {Math.abs(trend.value)}%
+              <Text style={[styles.trendText, {
+                color: trend.isPositive ? '#27ae60' : '#e74c3c'
+              }]}>
+                {trend.value}%
               </Text>
             </View>
           )}
         </View>
       </View>
-      
       <Text style={styles.title}>{title}</Text>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-      
-      {/* Barra de progreso visual */}
-      <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { backgroundColor: color }]} />
-      </View>
     </View>
   );
 };
@@ -62,17 +55,17 @@ export const StatCard: React.FC<StatCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 16,
-    marginVertical: 6,
-    marginHorizontal: 4,
     borderLeftWidth: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    flex: 1,
+    shadowRadius: 3.84,
+    elevation: 5,
     minWidth: 150,
   },
   header: {
@@ -115,17 +108,5 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 12,
     color: '#777777',
-    marginBottom: 8,
   },
-  progressContainer: {
-    height: 4,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    width: '70%',
-    borderRadius: 2,
-  },
-}); 
+});

@@ -15,6 +15,50 @@ Notifications.setNotificationHandler({
 // Canal de notificación personalizado para registros veterinarios
 export const VETERINARY_CHANNEL_ID = 'veterinary-records';
 
+// Registrar para notificaciones push
+export async function registerForPushNotificationsAsync() {
+  try {
+    // Verificar si el dispositivo puede recibir notificaciones
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    // Si no tenemos permiso, solicitarlo
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    // Si el usuario no concedió permiso, salir
+    if (finalStatus !== 'granted') {
+      console.log('No se obtuvieron permisos para las notificaciones push');
+      return false;
+    }
+
+    // En Android, necesitamos configurar los canales de notificación
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'General',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#27ae60',
+      });
+
+      await Notifications.setNotificationChannelAsync(VETERINARY_CHANNEL_ID, {
+        name: 'Registros Veterinarios',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#27ae60',
+        description: 'Notificaciones relacionadas con registros veterinarios del ganado',
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error al registrar notificaciones push:', error);
+    return false;
+  }
+}
+
 // Inicializar notificaciones y solicitar permisos
 export async function initializeNotifications() {
   if (Platform.OS === 'android') {
@@ -124,13 +168,10 @@ export async function scheduleNotificationForDateTime(title: string, body: strin
         priority: Notifications.AndroidNotificationPriority.HIGH,
         badge: 1,
         ...(Platform.OS === 'android' && { channelId: VETERINARY_CHANNEL_ID }),
-      },
-      trigger: { 
-        channelId: Platform.OS === 'android' ? VETERINARY_CHANNEL_ID : undefined,
-        hour: scheduledDateTime.getHours(),
-        minute: scheduledDateTime.getMinutes(),
-        type: 'daily'
-      } as const
+      },      trigger: { 
+        date: scheduledDateTime,
+        type: 'date',
+      }
     });
     
     console.log(`Notificación programada (ID: ${notificationId}) para: ${scheduledDateTime.toLocaleString()}`);

@@ -105,15 +105,10 @@ export default function PremiumActivateScreen() {
               <Text>✅</Text>
               <Text style={styles.benefitText}>Registro ilimitado de ganado</Text>
             </View>
-            
+
             <View style={styles.benefitItem}>
               <Text>✅</Text>
-              <Text style={styles.benefitText}>Reportes avanzados y estadísticas</Text>
-            </View>
-            
-            <View style={styles.benefitItem}>
-              <Text>✅</Text>
-              <Text style={styles.benefitText}>Exportación de datos a Excel/PDF</Text>
+              <Text style={styles.benefitText}>Registro ilimitado de Granjas</Text>
             </View>
             
             <View style={styles.benefitItem}>

@@ -399,14 +399,8 @@ export default function RegisterScreen() {
           <View style={modalStyles.roleModalContent}>
             {/* Header con gradiente */}
             <View style={modalStyles.roleModalHeader}>
-              <View style={modalStyles.roleIconContainer}>
-                <Text style={{ fontSize: 40, color: '#fff' }}>👥</Text>
-              </View>
               <Text style={modalStyles.roleModalTitle}>
                 Selecciona tu rol
-              </Text>
-              <Text style={modalStyles.roleModalSubtitle}>
-                Elige el rol que mejor te describe
               </Text>
             </View>
             
@@ -544,14 +538,12 @@ const modalStyles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#bdc3c7',
-    backgroundColor: '#fff',
+    backgroundColor: '#e74c3c',
   },
   cancelButtonText: {
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '500',
-    color: '#7f8c8d',
+    color: '#fff',
   },
 });

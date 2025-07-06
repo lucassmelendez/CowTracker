@@ -22,6 +22,23 @@ export const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   trend
 }) => {
+  // Función para determinar el tamaño de fuente basado en la longitud del valor
+  const getValueFontSize = (value: string | number): number => {
+    const valueStr = value.toString();
+    
+    // Si el valor es muy largo, usar fuente más pequeña
+    if (valueStr.length > 10) {
+      return 20; // Fuente más pequeña para valores muy largos
+    } else if (valueStr.length > 7) {
+      return 24; // Fuente mediana para valores largos
+    } else {
+      return 28; // Fuente normal para valores cortos
+    }
+  };
+
+  const displayValue = value.toString();
+  const fontSize = getValueFontSize(displayValue);
+
   return (
     <View style={[styles.container, { borderLeftColor: color }]}>
       <View style={styles.header}>
@@ -29,7 +46,9 @@ export const StatCard: React.FC<StatCardProps> = ({
           <Ionicons name={icon as any} size={24} color="#ffffff" />
         </View>
         <View style={styles.valueContainer}>
-          <Text style={styles.value}>{value}</Text>
+          <Text style={[styles.value, { fontSize }]} numberOfLines={1} adjustsFontSizeToFit>
+            {displayValue}
+          </Text>
           {trend && (
             <View style={styles.trendContainer}>
               <Ionicons 
@@ -48,8 +67,8 @@ export const StatCard: React.FC<StatCardProps> = ({
         </View>
       </View>
       
-      <Text style={styles.title}>{title}</Text>
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      <Text style={styles.title} numberOfLines={2}>{title}</Text>
+      {subtitle && <Text style={styles.subtitle} numberOfLines={2}>{subtitle}</Text>}
       
       {/* Barra de progreso visual */}
       <View style={styles.progressContainer}>
@@ -73,11 +92,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     flex: 1,
-    minWidth: 150,
+    minWidth: 160, // Aumentar el ancho mínimo
+    maxWidth: 200, // Establecer un ancho máximo
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Cambiar a flex-start para mejor alineación
     justifyContent: 'space-between',
     marginBottom: 12,
   },
@@ -87,14 +107,18 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0, // Evitar que se comprima
   },
   valueContainer: {
     alignItems: 'flex-end',
+    flex: 1, // Tomar el espacio restante
+    marginLeft: 8, // Espacio entre icono y valor
   },
   value: {
-    fontSize: 28,
     fontWeight: 'bold',
     color: '#333333',
+    textAlign: 'right',
+    flexShrink: 1, // Permitir que se comprima si es necesario
   },
   trendContainer: {
     flexDirection: 'row',
@@ -111,11 +135,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333333',
     marginBottom: 4,
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 12,
     color: '#777777',
     marginBottom: 8,
+    textAlign: 'left',
+    lineHeight: 16,
   },
   progressContainer: {
     height: 4,

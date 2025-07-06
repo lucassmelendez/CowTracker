@@ -289,6 +289,21 @@ export default function ReportPage() {
     }).format(amount);
   };
 
+  // Función para formatear moneda de forma compacta para las tarjetas
+  const formatCompactCurrency = (amount: number): string => {
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(0)}K`;
+    } else {
+      return new Intl.NumberFormat('es-CL', {
+        style: 'currency',
+        currency: 'CLP',
+        maximumFractionDigits: 0
+      }).format(amount);
+    }
+  };
+
   const generateReport = () => {
     if (!reportData) {
       showError('Error', 'No hay datos disponibles para generar el informe');
@@ -681,7 +696,7 @@ ${date}
             <View style={styles.statsGrid}>
               <StatCard
                 title="Ingresos Totales"
-                value={formatCurrency(salesStats.totalRevenue)}
+                value={formatCompactCurrency(salesStats.totalRevenue)}
                 icon="cash"
                 color="#27ae60"
                 subtitle={`${salesStats.totalSales} ventas realizadas`}
@@ -692,7 +707,7 @@ ${date}
               />
               <StatCard
                 title="Promedio por Venta"
-                value={formatCurrency(salesStats.averageSaleValue)}
+                value={formatCompactCurrency(salesStats.averageSaleValue)}
                 icon="calculator"
                 color="#f39c12"
                 subtitle="Valor medio"
@@ -978,7 +993,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    justifyContent: 'space-between',
+    justifyContent: 'space-around', // Cambiar a space-around para mejor distribución
+    alignItems: 'stretch', // Asegurar que todos los cards tengan la misma altura
   },
   actionButtonsContainer: {
     flexDirection: 'row',

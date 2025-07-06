@@ -168,7 +168,7 @@ export default function RegisterScreen() {
     formContainer: createStyles(tw.formContainer),
     label: createStyles(tw.label),
     input: createStyles(tw.input),
-    selectorButton: createStyles(`${tw.input} justify-center flex-row items-center`),
+    selectorButton: createStyles(`${tw.input} flex-row items-center`),
     selectorText: createStyles('text-gray-800 text-base'),
     selectorIcon: createStyles('text-lg mr-2'),
     button: createStyles(tw.primaryButton),

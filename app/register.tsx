@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  StyleSheet,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
@@ -17,12 +18,32 @@ interface Role {
   id: string;
   name: string;
   description: string;
+  icon: string;
+  color: string;
 }
 
 const roles: Role[] = [
-  { id: 'ganadero', name: 'Ganadero', description: 'Propietario de ganado y granjas' },
-  { id: 'trabajador', name: 'Trabajador', description: 'Empleado que maneja el ganado' },
-  { id: 'veterinario', name: 'Veterinario', description: 'Profesional de salud animal' },
+  { 
+    id: 'ganadero', 
+    name: 'Ganadero', 
+    description: 'Propietario de ganado y granjas',
+    icon: '🐄',
+    color: '#27ae60'
+  },
+  { 
+    id: 'trabajador', 
+    name: 'Trabajador', 
+    description: 'Empleado que maneja el ganado',
+    icon: '👷',
+    color: '#3498db'
+  },
+  { 
+    id: 'veterinario', 
+    name: 'Veterinario', 
+    description: 'Profesional de salud animal',
+    icon: '🩺',
+    color: '#e74c3c'
+  },
 ];
 
 export default function RegisterScreen() {
@@ -133,6 +154,11 @@ export default function RegisterScreen() {
     return selectedRole ? selectedRole.name : 'Seleccionar rol';
   };
 
+  const getSelectedRoleIcon = () => {
+    const selectedRole = roles.find(role => role.id === formData.role);
+    return selectedRole ? selectedRole.icon : '👤';
+  };
+
   const styles = {
     container: createStyles(tw.container),
     scrollView: createStyles(tw.scrollContainer),
@@ -142,24 +168,113 @@ export default function RegisterScreen() {
     formContainer: createStyles(tw.formContainer),
     label: createStyles(tw.label),
     input: createStyles(tw.input),
-    selectorButton: createStyles(`${tw.input} justify-center`),
+    selectorButton: createStyles(`${tw.input} justify-center flex-row items-center`),
     selectorText: createStyles('text-gray-800 text-base'),
+    selectorIcon: createStyles('text-lg mr-2'),
     button: createStyles(tw.primaryButton),
     buttonText: createStyles(tw.primaryButtonText),
     errorText: createStyles(tw.errorText),
     loginContainer: createStyles('flex-row justify-center mt-4'),
     loginText: createStyles('text-gray-600'),
     loginLink: createStyles('text-blue-500 font-semibold'),
-    modalOverlay: createStyles(tw.modalOverlay),
-    modalContent: createStyles(`${tw.modalContent} rounded-t-lg`),
-    modalTitle: createStyles(tw.modalTitle),
-    roleItem: createStyles('py-4 border-b border-gray-100'),
-    roleItemSelected: createStyles('bg-green-50'),
-    roleItemText: createStyles('text-base text-gray-800 text-center'),
-    roleItemTextSelected: createStyles('font-bold text-green-600'),
-    roleDescription: createStyles('text-xs text-gray-600 text-center mt-1'),
-    cancelButton: createStyles(`${tw.secondaryButton} mt-4`),
-    cancelButtonText: createStyles(tw.secondaryButtonText),
+    // Estilos del modal similares al PremiumUpgradeModal
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
+    },
+    roleModalContent: {
+      width: '90%',
+      maxWidth: 400,
+      backgroundColor: '#fff',
+      borderRadius: 20,
+      overflow: 'hidden',
+    },
+    roleModalHeader: {
+      backgroundColor: '#27ae60',
+      paddingVertical: 30,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+    },
+    roleIconContainer: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    roleModalTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#fff',
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    roleModalSubtitle: {
+      fontSize: 16,
+      color: 'rgba(255, 255, 255, 0.9)',
+      textAlign: 'center',
+    },
+    roleModalBody: {
+      padding: 24,
+    },
+    roleItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      marginBottom: 12,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: '#ecf0f1',
+      backgroundColor: '#fff',
+    },
+    roleItemSelected: {
+      borderColor: '#27ae60',
+      backgroundColor: '#e8f5e8',
+    },
+    roleIcon: {
+      fontSize: 32,
+      marginRight: 16,
+    },
+    roleTextContainer: {
+      flex: 1,
+    },
+    roleItemText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2c3e50',
+      marginBottom: 4,
+    },
+    roleItemTextSelected: {
+      color: '#27ae60',
+    },
+    roleDescription: {
+      fontSize: 14,
+      color: '#7f8c8d',
+      lineHeight: 20,
+    },
+    roleModalButtons: {
+      padding: 24,
+      paddingTop: 0,
+    },
+    cancelButton: {
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#bdc3c7',
+      backgroundColor: '#fff',
+    },
+    cancelButtonText: {
+      textAlign: 'center' as const,
+      fontSize: 16,
+      fontWeight: '500' as const,
+      color: '#7f8c8d',
+    },
   };
 
   return (
@@ -240,6 +355,7 @@ export default function RegisterScreen() {
             style={styles.selectorButton}
             onPress={() => setShowRoleModal(true)}
           >
+            <Text style={styles.selectorIcon}>{getSelectedRoleIcon()}</Text>
             <Text style={styles.selectorText}>{getSelectedRoleName()}</Text>
           </TouchableOpacity>
 
@@ -279,39 +395,59 @@ export default function RegisterScreen() {
         animationType="slide"
         onRequestClose={() => setShowRoleModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecciona tu rol</Text>
+        <View style={modalStyles.modalOverlay}>
+          <View style={modalStyles.roleModalContent}>
+            {/* Header con gradiente */}
+            <View style={modalStyles.roleModalHeader}>
+              <View style={modalStyles.roleIconContainer}>
+                <Text style={{ fontSize: 40, color: '#fff' }}>👥</Text>
+              </View>
+              <Text style={modalStyles.roleModalTitle}>
+                Selecciona tu rol
+              </Text>
+              <Text style={modalStyles.roleModalSubtitle}>
+                Elige el rol que mejor te describe
+              </Text>
+            </View>
             
-            {roles.map((role) => (
-              <TouchableOpacity
-                key={role.id}
-                style={[
-                  styles.roleItem,
-                  formData.role === role.id && styles.roleItemSelected,
-                ]}
-                onPress={() => handleRoleSelect(role)}
-              >
-                <Text
+            {/* Contenido principal */}
+            <View style={modalStyles.roleModalBody}>
+              {roles.map((role) => (
+                <TouchableOpacity
+                  key={role.id}
                   style={[
-                    styles.roleItemText,
-                    formData.role === role.id && styles.roleItemTextSelected,
+                    modalStyles.roleItem,
+                    formData.role === role.id && modalStyles.roleItemSelected,
                   ]}
+                  onPress={() => handleRoleSelect(role)}
                 >
-                  {role.name}
-                </Text>
-                <Text style={styles.roleDescription}>
-                  {role.description}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text style={modalStyles.roleIcon}>{role.icon}</Text>
+                  <View style={modalStyles.roleTextContainer}>
+                    <Text
+                      style={[
+                        modalStyles.roleItemText,
+                        formData.role === role.id && modalStyles.roleItemTextSelected,
+                      ]}
+                    >
+                      {role.name}
+                    </Text>
+                    <Text style={modalStyles.roleDescription}>
+                      {role.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowRoleModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancelar</Text>
-            </TouchableOpacity>
+            {/* Botones de acción */}
+            <View style={modalStyles.roleModalButtons}>
+              <TouchableOpacity
+                style={modalStyles.cancelButton}
+                onPress={() => setShowRoleModal(false)}
+              >
+                <Text style={modalStyles.cancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -319,3 +455,103 @@ export default function RegisterScreen() {
     </View>
   );
 }
+
+const modalStyles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  roleModalContent: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  roleModalHeader: {
+    backgroundColor: '#27ae60',
+    paddingVertical: 30,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  roleIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  roleModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  roleModalSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+  },
+  roleModalBody: {
+    padding: 24,
+  },
+  roleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ecf0f1',
+    backgroundColor: '#fff',
+  },
+  roleItemSelected: {
+    borderColor: '#27ae60',
+    backgroundColor: '#e8f5e8',
+  },
+  roleIcon: {
+    fontSize: 32,
+    marginRight: 16,
+  },
+  roleTextContainer: {
+    flex: 1,
+  },
+  roleItemText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  roleItemTextSelected: {
+    color: '#27ae60',
+  },
+  roleDescription: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    lineHeight: 20,
+  },
+  roleModalButtons: {
+    padding: 24,
+    paddingTop: 0,
+  },
+  cancelButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
+    backgroundColor: '#fff',
+  },
+  cancelButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#7f8c8d',
+  },
+});

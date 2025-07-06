@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../components/AuthContext';
 import { createStyles, tw } from '../styles/tailwind';
 import { useCustomModal } from '../components/CustomModal';
+import SimpleHeader from '../components/SimpleHeader';
 
 interface Role {
   id: string;
@@ -43,6 +44,11 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
+
+  // Función personalizada para volver al login
+  const handleBackToLogin = () => {
+    router.push('/login');
+  };
 
   const validateForm = (): boolean => {
     const newErrors: string[] = [];
@@ -158,11 +164,11 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header simple con botón de volver */}
+      <SimpleHeader title="Crear Cuenta" onBackPress={handleBackToLogin} />
+      
       <ScrollView contentContainerStyle={styles.scrollView}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.headerTitle}>Crear Cuenta</Text>
-          <Text style={styles.headerSubtitle}>Únete a CowTracker</Text>
-        </View>
+
 
         <View style={styles.formContainer}>
           <Text style={styles.label}>Primer Nombre *</Text>

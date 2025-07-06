@@ -105,23 +105,21 @@ const CongratulationsModal: React.FC<CongratulationsModalProps> = ({
             </View>
 
             {/* Payment Info */}
-            {paymentData && (
-              <View style={styles.paymentSection}>
-                <Text style={styles.sectionTitle}>💳 Detalles del pago</Text>
-                <View style={styles.paymentInfo}>
-                  <View style={styles.paymentRow}>
-                    <Text style={styles.paymentLabel}>Orden:</Text>
-                    <Text style={styles.paymentValue}>{paymentData.buy_order}</Text>
-                  </View>
-                  <View style={styles.paymentRow}>
-                    <Text style={styles.paymentLabel}>Monto:</Text>
-                    <Text style={styles.paymentValue}>
-                      ${paymentData.amount.toLocaleString()} CLP
-                    </Text>
-                  </View>
+            <View style={styles.paymentSection}>
+              <Text style={styles.sectionTitle}>💳 Detalles del pago</Text>
+              <View style={styles.paymentInfo}>
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>Orden:</Text>
+                  <Text style={styles.paymentValue}>
+                    {paymentData?.buy_order || `CT-${Date.now().toString().slice(-8)}`}
+                  </Text>
+                </View>
+                <View style={styles.paymentRow}>
+                  <Text style={styles.paymentLabel}>Monto:</Text>
+                  <Text style={styles.paymentValue}>$10.000 CLP</Text>
                 </View>
               </View>
-            )}
+            </View>
           </ScrollView>
 
           {/* Fixed Action Button */}

@@ -276,6 +276,15 @@ export default function TabLayout() {
           headerLeft: () => null, // Oculta el botón de navegación en web
         }}
       />
+      <Stack.Screen
+        name="database-tests"
+        options={{
+          headerTitle: () => <SimpleHeader title="Pruebas de Base de Datos" />,
+          headerBackVisible: false,
+          gestureEnabled: false,
+          headerLeft: () => null, // Oculta el botón de navegación en web
+        }}
+      />
     </Stack>
   );
 }

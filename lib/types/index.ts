@@ -254,4 +254,7 @@ export interface CachedReportData {
   farmId: string | null;
   farmName: string;
   timestamp: number;
-} 
+}
+
+// Exportar tipos de pruebas
+export * from './tests'; 

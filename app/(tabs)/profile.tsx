@@ -81,6 +81,7 @@ export default function ProfilePage() {
     saveButton: createStyles(tw.primaryButton + ' py-3 px-5'),
     cancelButton: createStyles('bg-gray-100 py-3 px-5 rounded-lg items-center border border-gray-300'),
     logoutButton: createStyles('bg-red-500 py-3 px-5 rounded-lg items-center mt-4'),
+    testButton: createStyles('bg-blue-600 py-3 px-5 rounded-lg items-center mt-4'),
     deleteAccountButton: {
       backgroundColor: '#b91c1c',
       paddingVertical: 12,
@@ -563,6 +564,19 @@ export default function ProfilePage() {
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                   <Text style={styles.buttonText}>Cerrar sesión</Text>
                 </TouchableOpacity>
+                
+                {/* Botón de Pruebas de Base de Datos - Solo para administradores */}
+                {userData.role === '1' && (
+                  <TouchableOpacity 
+                    style={styles.testButton} 
+                    onPress={() => router.push('/(tabs)/database-tests' as any)}
+                  >
+                    <View style={createStyles('flex-row items-center')}>
+                      <Ionicons name="analytics-outline" size={18} color="#fff" style={createStyles('mr-2')} />
+                      <Text style={styles.buttonText}>Pruebas de Base de Datos</Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
               </>
             )}
           </View>

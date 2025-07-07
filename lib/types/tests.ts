@@ -12,6 +12,7 @@ export interface TestResult {
   executionTime: number; // en milisegundos
   errorMessage?: string;
   details?: any;
+  scores: TestCriteria; // Puntuaciones individuales por criterio para esta prueba específica
 }
 
 export interface DatabaseTest {

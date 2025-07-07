@@ -9,6 +9,15 @@ import {
   TestCategory 
 } from '../types/tests';
 
+// Tipo para resultado de operación individual
+interface OperationResult {
+  id: string;
+  success: boolean;
+  executionTime: number;
+  errorMessage?: string;
+  details?: any;
+}
+
 class TestService {
   private simulatedDB: SimulatedDatabase;
   private testHistory: TestReport[] = [];
@@ -38,12 +47,12 @@ class TestService {
     for (let i = 1; i <= count; i++) {
       cattle.push({
         id: i,
-        nombre: `Vaca-${i}`,
-        raza: ['Holstein', 'Angus', 'Hereford'][Math.floor(Math.random() * 3)],
+        nombre: `Ganado-${i}`,
+        raza: ['Holstein', 'Angus', 'Brahman', 'Charolais'][Math.floor(Math.random() * 4)],
         edad: Math.floor(Math.random() * 10) + 1,
-        peso: Math.floor(Math.random() * 500) + 300,
+        peso: Math.floor(Math.random() * 200) + 300,
         granja_id: Math.floor(Math.random() * 50) + 1,
-        fecha_registro: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000)
+        estado: ['Activo', 'Vendido', 'Enfermo'][Math.floor(Math.random() * 3)]
       });
     }
     return cattle;
@@ -55,7 +64,7 @@ class TestService {
       farms.push({
         id: i,
         nombre: `Granja-${i}`,
-        ubicacion: `Región-${Math.floor(Math.random() * 16) + 1}`,
+        ubicacion: `Ubicación-${i}`,
         propietario_id: Math.floor(Math.random() * 100) + 1,
         area: Math.floor(Math.random() * 1000) + 100
       });
@@ -68,11 +77,10 @@ class TestService {
     for (let i = 1; i <= count; i++) {
       sales.push({
         id: i,
-        tipo: Math.random() > 0.5 ? 'leche' : 'ganado',
-        cantidad: Math.floor(Math.random() * 100) + 1,
-        precio: Math.floor(Math.random() * 100000) + 10000,
+        ganado_id: Math.floor(Math.random() * 1000) + 1,
+        precio: Math.floor(Math.random() * 5000) + 1000,
         fecha: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
-        granja_id: Math.floor(Math.random() * 50) + 1
+        comprador: `Comprador-${i}`
       });
     }
     return sales;
@@ -85,8 +93,7 @@ class TestService {
         id: i,
         nombre: `Usuario-${i}`,
         email: `usuario${i}@example.com`,
-        rol: ['admin', 'trabajador', 'veterinario'][Math.floor(Math.random() * 3)],
-        fecha_registro: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000)
+        rol: ['admin', 'usuario', 'veterinario'][Math.floor(Math.random() * 3)]
       });
     }
     return users;
@@ -98,16 +105,16 @@ class TestService {
       records.push({
         id: i,
         ganado_id: Math.floor(Math.random() * 1000) + 1,
-        tipo_tratamiento: ['vacuna', 'medicamento', 'cirugia'][Math.floor(Math.random() * 3)],
         fecha: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000),
-        veterinario_id: Math.floor(Math.random() * 20) + 1,
-        observaciones: `Tratamiento aplicado correctamente - ${i}`
+        diagnostico: `Diagnóstico-${i}`,
+        tratamiento: `Tratamiento-${i}`,
+        veterinario_id: Math.floor(Math.random() * 20) + 1
       });
     }
     return records;
   }
 
-  private async simulateOperation(operation: DatabaseOperation): Promise<TestResult> {
+  private async simulateOperation(operation: DatabaseOperation): Promise<OperationResult> {
     const startTime = Date.now();
     
     try {
@@ -190,6 +197,73 @@ class TestService {
     }
   }
 
+  // Método para calcular puntuaciones individuales por criterio
+  private calculateIndividualScores(
+    testResult: TestResult, 
+    expectedCriteria: TestCriteria, 
+    category: string
+  ): TestCriteria {
+    const { success, executionTime, errorMessage } = testResult;
+    
+    // Puntuación base según éxito/fallo
+    const baseScore = success ? 5 : 1;
+    
+    // Ajustes por tiempo de ejecución
+    let performanceAdjustment = 0;
+    if (executionTime > 2000) performanceAdjustment = -2;
+    else if (executionTime > 1000) performanceAdjustment = -1;
+    else if (executionTime < 100) performanceAdjustment = 1;
+    
+    // Ajustes por categoría específica
+    let categoryAdjustments = { D: 0, I: 0, CS: 0, TF: 0 };
+    
+    switch (category) {
+      case 'concurrency':
+        categoryAdjustments.CS = success ? 1 : -1; // Mejor carga del sistema si es exitoso
+        categoryAdjustments.TF = success ? 1 : -2; // Tolerancia a fallos crítica
+        break;
+      case 'performance':
+        categoryAdjustments.D = performanceAdjustment;
+        categoryAdjustments.CS = executionTime > 1500 ? -1 : 0;
+        break;
+      case 'integrity':
+        categoryAdjustments.I = success ? 1 : -2; // Integridad crítica
+        categoryAdjustments.TF = success ? 0 : -1;
+        break;
+      case 'backup':
+        categoryAdjustments.TF = success ? 1 : -2; // Tolerancia a fallos crítica
+        categoryAdjustments.I = success ? 1 : -1; // Integridad importante
+        break;
+      case 'stress':
+        categoryAdjustments.CS = success ? 1 : -2; // Carga del sistema crítica
+        categoryAdjustments.TF = success ? 1 : -1;
+        categoryAdjustments.D = executionTime > 1000 ? -1 : 0;
+        break;
+    }
+    
+    // Ajustes por errores específicos
+    if (errorMessage) {
+      if (errorMessage.includes('sobrecargado')) {
+        categoryAdjustments.CS -= 1;
+      }
+      if (errorMessage.includes('corrupto')) {
+        categoryAdjustments.I -= 1;
+        categoryAdjustments.TF -= 1;
+      }
+      if (errorMessage.includes('interrupción')) {
+        categoryAdjustments.TF -= 2;
+      }
+    }
+    
+    // Calcular puntuaciones finales (mínimo 1, máximo 5)
+    return {
+      D: Math.max(1, Math.min(5, expectedCriteria.D + categoryAdjustments.D + (success ? 0 : -1))),
+      I: Math.max(1, Math.min(5, expectedCriteria.I + categoryAdjustments.I + (success ? 0 : -1))),
+      CS: Math.max(1, Math.min(5, expectedCriteria.CS + categoryAdjustments.CS + (success ? 0 : -1))),
+      TF: Math.max(1, Math.min(5, expectedCriteria.TF + categoryAdjustments.TF + (success ? 0 : -1)))
+    };
+  }
+
   // Definición de las 20 pruebas
   private getTestDefinitions(): DatabaseTest[] {
     return [
@@ -210,12 +284,19 @@ class TestService {
           }
           const results = await Promise.all(promises);
           const successCount = results.filter(r => r.success).length;
-          return {
+          
+          const testResult = {
             id: 'p1',
             success: successCount >= 8,
             executionTime: Math.max(...results.map(r => r.executionTime)),
-            details: { totalOperations: 10, successfulOperations: successCount }
+            details: { totalOperations: 10, successfulOperations: successCount },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          // Calcular puntuaciones individuales
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 4, I: 5, CS: 3, TF: 4 }, 'concurrency');
+          
+          return testResult;
         }
       },
 
@@ -239,12 +320,18 @@ class TestService {
             if (result.success) successCount++;
           }
           
-          return {
+          const testResult = {
             id: 'p2',
             success: successCount >= batchSize * 0.95,
             executionTime: Date.now() - startTime,
-            details: { batchSize, successCount, successRate: (successCount / batchSize) * 100 }
+            details: { batchSize, successCount, successRate: (successCount / batchSize) * 100 },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          // Calcular puntuaciones individuales
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 1, I: 2, CS: 5, TF: 5 }, 'performance');
+          
+          return testResult;
         }
       },
 
@@ -261,12 +348,16 @@ class TestService {
           });
           
           if (!selectResult.success) {
-            return {
+            const testResult = {
               id: 'p3',
               success: false,
               executionTime: selectResult.executionTime,
-              errorMessage: 'Falló la consulta base'
+              errorMessage: 'Falló la consulta base',
+              scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
             };
+            
+            testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 4, CS: 3, TF: 3 }, 'integrity');
+            return testResult;
           }
           
           const insertResult = await this.simulateOperation({
@@ -275,12 +366,16 @@ class TestService {
             data: { granja_id: 1, nombre: 'Basado-en-consulta' }
           });
           
-          return {
+          const testResult = {
             id: 'p3',
             success: insertResult.success,
             executionTime: selectResult.executionTime + insertResult.executionTime,
-            details: { consultaExitosa: selectResult.success, insercionExitosa: insertResult.success }
+            details: { consultaExitosa: selectResult.success, insercionExitosa: insertResult.success },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 4, CS: 3, TF: 3 }, 'integrity');
+          return testResult;
         }
       },
 
@@ -301,12 +396,16 @@ class TestService {
             table: 'ganado'
           });
           
-          return {
+          const testResult = {
             id: 'p4',
             success: subqueryResult.success && mainQueryResult.success,
             executionTime: subqueryResult.executionTime + mainQueryResult.executionTime,
-            details: { subconsultaExitosa: subqueryResult.success, consultaPrincipalExitosa: mainQueryResult.success }
+            details: { subconsultaExitosa: subqueryResult.success, consultaPrincipalExitosa: mainQueryResult.success },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 4, CS: 3, TF: 3 }, 'performance');
+          return testResult;
         }
       },
 
@@ -327,12 +426,16 @@ class TestService {
             table: 'granjas'
           });
           
-          return {
+          const testResult = {
             id: 'p5',
             success: table1Result.success && table2Result.success,
             executionTime: table1Result.executionTime + table2Result.executionTime,
-            details: { joinExitoso: table1Result.success && table2Result.success }
+            details: { joinExitoso: table1Result.success && table2Result.success },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 4, CS: 3, TF: 3 }, 'performance');
+          return testResult;
         }
       },
 
@@ -351,12 +454,16 @@ class TestService {
           // Simular exportación
           await new Promise(resolve => setTimeout(resolve, 200));
           
-          return {
+          const testResult = {
             id: 'p6',
             success: selectResult.success,
             executionTime: selectResult.executionTime + 200,
-            details: { registrosExportados: selectResult.details?.selectedRows || 0 }
+            details: { registrosExportados: selectResult.details?.selectedRows || 0 },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 4, CS: 3, TF: 3 }, 'performance');
+          return testResult;
         }
       },
 
@@ -376,12 +483,16 @@ class TestService {
           const results = await Promise.all(operations);
           const successCount = results.filter(r => r.success).length;
           
-          return {
+          const testResult = {
             id: 'p7',
             success: successCount === results.length,
             executionTime: Math.max(...results.map(r => r.executionTime)),
-            details: { funcionesEjecutadas: results.length, funcionesExitosas: successCount }
+            details: { funcionesEjecutadas: results.length, funcionesExitosas: successCount },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 4, CS: 3, TF: 3 }, 'performance');
+          return testResult;
         }
       },
 
@@ -397,12 +508,16 @@ class TestService {
             table: 'ganado'
           });
           
-          return {
+          const testResult = {
             id: 'p8',
             success: deleteResult.success,
             executionTime: deleteResult.executionTime,
-            details: deleteResult.details
+            details: deleteResult.details,
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 4, I: 5, CS: 3, TF: 4 }, 'integrity');
+          return testResult;
         }
       },
 
@@ -419,12 +534,16 @@ class TestService {
             condition: 'id BETWEEN 1 AND 10'
           });
           
-          return {
+          const testResult = {
             id: 'p9',
             success: deleteResult.success,
             executionTime: deleteResult.executionTime,
-            details: deleteResult.details
+            details: deleteResult.details,
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 4, I: 4, CS: 3, TF: 4 }, 'integrity');
+          return testResult;
         }
       },
 
@@ -445,12 +564,16 @@ class TestService {
           await new Promise(resolve => setTimeout(resolve, 100));
           const rollbackSuccess = Math.random() > 0.1; // 90% de éxito
           
-          return {
+          const testResult = {
             id: 'p10',
             success: deleteResult.success && rollbackSuccess,
             executionTime: deleteResult.executionTime + 100,
-            details: { eliminacionExitosa: deleteResult.success, rollbackExitoso: rollbackSuccess }
+            details: { eliminacionExitosa: deleteResult.success, rollbackExitoso: rollbackSuccess },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 4, I: 5, CS: 3, TF: 5 }, 'integrity');
+          return testResult;
         }
       },
 
@@ -467,12 +590,16 @@ class TestService {
             data: { peso: 450 }
           });
           
-          return {
+          const testResult = {
             id: 'p11',
             success: updateResult.success,
             executionTime: updateResult.executionTime,
-            details: updateResult.details
+            details: updateResult.details,
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 4, I: 4, CS: 3, TF: 4 }, 'integrity');
+          return testResult;
         }
       },
 
@@ -496,12 +623,16 @@ class TestService {
             data: { granja_id: 999 }
           });
           
-          return {
+          const testResult = {
             id: 'p12',
             success: updateResult.success && cascadeResult.success,
             executionTime: updateResult.executionTime + cascadeResult.executionTime,
-            details: { actualizacionPrincipal: updateResult.success, cascadaExitosa: cascadeResult.success }
+            details: { actualizacionPrincipal: updateResult.success, cascadaExitosa: cascadeResult.success },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 5, CS: 3, TF: 4 }, 'integrity');
+          return testResult;
         }
       },
 
@@ -519,12 +650,16 @@ class TestService {
             condition: 'edad > 5'
           });
           
-          return {
+          const testResult = {
             id: 'p13',
             success: updateResult.success,
             executionTime: updateResult.executionTime,
-            details: updateResult.details
+            details: updateResult.details,
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 4, I: 4, CS: 3, TF: 4 }, 'integrity');
+          return testResult;
         }
       },
 
@@ -540,12 +675,16 @@ class TestService {
             table: 'all_tables'
           });
           
-          return {
+          const testResult = {
             id: 'p14',
             success: backupResult.success,
             executionTime: backupResult.executionTime,
-            details: backupResult.details
+            details: backupResult.details,
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 5, CS: 4, TF: 5 }, 'backup');
+          return testResult;
         }
       },
 
@@ -561,12 +700,16 @@ class TestService {
             table: 'all_tables'
           });
           
-          return {
+          const testResult = {
             id: 'p15',
             success: restoreResult.success,
             executionTime: restoreResult.executionTime,
-            details: restoreResult.details
+            details: restoreResult.details,
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 3, I: 5, CS: 4, TF: 5 }, 'backup');
+          return testResult;
         }
       },
 
@@ -587,12 +730,16 @@ class TestService {
           
           this.simulatedDB.isOverloaded = false;
           
-          return {
+          const testResult = {
             id: 'p16',
             success: insertResult.success,
             executionTime: insertResult.executionTime,
-            details: { ...insertResult.details, sistemasobrecargado: true }
+            details: { ...insertResult.details, sistemasobrecargado: true },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 2, I: 3, CS: 5, TF: 4 }, 'stress');
+          return testResult;
         }
       },
 
@@ -612,12 +759,16 @@ class TestService {
           
           this.simulatedDB.isOverloaded = false;
           
-          return {
+          const testResult = {
             id: 'p17',
             success: selectResult.success,
             executionTime: selectResult.executionTime,
-            details: { ...selectResult.details, sistemasobrecargado: true }
+            details: { ...selectResult.details, sistemasobrecargado: true },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 2, I: 3, CS: 5, TF: 4 }, 'stress');
+          return testResult;
         }
       },
 
@@ -638,12 +789,16 @@ class TestService {
           
           this.simulatedDB.isOverloaded = false;
           
-          return {
+          const testResult = {
             id: 'p18',
             success: updateResult.success,
             executionTime: updateResult.executionTime,
-            details: { ...updateResult.details, sistemasobrecargado: true }
+            details: { ...updateResult.details, sistemasobrecargado: true },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 2, I: 3, CS: 5, TF: 4 }, 'stress');
+          return testResult;
         }
       },
 
@@ -664,12 +819,16 @@ class TestService {
           
           this.simulatedDB.isOverloaded = false;
           
-          return {
+          const testResult = {
             id: 'p19',
             success: deleteResult.success,
             executionTime: deleteResult.executionTime,
-            details: { ...deleteResult.details, sistemasobrecargado: true }
+            details: { ...deleteResult.details, sistemasobrecargado: true },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 2, I: 3, CS: 5, TF: 4 }, 'stress');
+          return testResult;
         }
       },
 
@@ -693,24 +852,32 @@ class TestService {
           
           // Simular interrupción eléctrica (20% de probabilidad)
           if (Math.random() < 0.2) {
-            return {
+            const testResult = {
               id: 'p20',
               success: false,
               executionTime: 1000,
               errorMessage: 'Interrupción eléctrica simulada',
-              details: { interrupcionElectrica: true }
+              details: { interrupcionElectrica: true },
+              scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
             };
+            
+            testResult.scores = this.calculateIndividualScores(testResult, { D: 2, I: 4, CS: 3, TF: 5 }, 'stress');
+            return testResult;
           }
           
           const results = await Promise.all(operations);
           const successCount = results.filter(r => r.success).length;
           
-          return {
+          const testResult = {
             id: 'p20',
             success: successCount >= 4,
             executionTime: Math.max(...results.map(r => r.executionTime)),
-            details: { operacionesExitosas: successCount, totalOperaciones: 5 }
+            details: { operacionesExitosas: successCount, totalOperaciones: 5 },
+            scores: { D: 0, I: 0, CS: 0, TF: 0 } // Placeholder
           };
+          
+          testResult.scores = this.calculateIndividualScores(testResult, { D: 2, I: 4, CS: 3, TF: 5 }, 'stress');
+          return testResult;
         }
       }
     ];

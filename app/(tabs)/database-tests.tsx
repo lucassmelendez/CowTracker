@@ -123,6 +123,39 @@ export default function DatabaseTestsScreen() {
           {testDef?.description || 'Descripción no disponible'}
         </Text>
         
+        {/* Puntuaciones individuales por criterio */}
+        {test.scores && (
+          <View style={styles.individualScores}>
+            <Text style={styles.scoresTitle}>Puntuaciones por Criterio:</Text>
+            <View style={styles.scoresRow}>
+              <View style={styles.scoreItem}>
+                <Text style={styles.scoreLabel}>D</Text>
+                <Text style={[styles.scoreValue, { color: getScoreColor(test.scores.D) }]}>
+                  {test.scores.D}
+                </Text>
+              </View>
+              <View style={styles.scoreItem}>
+                <Text style={styles.scoreLabel}>I</Text>
+                <Text style={[styles.scoreValue, { color: getScoreColor(test.scores.I) }]}>
+                  {test.scores.I}
+                </Text>
+              </View>
+              <View style={styles.scoreItem}>
+                <Text style={styles.scoreLabel}>CS</Text>
+                <Text style={[styles.scoreValue, { color: getScoreColor(test.scores.CS) }]}>
+                  {test.scores.CS}
+                </Text>
+              </View>
+              <View style={styles.scoreItem}>
+                <Text style={styles.scoreLabel}>TF</Text>
+                <Text style={[styles.scoreValue, { color: getScoreColor(test.scores.TF) }]}>
+                  {test.scores.TF}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+        
         <View style={styles.testMetrics}>
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>Tiempo</Text>
@@ -309,6 +342,43 @@ export default function DatabaseTestsScreen() {
                     <Text style={styles.detailLabel}>Tiempo de Ejecución:</Text>
                     <Text style={styles.detailValue}>{selectedTest.executionTime}ms</Text>
                   </View>
+
+                  {/* Puntuaciones individuales en el modal */}
+                  {selectedTest.scores && (
+                    <View style={styles.modalScoresContainer}>
+                      <Text style={styles.detailLabel}>Puntuaciones por Criterio:</Text>
+                      <View style={styles.modalScoresGrid}>
+                        <View style={styles.modalScoreItem}>
+                          <Text style={styles.modalScoreLabel}>Desempeño (D)</Text>
+                          <Text style={[styles.modalScoreValue, { color: getScoreColor(selectedTest.scores.D) }]}>
+                            {selectedTest.scores.D}/5
+                          </Text>
+                          <Text style={styles.modalScoreDesc}>Velocidad de ejecución</Text>
+                        </View>
+                        <View style={styles.modalScoreItem}>
+                          <Text style={styles.modalScoreLabel}>Integridad (I)</Text>
+                          <Text style={[styles.modalScoreValue, { color: getScoreColor(selectedTest.scores.I) }]}>
+                            {selectedTest.scores.I}/5
+                          </Text>
+                          <Text style={styles.modalScoreDesc}>Consistencia de datos</Text>
+                        </View>
+                        <View style={styles.modalScoreItem}>
+                          <Text style={styles.modalScoreLabel}>Carga Sistema (CS)</Text>
+                          <Text style={[styles.modalScoreValue, { color: getScoreColor(selectedTest.scores.CS) }]}>
+                            {selectedTest.scores.CS}/5
+                          </Text>
+                          <Text style={styles.modalScoreDesc}>Rendimiento bajo carga</Text>
+                        </View>
+                        <View style={styles.modalScoreItem}>
+                          <Text style={styles.modalScoreLabel}>Tolerancia Fallos (TF)</Text>
+                          <Text style={[styles.modalScoreValue, { color: getScoreColor(selectedTest.scores.TF) }]}>
+                            {selectedTest.scores.TF}/5
+                          </Text>
+                          <Text style={styles.modalScoreDesc}>Recuperación de errores</Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
 
                   {selectedTest.errorMessage && (
                     <View style={styles.errorContainer}>
@@ -669,5 +739,55 @@ const styles = StyleSheet.create({
     color: '#2c3e50',
     fontFamily: 'monospace',
     lineHeight: 14,
+  },
+  individualScores: {
+    marginBottom: 10,
+  },
+  scoresTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
+  scoresRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  scoreItem: {
+    alignItems: 'center',
+  },
+  scoreLabel: {
+    fontSize: 12,
+    color: '#7f8c8d',
+    marginRight: 5,
+  },
+  scoreValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  modalScoresContainer: {
+    marginBottom: 10,
+  },
+  modalScoresGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalScoreItem: {
+    alignItems: 'center',
+  },
+  modalScoreLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+  },
+  modalScoreValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  modalScoreDesc: {
+    fontSize: 10,
+    color: '#7f8c8d',
   },
 }); 
